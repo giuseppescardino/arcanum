@@ -1,0 +1,22 @@
+[package]
+name = "arcanum-tools"
+version = "0.1.0"
+description = "Password/passphrase generator, strength estimate and TOTP"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+# data/eff_large_wordlist.txt: EFF Large Wordlist, CC BY 3.0 US,
+# https://www.eff.org/dice
+
+[dependencies]
+rand_core.workspace = true
+zeroize.workspace = true
+data-encoding.workspace = true
+thiserror.workspace = true
+hmac = "0.12"
+sha1 = "0.10"
+sha2.workspace = true
+url = "2"
+
+[lints]
+workspace = true

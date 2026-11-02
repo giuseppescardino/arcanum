@@ -1,0 +1,264 @@
+# CI for Arcanum: Rust core + sync server, Flutter app (Android APK, iOS,
+# macOS and Windows desktop). Every build is unsigned or ad-hoc signed: no
+# secrets, keys or certificates are needed.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.7'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # -------------------------------------------------------------- backend
+  core:
+    name: Rust core (lint + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+
+      - name: cargo fmt
+        run: cargo fmt --all --check
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: cargo test
+        run: cargo test --workspace --locked
+
+  server:
+    name: Sync server (lint + test + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: arcanum_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/arcanum_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+
+      - name: cargo fmt
+        run: cargo fmt --check
+      - name: cargo clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: cargo test (with PostgreSQL)
+        run: cargo test --locked
+      - name: cargo build --release
+        run: cargo build --release --locked
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcanum-server-linux-x64
+          path: server/target/release/arcanum-server
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker build
+        run: docker build -f deploy/Dockerfile -t arcanum-server:${{ github.sha }} .
+
+  # ------------------------------------------------------------------ app
+  app-test:
+    name: Flutter analyze & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # Release builds use the debug signing config: fine for sideloading,
+      # not for the Play Store.
+      - name: flutter build apk
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Stage APK
+        run: |
+          mkdir -p "$RUNNER_TEMP/android"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "$RUNNER_TEMP/android/Arcanum-android-arm64.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-android
+          path: ${{ runner.temp }}/android
+
+  ios:
+    name: iOS (unsigned build)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Xcode & CocoaPods version
+        run: |
+          xcodebuild -version
+          pod --version
+
+      # The Rust plugin is CocoaPods-only, so `flutter build` runs
+      # `pod install` against ios/Podfile(.lock).
+      - name: flutter build ios
+        run: flutter build ios --release --no-codesign
+
+      # Unsigned: re-sign with your own identity before installing.
+      - name: Stage unsigned IPA
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/ios"
+          mkdir -p "$out/Payload"
+          cp -R build/ios/iphoneos/Runner.app "$out/Payload/"
+          (cd "$out" && zip -qry Arcanum-ios-unsigned.ipa Payload && rm -rf Payload)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-ios-unsigned
+          path: ${{ runner.temp }}/ios
+
+  macos:
+    name: macOS (universal, ad-hoc signed)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # The Release entitlements include a keychain access group, which
+      # needs a development team. CI has none, so it signs ad-hoc with a
+      # copy that drops it: the app runs, but without Touch ID unlock.
+      - name: flutter build macos
+        run: |
+          set -euo pipefail
+          flutter build macos --release --config-only
+          ent="$RUNNER_TEMP/macos-ci.entitlements"
+          cp macos/Runner/Release.entitlements "$ent"
+          /usr/libexec/PlistBuddy -c "Delete :keychain-access-groups" "$ent"
+          xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner \
+            -configuration Release -derivedDataPath build/macos-ci \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            CODE_SIGN_ENTITLEMENTS="$ent" build
+
+      - name: Stage macOS app
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/macos"
+          mkdir -p "$out"
+          ditto -c -k --keepParent build/macos-ci/Build/Products/Release/Arcanum.app \
+            "$out/Arcanum-macos-universal.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-macos
+          path: ${{ runner.temp }}/macos
+
+  windows:
+    name: Windows desktop
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: flutter build windows
+        run: flutter build windows --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-windows-x64
+          path: app/build/windows/x64/runner/Release

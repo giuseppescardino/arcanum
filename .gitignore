@@ -1,0 +1,9 @@
+/core/target/
+/server/target/
+**/*.rs.bk
+.DS_Store
+.idea/
+.vscode/
+deploy/.env
+/dist/
+deploy/backups/

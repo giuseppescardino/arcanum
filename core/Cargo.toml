@@ -1,0 +1,48 @@
+[workspace]
+resolver = "2"
+members = ["arcanum-crypto", "arcanum-proto", "arcanum-vault", "arcanum-sync", "arcanum-tools", "arcanum-ffi"]
+
+[workspace.package]
+edition = "2021"
+license = "AGPL-3.0-or-later"
+rust-version = "1.80"
+
+[workspace.dependencies]
+argon2 = { version = "0.5", default-features = false, features = ["alloc", "zeroize"] }
+chacha20poly1305 = { version = "0.10", features = ["std"] }
+hkdf = "0.12"
+sha2 = "0.10"
+rand_core = { version = "0.6", features = ["getrandom"] }
+zeroize = { version = "1", features = ["zeroize_derive"] }
+serde = { version = "1", features = ["derive"] }
+data-encoding = "2"
+thiserror = "2"
+hex = "0.4"
+proptest = "1"
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+uuid = { version = "1", features = ["v4"] }
+tempfile = "3"
+arcanum-crypto = { path = "arcanum-crypto" }
+arcanum-vault = { path = "arcanum-vault" }
+arcanum-proto = { path = "arcanum-proto" }
+arcanum-sync = { path = "arcanum-sync" }
+arcanum-tools = { path = "arcanum-tools" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "warn"
+
+# Argon2 with production parameters is unbearably slow unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,25 @@
+[package]
+name = "arcanum-vault"
+version = "0.1.0"
+description = "Item model and encrypted local store"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arcanum-crypto.workspace = true
+arcanum-proto.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+uuid.workspace = true
+rand_core.workspace = true
+zeroize.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+rusqlite.workspace = true
+
+[lints]
+workspace = true

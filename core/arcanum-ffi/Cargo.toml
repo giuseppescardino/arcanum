@@ -1,0 +1,24 @@
+[package]
+# Cargokit names the native library after the *package*, and the generated
+# Dart loader expects this name; the directory stays `arcanum-ffi`.
+name = "rust_lib_arcanum"
+version = "0.1.0"
+description = "Dart bindings (flutter_rust_bridge) for the password manager core"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "lib"]
+
+[dependencies]
+flutter_rust_bridge = "=2.13.0"
+arcanum-vault.workspace = true
+arcanum-sync.workspace = true
+arcanum-tools.workspace = true
+zeroize.workspace = true
+data-encoding.workspace = true
+
+# Generated FFI glue needs `unsafe`, so the workspace lints don't apply here.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

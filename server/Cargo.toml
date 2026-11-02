@@ -1,0 +1,43 @@
+[package]
+name = "arcanum-server"
+version = "0.1.0"
+description = "Zero-knowledge sync server for the password manager"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+rust-version = "1.80"
+
+[dependencies]
+arcanum-proto = { path = "../core/arcanum-proto" }
+arcanum-crypto = { path = "../core/arcanum-crypto" }
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid", "json", "migrate", "macros"] }
+uuid = { version = "1", features = ["v4"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand_core = { version = "0.6", features = ["getrandom"] }
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.22"
+tower-http = { version = "0.6", features = ["trace", "limit"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2"
+
+[dev-dependencies]
+arcanum-sync = { path = "../core/arcanum-sync" }
+arcanum-vault = { path = "../core/arcanum-vault" }
+tempfile = "3"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"
+
+# Argon2 with production parameters is unbearably slow unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3
+

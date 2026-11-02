@@ -1,0 +1,23 @@
+[package]
+name = "arcanum-sync"
+version = "0.1.0"
+description = "HTTP sync client (OPAQUE login, pull/push) for the password manager"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+arcanum-crypto.workspace = true
+arcanum-proto.workspace = true
+arcanum-vault.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rand_core.workspace = true
+thiserror.workspace = true
+# Blocking client: calls already run on a worker thread (flutter_rust_bridge).
+# rustls + ring cross-compiles to Android/iOS without system OpenSSL.
+ureq = { version = "2", features = ["json"] }
+url = "2"
+
+[lints]
+workspace = true
