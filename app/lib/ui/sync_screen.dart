@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/messages.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import 'widgets.dart';
 
 class SyncScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class SyncScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) => Scaffold(
-        appBar: AppBar(title: const Text('Sincronizzazione')),
+        appBar: AppBar(title: Text(context.l10n.syncTitle)),
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -40,19 +41,16 @@ class _LinkedView extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Disconnettere questo dispositivo?'),
-        content: const Text(
-          'Il vault resta su questo dispositivo ma smette di sincronizzarsi. '
-          'I dati sul server e sugli altri dispositivi non vengono toccati.',
-        ),
+        title: Text(ctx.l10n.syncDisconnectTitle),
+        content: Text(ctx.l10n.syncDisconnectBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Disconnetti'),
+            child: Text(ctx.l10n.syncDisconnect),
           ),
         ],
       ),
@@ -74,6 +72,7 @@ class _LinkedView extends StatelessWidget {
     final info = controller.syncInfo;
     final summary = controller.lastSummary;
     final last = controller.lastSync;
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,21 +88,32 @@ class _LinkedView extends StatelessWidget {
                   children: [
                     const Icon(Icons.cloud_done_outlined),
                     const SizedBox(width: 8),
-                    Text('Sincronizzazione attiva', style: text.titleMedium),
+                    Text(l10n.syncActive, style: text.titleMedium),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (info != null) ...[
-                  Text('Account: ${info.email}'),
-                  Text('Server: ${info.serverUrl}'),
+                  Text(l10n.syncAccount(info.email)),
+                  Text(l10n.syncServer(info.serverUrl)),
                 ],
                 const SizedBox(height: 8),
                 Text(
                   last == null
-                      ? 'Non ancora sincronizzato in questa sessione.'
-                      : 'Ultima sincronizzazione: ${_time(last)}'
-                            '${summary == null ? '' : ' (${summary.pulled} ricevuti, ${summary.pushed} inviati'
-                                      '${summary.conflicts > 0 ? ', ${summary.conflicts} conflitti' : ''})'}',
+                      ? l10n.syncNotYetSynced
+                      : summary == null
+                      ? l10n.syncLastSync(_time(last))
+                      : summary.conflicts > 0
+                      ? l10n.syncLastSyncSummaryConflicts(
+                          _time(last),
+                          summary.pulled,
+                          summary.pushed,
+                          summary.conflicts,
+                        )
+                      : l10n.syncLastSyncSummary(
+                          _time(last),
+                          summary.pulled,
+                          summary.pushed,
+                        ),
                   style: text.bodySmall,
                 ),
               ],
@@ -114,7 +124,7 @@ class _LinkedView extends StatelessWidget {
         if (controller.sessionExpired)
           FilledButton.icon(
             icon: const Icon(Icons.login),
-            label: const Text('Riconnetti'),
+            label: Text(l10n.reconnect),
             onPressed: () => showReconnectDialog(context, controller),
           )
         else
@@ -125,21 +135,16 @@ class _LinkedView extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.sync),
-            label: const Text('Sincronizza ora'),
+            label: Text(l10n.syncNow),
             onPressed: controller.syncing ? null : controller.syncNow,
           ),
         const SizedBox(height: 8),
         OutlinedButton(
           onPressed: () => _disconnect(context),
-          child: const Text('Disconnetti questo dispositivo'),
+          child: Text(l10n.syncDisconnectDevice),
         ),
         const SizedBox(height: 24),
-        Text(
-          'I dati vengono cifrati su questo dispositivo prima dell\'invio: '
-          'il server conserva solo dati illeggibili e non conosce né la '
-          'master password né la Secret Key.',
-          style: text.bodySmall,
-        ),
+        Text(l10n.syncEncryptionNote, style: text.bodySmall),
       ],
     );
   }
@@ -203,15 +208,13 @@ class _EnableSyncFormState extends State<_EnableSyncForm> {
           const Icon(Icons.cloud_sync_outlined, size: 56),
           const SizedBox(height: 16),
           Text(
-            'Sincronizza tra i tuoi dispositivi',
+            context.l10n.syncEnableTitle,
             style: text.headlineSmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'Crea un account sul tuo server di sincronizzazione. Tutto viene '
-            'cifrato qui prima di partire: il server vede solo dati '
-            'illeggibili. Sugli altri dispositivi scegli "Ho già un account".',
+            context.l10n.syncEnableBody,
             style: text.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -223,16 +226,17 @@ class _EnableSyncFormState extends State<_EnableSyncForm> {
           const SizedBox(height: 16),
           PasswordField(
             controller: _password,
-            label: 'Master password (per conferma)',
+            label: context.l10n.syncConfirmMasterPassword,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            validator: (v) =>
-                (v ?? '').isEmpty ? 'Inserisci la master password' : null,
+            validator: (v) => (v ?? '').isEmpty
+                ? context.l10n.commonEnterMasterPassword
+                : null,
           ),
           const SizedBox(height: 24),
           BusyButton(
             busy: _busy,
-            label: 'Attiva sincronizzazione',
+            label: context.l10n.syncEnable,
             onPressed: _submit,
           ),
         ],
@@ -291,7 +295,7 @@ class _ReconnectDialogState extends State<_ReconnectDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Riconnetti questo dispositivo'),
+      title: Text(context.l10n.syncReconnectTitle),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -299,15 +303,11 @@ class _ReconnectDialogState extends State<_ReconnectDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ErrorBanner(_error),
-            const Text(
-              'Inserisci la master password attuale dell\'account. Se l\'hai '
-              'cambiata su un altro dispositivo, usa quella nuova: da ora '
-              'varrà anche qui.',
-            ),
+            Text(context.l10n.syncReconnectBody),
             const SizedBox(height: 16),
             PasswordField(
               controller: _password,
-              label: 'Master password',
+              label: context.l10n.masterPassword,
               autofocus: true,
               onSubmitted: (_) => _submit(),
             ),
@@ -317,7 +317,7 @@ class _ReconnectDialogState extends State<_ReconnectDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text('Annulla'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _busy ? null : _submit,
@@ -326,7 +326,7 @@ class _ReconnectDialogState extends State<_ReconnectDialog> {
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Riconnetti'),
+              : Text(context.l10n.reconnect),
         ),
       ],
     );

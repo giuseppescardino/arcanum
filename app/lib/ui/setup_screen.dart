@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/messages.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import 'sign_in_screen.dart';
 import 'widgets.dart';
 
@@ -55,14 +56,13 @@ class _SetupScreenState extends State<SetupScreen> {
           const Icon(Icons.shield_outlined, size: 56),
           const SizedBox(height: 16),
           Text(
-            'Crea il tuo vault',
+            context.l10n.setupTitle,
             style: text.headlineSmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'La master password cifra tutti i tuoi dati sul dispositivo. '
-            'Nessuno, nemmeno noi, può recuperarla: sceglila lunga e memorabile.',
+            context.l10n.setupIntro,
             style: text.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -70,24 +70,28 @@ class _SetupScreenState extends State<SetupScreen> {
           ErrorBanner(_error),
           PasswordField(
             controller: _password,
-            label: 'Master password',
+            label: context.l10n.masterPassword,
             autofocus: true,
             textInputAction: TextInputAction.next,
             validator: (v) => (v ?? '').length < minMasterPasswordLength
-                ? 'Almeno $minMasterPasswordLength caratteri'
+                ? context.l10n.setupMinLength(minMasterPasswordLength)
                 : null,
           ),
           const SizedBox(height: 16),
           PasswordField(
             controller: _confirm,
-            label: 'Ripeti master password',
+            label: context.l10n.setupRepeatMasterPassword,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
             validator: (v) =>
-                v != _password.text ? 'Le password non coincidono' : null,
+                v != _password.text ? context.l10n.passwordsDontMatch : null,
           ),
           const SizedBox(height: 24),
-          BusyButton(busy: _busy, label: 'Crea vault', onPressed: _submit),
+          BusyButton(
+            busy: _busy,
+            label: context.l10n.setupCreate,
+            onPressed: _submit,
+          ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: _busy
@@ -98,7 +102,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           SignInScreen(controller: widget.controller),
                     ),
                   ),
-            child: const Text('Ho già un account: accedi'),
+            child: Text(context.l10n.setupHaveAccount),
           ),
         ],
       ),

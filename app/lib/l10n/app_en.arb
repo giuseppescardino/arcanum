@@ -1,0 +1,404 @@
+{
+  "@@locale": "en",
+  "languageTitle": "Language",
+  "@languageTitle": {
+    "description": "Title of the language picker"
+  },
+  "languageSystem": "System default",
+  "@languageSystem": {
+    "description": "Follow the device language"
+  },
+  "cancel": "Cancel",
+  "copy": "Copy",
+  "delete": "Delete",
+  "password": "Password",
+  "masterPassword": "Master password",
+  "secretKey": "Secret Key",
+  "@secretKey": {
+    "description": "Product term, keep as is"
+  },
+  "reconnect": "Reconnect",
+  "syncTitle": "Sync",
+  "@syncTitle": {
+    "description": "Sync screen title and menu entry"
+  },
+  "syncNow": "Sync now",
+  "noGroup": "No group",
+  "untitled": "(untitled)",
+  "username": "Username",
+  "passwordsDontMatch": "Passwords do not match",
+  "show": "Show",
+  "@show": {
+    "description": "Reveal a hidden secret"
+  },
+  "hide": "Hide",
+  "vaultPasswordOf": "Password for \"{title}\"",
+  "@vaultPasswordOf": {
+    "description": "Clipboard label when copying an item's password",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultDeleteGroupTitle": "Delete group \"{group}\"?",
+  "@vaultDeleteGroupTitle": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultDeleteGroupBody": "Items are not deleted: they move to \"No group\".",
+  "vaultDeleteGroup": "Delete group",
+  "vaultForgetSecretKeyTitle": "Remove the Secret Key?",
+  "vaultForgetSecretKeyBody": "Next time you unlock on this device you will need the Secret Key from your Emergency Kit. Make sure you have it.",
+  "vaultRemove": "Remove",
+  "vaultTitle": "Vault",
+  "@vaultTitle": {
+    "description": "Main screen title"
+  },
+  "vaultLock": "Lock",
+  "vaultEnableQuickUnlock": "Enable unlock with {method}",
+  "@vaultEnableQuickUnlock": {
+    "description": "method is e.g. Face ID, Touch ID, fingerprint",
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultDisableQuickUnlock": "Disable unlock with {method}",
+  "@vaultDisableQuickUnlock": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultEnableAutofill": "Enable autofill",
+  "vaultChangeMasterPassword": "Change master password",
+  "vaultForgetSecretKey": "Remove Secret Key from this device",
+  "vaultSearchHint": "Search · Enter copies the password",
+  "vaultSearchHintWithShortcut": "Search · Enter copies the password · {shortcut} from anywhere",
+  "@vaultSearchHintWithShortcut": {
+    "description": "shortcut is the global hotkey label",
+    "placeholders": {
+      "shortcut": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultNew": "New",
+  "vaultSessionExpired": "Sync is paused: this device needs to reconnect to the server.",
+  "vaultAllGroups": "All",
+  "@vaultAllGroups": {
+    "description": "Filter chip showing items of every group"
+  },
+  "vaultGroupActions": "Group actions",
+  "vaultRenameGroup": "Rename group",
+  "vaultGroupName": "Name",
+  "vaultGroupMergeHint": "The group already exists: items will be merged.",
+  "vaultRename": "Rename",
+  "vaultCopyTotp": "Copy 2FA code",
+  "vaultTotpCode": "2FA code",
+  "vaultCopyUsername": "Copy username",
+  "vaultCopyPassword": "Copy password",
+  "vaultNoResults": "No results.",
+  "vaultEmpty": "Your vault is empty.\nAdd your first password with \"New\".",
+  "vaultMasterPasswordChanged": "Master password updated.",
+  "vaultCurrentPassword": "Current password",
+  "vaultRequired": "Required",
+  "vaultNewPassword": "New password",
+  "vaultMinLength": "{count, plural, =1{At least 1 character} other{At least {count} characters}}",
+  "@vaultMinLength": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultRepeatNewPassword": "Repeat new password",
+  "vaultChange": "Change",
+  "editorDeleteTitle": "Delete this item?",
+  "editorDeleteBody": "This can't be undone.",
+  "editorNewTitle": "New item",
+  "editorEditTitle": "Edit",
+  "editorRemoveFavorite": "Remove from favorites",
+  "editorFavorite": "Favorite",
+  "editorSave": "Save",
+  "editorKindLogin": "Login",
+  "@editorKindLogin": {
+    "description": "Item type: website login"
+  },
+  "editorKindSecureNote": "Secure note",
+  "editorTitleLabel": "Title",
+  "editorTitleRequired": "Title is required",
+  "editorUsernameLabel": "Username / email",
+  "editorGenerate": "Generate",
+  "editorWebsites": "Websites",
+  "editorWebsitesHelper": "One per line",
+  "editorTotpLabel": "2FA key (TOTP)",
+  "editorTotpHelper": "Secret key or otpauth:// URI from the site",
+  "editorTotpInvalid": "Invalid 2FA key",
+  "editorNotes": "Notes",
+  "editorGroup": "Group",
+  "editorGroupHelper": "Pick an existing one or type a new one",
+  "totpCopyCode": "Copy code",
+  "totpCode": "2FA code",
+  "@totpCode": {
+    "description": "Clipboard label for a copied 2FA code"
+  },
+  "strengthVeryWeak": "Very weak",
+  "strengthWeak": "Weak",
+  "strengthFair": "Fair",
+  "strengthStrong": "Strong",
+  "strengthVeryStrong": "Very strong",
+  "strengthLabelWithBits": "{label} · {bits} bit",
+  "@strengthLabelWithBits": {
+    "description": "Strength level and estimated entropy in bits",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "bits": {
+        "type": "int"
+      }
+    }
+  },
+  "syncDisconnectTitle": "Disconnect this device?",
+  "syncDisconnectBody": "The vault stays on this device but stops syncing. Data on the server and on your other devices is not touched.",
+  "syncDisconnect": "Disconnect",
+  "@syncDisconnect": {
+    "description": "Confirm button of the disconnect dialog"
+  },
+  "syncActive": "Sync is on",
+  "syncAccount": "Account: {email}",
+  "@syncAccount": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "syncServer": "Server: {url}",
+  "@syncServer": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "syncNotYetSynced": "Not synced yet in this session.",
+  "syncLastSync": "Last synced: {time}",
+  "@syncLastSync": {
+    "description": "time is HH:mm",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLastSyncSummary": "Last synced: {time} ({pulled} received, {pushed} sent)",
+  "@syncLastSyncSummary": {
+    "description": "Counts of items received from and sent to the server",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      }
+    }
+  },
+  "syncLastSyncSummaryConflicts": "Last synced: {time} ({pulled} received, {pushed} sent, {conflicts, plural, =1{1 conflict} other{{conflicts} conflicts}})",
+  "@syncLastSyncSummaryConflicts": {
+    "description": "Only used when conflicts > 0",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "pulled": {
+        "type": "int"
+      },
+      "pushed": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "syncDisconnectDevice": "Disconnect this device",
+  "syncEncryptionNote": "Data is encrypted on this device before it is sent: the server only stores unreadable data and knows neither your master password nor your Secret Key.",
+  "syncEnableTitle": "Sync across your devices",
+  "syncEnableBody": "Create an account on your sync server. Everything is encrypted here before it leaves: the server only sees unreadable data. On your other devices choose \"I already have an account\".",
+  "@syncEnableBody": {
+    "description": "Quotes the setupHaveAccount button; keep them consistent"
+  },
+  "syncConfirmMasterPassword": "Master password (to confirm)",
+  "syncEnable": "Turn on sync",
+  "syncReconnectTitle": "Reconnect this device",
+  "syncReconnectBody": "Enter the account's current master password. If you changed it on another device, use the new one: from now on it applies here too.",
+  "signInTitle": "Sign in",
+  "@signInTitle": {
+    "description": "Screen title and submit button"
+  },
+  "signInIntro": "Connect this device to your account. You need the Secret Key from your Emergency Kit and your master password.",
+  "unlockTitle": "Unlock the vault",
+  "unlockButton": "Unlock",
+  "unlockWithMethod": "Unlock with {method}",
+  "@unlockWithMethod": {
+    "description": "method is the biometric method name, e.g. Face ID",
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "unlockEnterSecretKeyManually": "Enter the Secret Key manually",
+  "setupTitle": "Create your vault",
+  "setupIntro": "Your master password encrypts all your data on the device. Nobody, not even us, can recover it: make it long and memorable.",
+  "setupMinLength": "At least {count} characters",
+  "@setupMinLength": {
+    "description": "Master password minimum length (always > 1)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setupRepeatMasterPassword": "Repeat master password",
+  "setupCreate": "Create vault",
+  "setupHaveAccount": "I already have an account: sign in",
+  "kitTitle": "Your Secret Key",
+  "kitIntro": "Together with your master password, the Secret Key is needed to open the vault on a new device or after reinstalling. It is saved in this device's keychain, but if you lose the device without having written it down, your data cannot be recovered.",
+  "kitWriteItDown": "Write it on paper or store it somewhere safe, away from your master password.",
+  "kitSavedConfirm": "I have saved the Secret Key somewhere safe",
+  "kitContinue": "Continue",
+  "commonEnterMasterPassword": "Enter your master password",
+  "@commonEnterMasterPassword": {
+    "description": "Validator error when the master password is empty"
+  },
+  "commonInvalidSecretKey": "Invalid Secret Key",
+  "commonSyncServer": "Sync server",
+  "commonSyncServerHint": "https://sync.example.com",
+  "@commonSyncServerHint": {
+    "description": "Example URL shown as hint"
+  },
+  "commonSyncServerInvalid": "Full address, e.g. https://sync.example.com",
+  "commonEmail": "Email",
+  "commonInvalidEmail": "Invalid email",
+  "generatorTitle": "Generate password",
+  "generatorPassphrase": "Passphrase",
+  "generatorRegenerate": "Regenerate",
+  "generatorUse": "Use",
+  "generatorLength": "Length",
+  "generatorLowercase": "Lowercase (a-z)",
+  "generatorUppercase": "Uppercase (A-Z)",
+  "generatorDigits": "Numbers (0-9)",
+  "generatorSymbols": "Symbols (!@#…)",
+  "generatorAvoidAmbiguous": "Avoid ambiguous characters (l, 1, O, 0…)",
+  "generatorWords": "Words",
+  "generatorSeparator": "Separator",
+  "generatorSeparatorSpace": "space",
+  "@generatorSeparatorSpace": {
+    "description": "Label of the space separator option."
+  },
+  "generatorCapitalize": "Capitalize words",
+  "generatorIncludeNumber": "Add a number",
+  "autofillNoVault": "There is no vault on this device yet. Open Arcanum to create one or sign in to your account.",
+  "autofillClose": "Close",
+  "autofillDifferentSiteTitle": "Different site",
+  "autofillDifferentSiteBody": "\"{title}\" isn't saved for {domain}. Fill anyway? Only do this if you're sure the site is genuine.",
+  "@autofillDifferentSiteBody": {
+    "description": "Confirmation before filling a credential on a site it isn't saved for.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "autofillFill": "Fill",
+  "autofillPickerTitle": "Choose credentials",
+  "autofillRequestedBy": "Requested by: {requester}",
+  "@autofillRequestedBy": {
+    "placeholders": {
+      "requester": {
+        "type": "String"
+      }
+    }
+  },
+  "autofillSearch": "Search",
+  "autofillNoCredentials": "No credentials found.",
+  "autofillSuggested": "Suggested",
+  "autofillAllCredentials": "All credentials",
+  "autofillOthers": "Others",
+  "errorWrongCredentials": "Wrong master password or Secret Key.",
+  "errorInvalidSecretKey": "Invalid Secret Key: make sure you copied all of it.",
+  "errorLocked": "The vault is locked.",
+  "errorNotInitialized": "No vault found.",
+  "errorAlreadyInitialized": "The vault already exists.",
+  "errorNotFound": "Item not found.",
+  "errorInvalidLogin": "Wrong email, master password or Secret Key.",
+  "errorEmailTaken": "An account with this email already exists.",
+  "errorSessionExpired": "The sync session has expired: reconnect this device.",
+  "errorTooManyRequests": "Too many attempts. Try again in a few minutes.",
+  "errorInvalidServerUrl": "Invalid server address: it must start with https://",
+  "errorNetwork": "Server unreachable. Check your connection and the address.",
+  "errorNotLinked": "This vault isn't linked to a server.",
+  "errorInvalidInput": "Invalid value: {details}",
+  "@errorInvalidInput": {
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPasswordRequired": "For security, the master password is required (at least every 14 days and after a password change).",
+  "errorInternal": "Internal error: {details}",
+  "@errorInternal": {
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "errorUnexpected": "Unexpected error: {details}",
+  "@errorUnexpected": {
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "controllerDefaultDevice": "Device",
+  "@controllerDefaultDevice": {
+    "description": "Fallback device name when the OS is unknown."
+  },
+  "controllerMissingSecretKey": "Secret Key missing",
+  "quickUnlockReason": "Unlock the vault",
+  "quickUnlockFingerprint": "fingerprint",
+  "@quickUnlockFingerprint": {
+    "description": "Biometric method name, used inside 'Unlock with {method}'."
+  },
+  "quickUnlockCancelled": "Verification cancelled",
+  "clipboardCopied": "{label} copied. It will be cleared in {seconds, plural, =1{1 second} other{{seconds} seconds}}.",
+  "@clipboardCopied": {
+    "description": "Snackbar after copying a secret; label is the copied field name.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
+}

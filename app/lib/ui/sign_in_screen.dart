@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/messages.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'widgets.dart';
 
@@ -61,7 +62,7 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Accedi')),
+      appBar: AppBar(title: Text(context.l10n.signInTitle)),
       body: Form(
         key: _formKey,
         child: Center(
@@ -72,11 +73,7 @@ class _SignInScreenState extends State<SignInScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Collega questo dispositivo al tuo account. Servono la '
-                    'Secret Key dell\'Emergency Kit e la master password.',
-                    style: text.bodyMedium,
-                  ),
+                  Text(context.l10n.signInIntro, style: text.bodyMedium),
                   const SizedBox(height: 24),
                   ErrorBanner(_error),
                   ServerUrlField(controller: _server, autofocus: true),
@@ -89,26 +86,30 @@ class _SignInScreenState extends State<SignInScreen> {
                     enableSuggestions: false,
                     style: const TextStyle(fontFamily: 'monospace'),
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Secret Key',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.secretKey,
                       hintText: 'PM1-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
                     ),
                     validator: (v) => isValidSecretKey(secretKey: v ?? '')
                         ? null
-                        : 'Secret Key non valida',
+                        : context.l10n.commonInvalidSecretKey,
                   ),
                   const SizedBox(height: 16),
                   PasswordField(
                     controller: _password,
-                    label: 'Master password',
+                    label: context.l10n.masterPassword,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _submit(),
                     validator: (v) => (v ?? '').isEmpty
-                        ? 'Inserisci la master password'
+                        ? context.l10n.commonEnterMasterPassword
                         : null,
                   ),
                   const SizedBox(height: 24),
-                  BusyButton(busy: _busy, label: 'Accedi', onPressed: _submit),
+                  BusyButton(
+                    busy: _busy,
+                    label: context.l10n.signInTitle,
+                    onPressed: _submit,
+                  ),
                 ],
               ),
             ),

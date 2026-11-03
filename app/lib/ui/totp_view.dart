@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app/clipboard.dart';
 import '../app/tools.dart';
+import '../l10n/l10n.dart';
 
 /// Live 2FA code with a countdown ring; refreshes every second.
 class TotpView extends StatefulWidget {
@@ -71,9 +72,10 @@ class _TotpViewState extends State<TotpView> {
           ),
         ),
         IconButton(
-          tooltip: 'Copia codice',
+          tooltip: context.l10n.totpCopyCode,
           icon: const Icon(Icons.copy),
-          onPressed: () => copySecret(context, totp.code, label: 'Codice 2FA'),
+          onPressed: () =>
+              copySecret(context, totp.code, label: context.l10n.totpCode),
         ),
       ],
     );

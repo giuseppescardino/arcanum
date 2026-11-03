@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import '../ui/theme.dart';
 import '../ui/unlock_screen.dart';
@@ -10,38 +12,50 @@ import 'matching.dart';
 
 /// UI shown by Android's AutofillActivity: unlock, then pick a credential.
 class AutofillApp extends StatelessWidget {
-  const AutofillApp({
+  AutofillApp({
     super.key,
     required this.controller,
     required this.bridge,
     required this.request,
-  });
+    LanguageSettings? language,
+  }) : language = language ?? LanguageSettings();
 
   final VaultController controller;
+  final LanguageSettings language;
   final AutofillBridge bridge;
   final AutofillRequest request;
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) => MaterialApp(
-        title: 'Arcanum',
-        debugShowCheckedModeBanner: false,
-        theme: appTheme(Brightness.light),
-        darkTheme: appTheme(Brightness.dark),
-        home: KeyedSubtree(
-          key: ValueKey(controller.stage),
-          child: switch (controller.stage) {
-            VaultStage.setup ||
-            VaultStage.emergencyKit => _NoVault(bridge: bridge),
-            VaultStage.locked => UnlockScreen(controller: controller),
-            VaultStage.unlocked => AutofillPickerScreen(
-              controller: controller,
-              bridge: bridge,
-              request: request,
-            ),
+    return LanguageScope(
+      settings: language,
+      child: ListenableBuilder(
+        listenable: Listenable.merge([controller, language]),
+        builder: (context, _) => MaterialApp(
+          title: 'Arcanum',
+          debugShowCheckedModeBanner: false,
+          theme: appTheme(Brightness.light),
+          darkTheme: appTheme(Brightness.dark),
+          locale: language.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          builder: (context, child) {
+            trackLocale(context);
+            return child!;
           },
+          home: KeyedSubtree(
+            key: ValueKey(controller.stage),
+            child: switch (controller.stage) {
+              VaultStage.setup ||
+              VaultStage.emergencyKit => _NoVault(bridge: bridge),
+              VaultStage.locked => UnlockScreen(controller: controller),
+              VaultStage.unlocked => AutofillPickerScreen(
+                controller: controller,
+                bridge: bridge,
+                request: request,
+              ),
+            },
+          ),
         ),
       ),
     );
@@ -59,13 +73,12 @@ class _NoVault extends StatelessWidget {
       children: [
         const Icon(Icons.info_outline, size: 48),
         const SizedBox(height: 16),
-        const Text(
-          'Non c\'è ancora un vault su questo dispositivo. Apri Password '
-          'Manager per crearlo o accedere al tuo account.',
-          textAlign: TextAlign.center,
-        ),
+        Text(context.l10n.autofillNoVault, textAlign: TextAlign.center),
         const SizedBox(height: 24),
-        FilledButton(onPressed: bridge.cancel, child: const Text('Chiudi')),
+        FilledButton(
+          onPressed: bridge.cancel,
+          child: Text(context.l10n.autofillClose),
+        ),
       ],
     );
   }
@@ -111,19 +124,16 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Sito diverso'),
-          content: Text(
-            '"${f.title}" non è salvato per $domain. Compilare comunque? '
-            'Fallo solo se sei sicuro che il sito sia autentico.',
-          ),
+          title: Text(ctx.l10n.autofillDifferentSiteTitle),
+          content: Text(ctx.l10n.autofillDifferentSiteBody(f.title, domain)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annulla'),
+              child: Text(ctx.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Compila'),
+              child: Text(ctx.l10n.autofillFill),
             ),
           ],
         ),
@@ -141,15 +151,16 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
         .toList();
     final others = logins.where((i) => !suggested.contains(i)).toList();
     final text = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Annulla',
+          tooltip: l10n.cancel,
           icon: const Icon(Icons.close),
           onPressed: widget.bridge.cancel,
         ),
-        title: const Text('Scegli le credenziali'),
+        title: Text(l10n.autofillPickerTitle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(96),
           child: Padding(
@@ -158,16 +169,16 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Richiesto da: ${widget.request.displayName}',
+                  l10n.autofillRequestedBy(widget.request.displayName),
                   key: const ValueKey('autofill-requester'),
                   style: text.bodyMedium,
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Cerca',
-                    prefixIcon: Icon(Icons.search),
+                  decoration: InputDecoration(
+                    hintText: l10n.autofillSearch,
+                    prefixIcon: const Icon(Icons.search),
                     isDense: true,
                   ),
                 ),
@@ -177,15 +188,19 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
         ),
       ),
       body: logins.isEmpty
-          ? const Center(child: Text('Nessuna credenziale trovata.'))
+          ? Center(child: Text(l10n.autofillNoCredentials))
           : ListView(
               children: [
                 if (suggested.isNotEmpty) ...[
-                  const _Header('Suggeriti'),
+                  _Header(l10n.autofillSuggested),
                   for (final i in suggested) _tile(i),
                 ],
                 if (others.isNotEmpty) ...[
-                  _Header(suggested.isEmpty ? 'Tutte le credenziali' : 'Altre'),
+                  _Header(
+                    suggested.isEmpty
+                        ? l10n.autofillAllCredentials
+                        : l10n.autofillOthers,
+                  ),
                   for (final i in others) _tile(i),
                 ],
               ],
@@ -197,7 +212,7 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
     final f = item.fields;
     return ListTile(
       leading: const CircleAvatar(child: Icon(Icons.key)),
-      title: Text(f.title.isEmpty ? '(senza titolo)' : f.title),
+      title: Text(f.title.isEmpty ? context.l10n.untitled : f.title),
       subtitle: f.username.isEmpty ? null : Text(f.username),
       onTap: () => _pick(item),
     );

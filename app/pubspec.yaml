@@ -9,9 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   flutter_rust_bridge: 2.13.0
   flutter_secure_storage: ^11.2.0
   hotkey_manager: ^0.2.3
+  intl: any
   local_auth: ^3.0.2
   path_provider: ^2.1.6
   rust_lib_arcanum:
@@ -26,4 +29,5 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  generate: true
   uses-material-design: true

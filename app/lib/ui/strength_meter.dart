@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
 
 import '../app/tools.dart';
+import '../l10n/l10n.dart';
 
 class StrengthMeter extends StatelessWidget {
   const StrengthMeter({super.key, required this.password});
 
   final String password;
 
-  static (String, Color) _style(PasswordStrengthLevel level) => switch (level) {
-    PasswordStrengthLevel.veryWeak => ('Molto debole', Colors.red),
-    PasswordStrengthLevel.weak => ('Debole', Colors.deepOrange),
-    PasswordStrengthLevel.fair => ('Discreta', Colors.amber.shade700),
-    PasswordStrengthLevel.strong => ('Forte', Colors.lightGreen.shade700),
-    PasswordStrengthLevel.veryStrong => ('Molto forte', Colors.green),
+  static (String, Color) _style(
+    AppLocalizations l10n,
+    PasswordStrengthLevel level,
+  ) => switch (level) {
+    PasswordStrengthLevel.veryWeak => (l10n.strengthVeryWeak, Colors.red),
+    PasswordStrengthLevel.weak => (l10n.strengthWeak, Colors.deepOrange),
+    PasswordStrengthLevel.fair => (l10n.strengthFair, Colors.amber.shade700),
+    PasswordStrengthLevel.strong => (
+      l10n.strengthStrong,
+      Colors.lightGreen.shade700,
+    ),
+    PasswordStrengthLevel.veryStrong => (l10n.strengthVeryStrong, Colors.green),
   };
 
   @override
   Widget build(BuildContext context) {
     if (password.isEmpty) return const SizedBox.shrink();
     final s = tools.strength(password);
-    final (label, color) = _style(s.level);
+    final (label, color) = _style(context.l10n, s.level);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
@@ -38,7 +45,7 @@ class StrengthMeter extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            '$label · ${s.bits} bit',
+            context.l10n.strengthLabelWithBits(label, s.bits),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

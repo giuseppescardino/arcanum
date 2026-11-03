@@ -4,6 +4,7 @@ import '../app/clipboard.dart';
 import '../app/messages.dart';
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'generator_dialog.dart';
 import 'strength_meter.dart';
@@ -126,16 +127,16 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare questo elemento?'),
-        content: const Text('L\'operazione non può essere annullata.'),
+        title: Text(context.l10n.editorDeleteTitle),
+        content: Text(context.l10n.editorDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Elimina'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -150,16 +151,20 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     final isLogin = _kind == VaultItemKind.login;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isNew ? 'Nuovo elemento' : 'Modifica'),
+        title: Text(
+          _isNew ? context.l10n.editorNewTitle : context.l10n.editorEditTitle,
+        ),
         actions: [
           IconButton(
-            tooltip: _favorite ? 'Rimuovi dai preferiti' : 'Preferito',
+            tooltip: _favorite
+                ? context.l10n.editorRemoveFavorite
+                : context.l10n.editorFavorite,
             icon: Icon(_favorite ? Icons.star : Icons.star_border),
             onPressed: () => setState(() => _favorite = !_favorite),
           ),
           if (!_isNew)
             IconButton(
-              tooltip: 'Elimina',
+              tooltip: context.l10n.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: _busy ? null : _delete,
             ),
@@ -167,7 +172,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: FilledButton(
               onPressed: _busy ? null : _save,
-              child: const Text('Salva'),
+              child: Text(context.l10n.editorSave),
             ),
           ),
         ],
@@ -182,16 +187,16 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
               children: [
                 if (_isNew) ...[
                   SegmentedButton<VaultItemKind>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: VaultItemKind.login,
-                        icon: Icon(Icons.key),
-                        label: Text('Login'),
+                        icon: const Icon(Icons.key),
+                        label: Text(context.l10n.editorKindLogin),
                       ),
                       ButtonSegment(
                         value: VaultItemKind.secureNote,
-                        icon: Icon(Icons.sticky_note_2_outlined),
-                        label: Text('Nota sicura'),
+                        icon: const Icon(Icons.sticky_note_2_outlined),
+                        label: Text(context.l10n.editorKindSecureNote),
                       ),
                     ],
                     selected: {_kind},
@@ -203,9 +208,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                   controller: _title,
                   autofocus: _isNew,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Titolo'),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.editorTitleLabel,
+                  ),
                   validator: (v) => (v ?? '').trim().isEmpty
-                      ? 'Il titolo è obbligatorio'
+                      ? context.l10n.editorTitleRequired
                       : null,
                 ),
                 const SizedBox(height: 16),
@@ -220,14 +227,14 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                     autocorrect: false,
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: 'Nome utente / email',
+                      labelText: context.l10n.editorUsernameLabel,
                       suffixIcon: IconButton(
-                        tooltip: 'Copia',
+                        tooltip: context.l10n.copy,
                         icon: const Icon(Icons.copy),
                         onPressed: () => copySecret(
                           context,
                           _username.text,
-                          label: 'Nome utente',
+                          label: context.l10n.username,
                         ),
                       ),
                     ),
@@ -235,23 +242,23 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                   const SizedBox(height: 16),
                   PasswordField(
                     controller: _password,
-                    label: 'Password',
+                    label: context.l10n.password,
                     textInputAction: TextInputAction.next,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          tooltip: 'Genera',
+                          tooltip: context.l10n.editorGenerate,
                           icon: const Icon(Icons.casino_outlined),
                           onPressed: _generate,
                         ),
                         IconButton(
-                          tooltip: 'Copia',
+                          tooltip: context.l10n.copy,
                           icon: const Icon(Icons.copy),
                           onPressed: () => copySecret(
                             context,
                             _password.text,
-                            label: 'Password',
+                            label: context.l10n.password,
                           ),
                         ),
                       ],
@@ -269,9 +276,9 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                     keyboardType: TextInputType.multiline,
                     minLines: 1,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Siti web',
-                      helperText: 'Uno per riga',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.editorWebsites,
+                      helperText: context.l10n.editorWebsitesHelper,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -279,15 +286,15 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                     controller: _totp,
                     autocorrect: false,
                     enableSuggestions: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Chiave 2FA (TOTP)',
-                      helperText: 'Chiave segreta o URI otpauth:// del sito',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.editorTotpLabel,
+                      helperText: context.l10n.editorTotpHelper,
                     ),
                     validator: (v) {
                       final value = (v ?? '').trim();
                       return value.isEmpty || tools.isValidTotp(value)
                           ? null
-                          : 'Chiave 2FA non valida';
+                          : context.l10n.editorTotpInvalid;
                     },
                   ),
                   ValueListenableBuilder(
@@ -310,8 +317,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                   keyboardType: TextInputType.multiline,
                   minLines: isLogin ? 3 : 10,
                   maxLines: null,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.editorNotes,
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -361,10 +368,10 @@ class _GroupFieldState extends State<GroupField> {
             focusNode: focusNode,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (_) => onSubmitted(),
-            decoration: const InputDecoration(
-              labelText: 'Gruppo',
-              helperText: 'Scegline uno esistente o scrivine uno nuovo',
-              prefixIcon: Icon(Icons.folder_outlined),
+            decoration: InputDecoration(
+              labelText: context.l10n.editorGroup,
+              helperText: context.l10n.editorGroupHelper,
+              prefixIcon: const Icon(Icons.folder_outlined),
             ),
           ),
       optionsViewBuilder: (context, onSelected, options) => Align(

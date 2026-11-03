@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import 'emergency_kit_screen.dart';
 import 'setup_screen.dart';
 import 'theme.dart';
@@ -10,9 +12,11 @@ import 'unlock_screen.dart';
 import 'vault_screen.dart';
 
 class ArcanumApp extends StatefulWidget {
-  const ArcanumApp({super.key, required this.controller});
+  ArcanumApp({super.key, required this.controller, LanguageSettings? language})
+    : language = language ?? LanguageSettings();
 
   final VaultController controller;
+  final LanguageSettings language;
 
   @override
   State<ArcanumApp> createState() => _ArcanumAppState();
@@ -67,26 +71,37 @@ class _ArcanumAppState extends State<ArcanumApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) => MaterialApp(
-        title: 'Arcanum',
-        navigatorKey: _navigatorKey,
-        debugShowCheckedModeBanner: false,
-        theme: appTheme(Brightness.light),
-        darkTheme: appTheme(Brightness.dark),
-        builder: (context, child) =>
-            Listener(onPointerDown: (_) => _controller.touch(), child: child),
-        home: KeyedSubtree(
-          key: ValueKey(_controller.stage),
-          child: switch (_controller.stage) {
-            VaultStage.setup => SetupScreen(controller: _controller),
-            VaultStage.emergencyKit => EmergencyKitScreen(
-              controller: _controller,
-            ),
-            VaultStage.locked => UnlockScreen(controller: _controller),
-            VaultStage.unlocked => VaultScreen(controller: _controller),
+    return LanguageScope(
+      settings: widget.language,
+      child: ListenableBuilder(
+        listenable: Listenable.merge([_controller, widget.language]),
+        builder: (context, _) => MaterialApp(
+          title: 'Arcanum',
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          theme: appTheme(Brightness.light),
+          darkTheme: appTheme(Brightness.dark),
+          locale: widget.language.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          builder: (context, child) {
+            trackLocale(context);
+            return Listener(
+              onPointerDown: (_) => _controller.touch(),
+              child: child,
+            );
           },
+          home: KeyedSubtree(
+            key: ValueKey(_controller.stage),
+            child: switch (_controller.stage) {
+              VaultStage.setup => SetupScreen(controller: _controller),
+              VaultStage.emergencyKit => EmergencyKitScreen(
+                controller: _controller,
+              ),
+              VaultStage.locked => UnlockScreen(controller: _controller),
+              VaultStage.unlocked => VaultScreen(controller: _controller),
+            },
+          ),
         ),
       ),
     );

@@ -1,0 +1,2 @@
+/* Shown by iOS when asking for Face ID permission. */
+"NSFaceIDUsageDescription" = "Face ID sblocca il vault senza digitare la master password.";

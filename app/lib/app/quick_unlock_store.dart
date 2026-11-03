@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../l10n/l10n.dart';
+
 /// Keeps the quick-unlock secret behind the platform's biometrics.
 abstract class QuickUnlockStore {
   /// Name shown in the UI ("Windows Hello", "Face ID / Touch ID", ...).
@@ -26,7 +28,7 @@ class PlatformQuickUnlockStore implements QuickUnlockStore {
     : _auth = auth ?? LocalAuthentication();
 
   static const _key = 'pm.quick_unlock';
-  static const _reason = 'Sblocca il vault';
+  static String get _reason => l10n.quickUnlockReason;
   final LocalAuthentication _auth;
 
   bool get _isApple =>
@@ -50,7 +52,7 @@ class PlatformQuickUnlockStore implements QuickUnlockStore {
         accessControlFlags: apple,
         useSecureEnclave: true,
       ),
-      aOptions: const AndroidOptions.biometric(
+      aOptions: AndroidOptions.biometric(
         enforceBiometrics: true,
         requireBiometricsPerOperation: true,
         biometricType: AndroidBiometricType.strongBiometricOnly,
@@ -65,7 +67,7 @@ class PlatformQuickUnlockStore implements QuickUnlockStore {
   String get methodName => switch (defaultTargetPlatform) {
     TargetPlatform.windows => 'Windows Hello',
     TargetPlatform.iOS || TargetPlatform.macOS => 'Face ID / Touch ID',
-    _ => 'impronta digitale',
+    _ => l10n.quickUnlockFingerprint,
   };
 
   @override
@@ -82,7 +84,7 @@ class PlatformQuickUnlockStore implements QuickUnlockStore {
   @override
   Future<void> save(String secret) async {
     if (!_hardwareBound && !await _confirm()) {
-      throw StateError('Verifica annullata');
+      throw StateError(l10n.quickUnlockCancelled);
     }
     await _storage.write(key: _key, value: secret);
   }

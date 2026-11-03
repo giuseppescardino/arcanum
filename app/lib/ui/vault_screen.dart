@@ -6,8 +6,10 @@ import '../app/messages.dart';
 import '../app/quick_access.dart';
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'item_editor_screen.dart';
+import 'language_picker.dart';
 import 'sync_screen.dart';
 import 'widgets.dart';
 
@@ -24,6 +26,7 @@ enum _MenuAction {
   sync,
   quickUnlock,
   autofill,
+  language,
   changePassword,
   forgetSecretKey,
 }
@@ -71,7 +74,7 @@ class _VaultScreenState extends State<VaultScreen> {
     await copySecret(
       context,
       match.fields.password,
-      label: 'Password di "${match.fields.title}"',
+      label: context.l10n.vaultPasswordOf(match.fields.title),
     );
     await QuickAccess.hide();
   }
@@ -137,18 +140,16 @@ class _VaultScreenState extends State<VaultScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Eliminare il gruppo "$group"?'),
-        content: const Text(
-          'Gli elementi non vengono eliminati: passano in "Senza gruppo".',
-        ),
+        title: Text(context.l10n.vaultDeleteGroupTitle(group)),
+        content: Text(context.l10n.vaultDeleteGroupBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Elimina gruppo'),
+            child: Text(context.l10n.vaultDeleteGroup),
           ),
         ],
       ),
@@ -224,6 +225,8 @@ class _VaultScreenState extends State<VaultScreen> {
         }
       case _MenuAction.autofill:
         await AndroidAutofill.openSettings();
+      case _MenuAction.language:
+        await showLanguageDialog(context);
       case _MenuAction.changePassword:
         await showDialog<void>(
           context: context,
@@ -233,19 +236,16 @@ class _VaultScreenState extends State<VaultScreen> {
         final ok = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Rimuovere la Secret Key?'),
-            content: const Text(
-              'Al prossimo sblocco su questo dispositivo servirà la Secret Key '
-              'dell\'Emergency Kit. Assicurati di averla.',
-            ),
+            title: Text(context.l10n.vaultForgetSecretKeyTitle),
+            content: Text(context.l10n.vaultForgetSecretKeyBody),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Annulla'),
+                child: Text(context.l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Rimuovi'),
+                child: Text(context.l10n.vaultRemove),
               ),
             ],
           ),
@@ -272,42 +272,50 @@ class _VaultScreenState extends State<VaultScreen> {
         final sections = _sections;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Vault'),
+            title: Text(context.l10n.vaultTitle),
             actions: [
               if (_controller.linked) _SyncButton(controller: _controller),
               IconButton(
-                tooltip: 'Blocca',
+                tooltip: context.l10n.vaultLock,
                 icon: const Icon(Icons.lock),
                 onPressed: _controller.lock,
               ),
               PopupMenuButton<_MenuAction>(
                 onSelected: _onMenu,
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _MenuAction.sync,
-                    child: Text('Sincronizzazione'),
+                    child: Text(context.l10n.syncTitle),
                   ),
                   if (_controller.quickUnlockAvailable)
                     PopupMenuItem(
                       value: _MenuAction.quickUnlock,
                       child: Text(
                         _controller.quickUnlockEnabled
-                            ? 'Disattiva sblocco con ${_controller.quickUnlock.methodName}'
-                            : 'Attiva sblocco con ${_controller.quickUnlock.methodName}',
+                            ? context.l10n.vaultDisableQuickUnlock(
+                                _controller.quickUnlock.methodName,
+                              )
+                            : context.l10n.vaultEnableQuickUnlock(
+                                _controller.quickUnlock.methodName,
+                              ),
                       ),
                     ),
                   if (AndroidAutofill.supported)
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: _MenuAction.autofill,
-                      child: Text('Attiva compilazione automatica'),
+                      child: Text(context.l10n.vaultEnableAutofill),
                     ),
                   PopupMenuItem(
+                    value: _MenuAction.language,
+                    child: Text(context.l10n.languageTitle),
+                  ),
+                  PopupMenuItem(
                     value: _MenuAction.changePassword,
-                    child: Text('Cambia master password'),
+                    child: Text(context.l10n.vaultChangeMasterPassword),
                   ),
                   PopupMenuItem(
                     value: _MenuAction.forgetSecretKey,
-                    child: Text('Rimuovi Secret Key da questo dispositivo'),
+                    child: Text(context.l10n.vaultForgetSecretKey),
                   ),
                 ],
               ),
@@ -325,9 +333,10 @@ class _VaultScreenState extends State<VaultScreen> {
                       onSubmitted: (_) => _copyFirstMatch(),
                       decoration: InputDecoration(
                         hintText: QuickAccess.active
-                            ? 'Cerca · Invio copia la password · '
-                                  '${QuickAccess.shortcutLabel} da ovunque'
-                            : 'Cerca · Invio copia la password',
+                            ? context.l10n.vaultSearchHintWithShortcut(
+                                QuickAccess.shortcutLabel,
+                              )
+                            : context.l10n.vaultSearchHint,
                         prefixIcon: const Icon(Icons.search),
                         isDense: true,
                         suffixIcon: _query.isEmpty
@@ -358,22 +367,19 @@ class _VaultScreenState extends State<VaultScreen> {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _openEditor,
             icon: const Icon(Icons.add),
-            label: const Text('Nuovo'),
+            label: Text(context.l10n.vaultNew),
           ),
           body: Column(
             children: [
               if (_controller.sessionExpired)
                 MaterialBanner(
                   leading: const Icon(Icons.sync_problem),
-                  content: const Text(
-                    'La sincronizzazione è sospesa: questo dispositivo deve '
-                    'riconnettersi al server.',
-                  ),
+                  content: Text(context.l10n.vaultSessionExpired),
                   actions: [
                     TextButton(
                       onPressed: () =>
                           showReconnectDialog(context, _controller),
-                      child: const Text('Riconnetti'),
+                      child: Text(context.l10n.reconnect),
                     ),
                   ],
                 ),
@@ -411,7 +417,7 @@ class _SyncButton extends StatelessWidget {
     }
     final error = controller.syncError;
     return IconButton(
-      tooltip: error ?? 'Sincronizza ora',
+      tooltip: error ?? context.l10n.syncNow,
       icon: Icon(
         error == null ? Icons.cloud_done_outlined : Icons.sync_problem,
         color: error == null ? null : Theme.of(context).colorScheme.error,
@@ -455,9 +461,9 @@ class _GroupFilterBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
         children: [
-          chip('Tutti', null),
+          chip(context.l10n.vaultAllGroups, null),
           for (final g in groups) chip(g, g, icon: Icons.folder_outlined),
-          if (hasUngrouped) chip('Senza gruppo', ''),
+          if (hasUngrouped) chip(context.l10n.noGroup, ''),
         ],
       ),
     );
@@ -491,7 +497,7 @@ class _GroupHeader extends StatelessWidget {
       onTap: onToggle,
       leading: Icon(collapsed ? Icons.chevron_right : Icons.expand_more),
       title: Text(
-        name.isEmpty ? 'Senza gruppo' : name,
+        name.isEmpty ? context.l10n.noGroup : name,
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
         ),
@@ -502,19 +508,19 @@ class _GroupHeader extends StatelessWidget {
           Text('$count', style: theme.textTheme.labelMedium),
           if (onRename != null)
             PopupMenuButton<_GroupAction>(
-              tooltip: 'Azioni gruppo',
+              tooltip: context.l10n.vaultGroupActions,
               onSelected: (a) => switch (a) {
                 _GroupAction.rename => onRename!(),
                 _GroupAction.delete => onDelete!(),
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                   value: _GroupAction.rename,
-                  child: Text('Rinomina gruppo'),
+                  child: Text(context.l10n.vaultRenameGroup),
                 ),
                 PopupMenuItem(
                   value: _GroupAction.delete,
-                  child: Text('Elimina gruppo'),
+                  child: Text(context.l10n.vaultDeleteGroup),
                 ),
               ],
             )
@@ -555,7 +561,7 @@ class _RenameGroupDialogState extends State<_RenameGroupDialog> {
     final name = _name.text.trim();
     final merges = name != widget.initial && widget.existing.contains(name);
     return AlertDialog(
-      title: const Text('Rinomina gruppo'),
+      title: Text(context.l10n.vaultRenameGroup),
       content: SizedBox(
         width: 400,
         child: TextField(
@@ -564,21 +570,19 @@ class _RenameGroupDialogState extends State<_RenameGroupDialog> {
           onChanged: (_) => setState(() {}),
           onSubmitted: (_) => _submit(),
           decoration: InputDecoration(
-            labelText: 'Nome',
-            helperText: merges
-                ? 'Il gruppo esiste già: gli elementi verranno uniti.'
-                : null,
+            labelText: context.l10n.vaultGroupName,
+            helperText: merges ? context.l10n.vaultGroupMergeHint : null,
           ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: name.isEmpty ? null : _submit,
-          child: const Text('Rinomina'),
+          child: Text(context.l10n.vaultRename),
         ),
       ],
     );
@@ -609,7 +613,7 @@ class _ItemTile extends StatelessWidget {
         children: [
           Flexible(
             child: Text(
-              f.title.isEmpty ? '(senza titolo)' : f.title,
+              f.title.isEmpty ? context.l10n.untitled : f.title,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -629,28 +633,38 @@ class _ItemTile extends StatelessWidget {
               children: [
                 if (f.totp != null)
                   IconButton(
-                    tooltip: 'Copia codice 2FA',
+                    tooltip: context.l10n.vaultCopyTotp,
                     icon: const Icon(Icons.pin_outlined),
                     onPressed: () {
                       final code = tools.totp(f.totp!, DateTime.now());
                       if (code != null) {
-                        copySecret(context, code.code, label: 'Codice 2FA');
+                        copySecret(
+                          context,
+                          code.code,
+                          label: context.l10n.vaultTotpCode,
+                        );
                       }
                     },
                   ),
                 if (f.username.isNotEmpty)
                   IconButton(
-                    tooltip: 'Copia nome utente',
+                    tooltip: context.l10n.vaultCopyUsername,
                     icon: const Icon(Icons.person_outline),
-                    onPressed: () =>
-                        copySecret(context, f.username, label: 'Nome utente'),
+                    onPressed: () => copySecret(
+                      context,
+                      f.username,
+                      label: context.l10n.username,
+                    ),
                   ),
                 if (f.password.isNotEmpty)
                   IconButton(
-                    tooltip: 'Copia password',
+                    tooltip: context.l10n.vaultCopyPassword,
                     icon: const Icon(Icons.copy),
-                    onPressed: () =>
-                        copySecret(context, f.password, label: 'Password'),
+                    onPressed: () => copySecret(
+                      context,
+                      f.password,
+                      label: context.l10n.password,
+                    ),
                   ),
               ],
             )
@@ -670,7 +684,7 @@ class _EmptyState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
-          searching ? 'Nessun risultato.' : 'Il vault è vuoto.\nAggiungi la tua prima password con "Nuovo".',
+          searching ? context.l10n.vaultNoResults : context.l10n.vaultEmpty,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge,
         ),
@@ -715,7 +729,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Master password aggiornata.')),
+        SnackBar(content: Text(context.l10n.vaultMasterPasswordChanged)),
       );
     } catch (e) {
       if (mounted) setState(() => _error = failureMessage(e));
@@ -727,7 +741,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Cambia master password'),
+      title: Text(context.l10n.vaultChangeMasterPassword),
       content: Form(
         key: _formKey,
         child: SizedBox(
@@ -738,24 +752,26 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               ErrorBanner(_error),
               PasswordField(
                 controller: _current,
-                label: 'Password attuale',
+                label: context.l10n.vaultCurrentPassword,
                 autofocus: true,
-                validator: (v) => (v ?? '').isEmpty ? 'Obbligatoria' : null,
+                validator: (v) =>
+                    (v ?? '').isEmpty ? context.l10n.vaultRequired : null,
               ),
               const SizedBox(height: 12),
               PasswordField(
                 controller: _next,
-                label: 'Nuova password',
-                validator: (v) =>
-                    (v ?? '').length < 10 ? 'Almeno 10 caratteri' : null,
+                label: context.l10n.vaultNewPassword,
+                validator: (v) => (v ?? '').length < 10
+                    ? context.l10n.vaultMinLength(10)
+                    : null,
               ),
               const SizedBox(height: 12),
               PasswordField(
                 controller: _confirm,
-                label: 'Ripeti nuova password',
+                label: context.l10n.vaultRepeatNewPassword,
                 onSubmitted: (_) => _submit(),
                 validator: (v) =>
-                    v != _next.text ? 'Le password non coincidono' : null,
+                    v != _next.text ? context.l10n.passwordsDontMatch : null,
               ),
             ],
           ),
@@ -764,7 +780,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text('Annulla'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _busy ? null : _submit,
@@ -773,7 +789,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Cambia'),
+              : Text(context.l10n.vaultChange),
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/clipboard.dart';
 import '../app/tools.dart';
+import '../l10n/l10n.dart';
 import 'strength_meter.dart';
 
 enum _Mode { password, passphrase }
@@ -93,8 +94,9 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     return AlertDialog(
-      title: const Text('Genera password'),
+      title: Text(l10n.generatorTitle),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -103,11 +105,14 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SegmentedButton<_Mode>(
-                segments: const [
-                  ButtonSegment(value: _Mode.password, label: Text('Password')),
+                segments: [
+                  ButtonSegment(
+                    value: _Mode.password,
+                    label: Text(l10n.password),
+                  ),
                   ButtonSegment(
                     value: _Mode.passphrase,
-                    label: Text('Passphrase'),
+                    label: Text(l10n.generatorPassphrase),
                   ),
                 ],
                 selected: {_mode},
@@ -133,15 +138,15 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Rigenera',
+                      tooltip: l10n.generatorRegenerate,
                       icon: const Icon(Icons.refresh),
                       onPressed: () => _update(() {}),
                     ),
                     IconButton(
-                      tooltip: 'Copia',
+                      tooltip: l10n.copy,
                       icon: const Icon(Icons.copy),
                       onPressed: () =>
-                          copySecret(context, _value, label: 'Password'),
+                          copySecret(context, _value, label: l10n.password),
                     ),
                   ],
                 ),
@@ -157,11 +162,11 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, _value),
-          child: const Text('Usa'),
+          child: Text(l10n.generatorUse),
         ),
       ],
     );
@@ -170,7 +175,7 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
   List<Widget> _passwordOptions() => [
     Row(
       children: [
-        const Text('Lunghezza'),
+        Text(context.l10n.generatorLength),
         Expanded(
           child: Slider(
             value: _pw.length.toDouble(),
@@ -185,19 +190,27 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
       ],
     ),
     _switch(
-      'Minuscole (a-z)',
+      context.l10n.generatorLowercase,
       _pw.lowercase,
       (v) => _pw = _withPw(lowercase: v),
     ),
     _switch(
-      'Maiuscole (A-Z)',
+      context.l10n.generatorUppercase,
       _pw.uppercase,
       (v) => _pw = _withPw(uppercase: v),
     ),
-    _switch('Numeri (0-9)', _pw.digits, (v) => _pw = _withPw(digits: v)),
-    _switch('Simboli (!@#…)', _pw.symbols, (v) => _pw = _withPw(symbols: v)),
     _switch(
-      'Evita caratteri ambigui (l, 1, O, 0…)',
+      context.l10n.generatorDigits,
+      _pw.digits,
+      (v) => _pw = _withPw(digits: v),
+    ),
+    _switch(
+      context.l10n.generatorSymbols,
+      _pw.symbols,
+      (v) => _pw = _withPw(symbols: v),
+    ),
+    _switch(
+      context.l10n.generatorAvoidAmbiguous,
       _pw.avoidAmbiguous,
       (v) => _pw = _withPw(avoidAmbiguous: v),
     ),
@@ -206,7 +219,7 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
   List<Widget> _passphraseOptions() => [
     Row(
       children: [
-        const Text('Parole'),
+        Text(context.l10n.generatorWords),
         Expanded(
           child: Slider(
             value: _pp.words.toDouble(),
@@ -225,14 +238,17 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
       spacing: 16,
       runSpacing: 8,
       children: [
-        const Text('Separatore'),
+        Text(context.l10n.generatorSeparator),
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: '-', label: Text('-')),
-            ButtonSegment(value: '.', label: Text('.')),
-            ButtonSegment(value: ' ', label: Text('spazio')),
-            ButtonSegment(value: '_', label: Text('_')),
+          segments: [
+            const ButtonSegment(value: '-', label: Text('-')),
+            const ButtonSegment(value: '.', label: Text('.')),
+            ButtonSegment(
+              value: ' ',
+              label: Text(context.l10n.generatorSeparatorSpace),
+            ),
+            const ButtonSegment(value: '_', label: Text('_')),
           ],
           selected: {_pp.separator},
           onSelectionChanged: (s) =>
@@ -241,12 +257,12 @@ class _GeneratorDialogState extends State<_GeneratorDialog> {
       ],
     ),
     _switch(
-      'Iniziali maiuscole',
+      context.l10n.generatorCapitalize,
       _pp.capitalize,
       (v) => _pp = _withPp(capitalize: v),
     ),
     _switch(
-      'Aggiungi un numero',
+      context.l10n.generatorIncludeNumber,
       _pp.includeNumber,
       (v) => _pp = _withPp(includeNumber: v),
     ),

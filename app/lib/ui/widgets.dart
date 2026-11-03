@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
+import 'language_picker.dart';
+
 /// Text field with a show/hide toggle. Autocorrect and suggestions are off
 /// so secrets never reach the keyboard's learning dictionary.
 class PasswordField extends StatefulWidget {
@@ -48,7 +51,7 @@ class _PasswordFieldState extends State<PasswordField> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              tooltip: _obscured ? 'Mostra' : 'Nascondi',
+              tooltip: _obscured ? context.l10n.show : context.l10n.hide,
               icon: Icon(_obscured ? Icons.visibility : Icons.visibility_off),
               onPressed: () => setState(() => _obscured = !_obscured),
             ),
@@ -60,7 +63,8 @@ class _PasswordFieldState extends State<PasswordField> {
   }
 }
 
-/// Centered, width-limited column used by the onboarding screens.
+/// Centered, width-limited column used by the onboarding screens, with the
+/// language picker in the corner.
 class NarrowPage extends StatelessWidget {
   const NarrowPage({super.key, required this.children});
 
@@ -70,17 +74,22 @@ class NarrowPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
+        child: Stack(
+          children: [
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: children,
+                  ),
+                ),
               ),
             ),
-          ),
+            const Positioned(top: 4, right: 4, child: LanguageButton()),
+          ],
         ),
       ),
     );
@@ -156,16 +165,16 @@ class ServerUrlField extends StatelessWidget {
       autocorrect: false,
       keyboardType: TextInputType.url,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'Server di sincronizzazione',
-        hintText: 'https://sync.esempio.it',
+      decoration: InputDecoration(
+        labelText: context.l10n.commonSyncServer,
+        hintText: context.l10n.commonSyncServerHint,
       ),
       validator: (v) {
         final value = (v ?? '').trim();
         if (value.startsWith('https://') || value.startsWith('http://')) {
           return null;
         }
-        return 'Indirizzo completo, ad es. https://sync.esempio.it';
+        return context.l10n.commonSyncServerInvalid;
       },
     );
   }
@@ -183,11 +192,13 @@ class EmailField extends StatelessWidget {
       autocorrect: false,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(labelText: 'Email'),
+      decoration: InputDecoration(labelText: context.l10n.commonEmail),
       validator: (v) {
         final value = (v ?? '').trim();
         final at = value.indexOf('@');
-        return at > 0 && at < value.length - 1 ? null : 'Email non valida';
+        return at > 0 && at < value.length - 1
+            ? null
+            : context.l10n.commonInvalidEmail;
       },
     );
   }

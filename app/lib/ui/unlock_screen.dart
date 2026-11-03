@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/messages.dart';
 import '../app/vault_controller.dart';
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'widgets.dart';
 
@@ -89,7 +90,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
           const Icon(Icons.lock_outline, size: 56),
           const SizedBox(height: 16),
           Text(
-            'Sblocca il vault',
+            context.l10n.unlockTitle,
             style: text.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -102,33 +103,40 @@ class _UnlockScreenState extends State<UnlockScreen> {
               enableSuggestions: false,
               style: const TextStyle(fontFamily: 'monospace'),
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Secret Key',
+              decoration: InputDecoration(
+                labelText: context.l10n.secretKey,
                 hintText: 'PM1-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
               ),
               validator: (v) => isValidSecretKey(secretKey: v ?? '')
                   ? null
-                  : 'Secret Key non valida',
+                  : context.l10n.commonInvalidSecretKey,
             ),
             const SizedBox(height: 16),
           ],
           PasswordField(
             controller: _password,
-            label: 'Master password',
+            label: context.l10n.masterPassword,
             autofocus: !_askSecretKey,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            validator: (v) =>
-                (v ?? '').isEmpty ? 'Inserisci la master password' : null,
+            validator: (v) => (v ?? '').isEmpty
+                ? context.l10n.commonEnterMasterPassword
+                : null,
           ),
           const SizedBox(height: 24),
-          BusyButton(busy: _busy, label: 'Sblocca', onPressed: _submit),
+          BusyButton(
+            busy: _busy,
+            label: context.l10n.unlockButton,
+            onPressed: _submit,
+          ),
           if (_canUseBiometrics) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               icon: const Icon(Icons.fingerprint),
               label: Text(
-                'Sblocca con ${widget.controller.quickUnlock.methodName}',
+                context.l10n.unlockWithMethod(
+                  widget.controller.quickUnlock.methodName,
+                ),
               ),
               onPressed: _busy ? null : _biometrics,
             ),
@@ -137,7 +145,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => setState(() => _askSecretKey = true),
-              child: const Text('Inserisci la Secret Key manualmente'),
+              child: Text(context.l10n.unlockEnterSecretKeyManually),
             ),
           ],
         ],

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
+
 const clipboardClearAfter = Duration(seconds: 30);
 
 /// Copies [value] and clears the clipboard after [clipboardClearAfter],
@@ -23,8 +25,7 @@ Future<void> copySecret(
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '$label copiato. Verrà cancellato tra '
-          '${clipboardClearAfter.inSeconds} secondi.',
+          context.l10n.clipboardCopied(label, clipboardClearAfter.inSeconds),
         ),
       ),
     );

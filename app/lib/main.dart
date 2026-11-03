@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'app/android_language.dart';
+import 'app/language_settings.dart';
 import 'app/quick_access.dart';
 import 'app/secret_key_store.dart';
 import 'app/vault_controller.dart';
@@ -9,6 +11,15 @@ import 'autofill/autofill_bridge.dart';
 import 'src/rust/api/vault.dart';
 import 'src/rust/frb_generated.dart';
 import 'ui/app.dart';
+
+Future<LanguageSettings> _loadLanguage() async {
+  final dir = await getApplicationSupportDirectory();
+  final settings = LanguageSettings(
+    store: FileLanguageStore('${dir.path}/language'),
+  );
+  await settings.load();
+  return settings;
+}
 
 Future<VaultController> _openVault() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +36,12 @@ Future<VaultController> _openVault() async {
 
 Future<void> main() async {
   final controller = await _openVault();
+  final language = await _loadLanguage();
+  language.addListener(
+    () => AndroidLanguage.apply(language.locale?.languageCode),
+  );
   await QuickAccess.init();
-  runApp(ArcanumApp(controller: controller));
+  runApp(ArcanumApp(controller: controller, language: language));
 }
 
 /// Entry point used by Android's AutofillActivity.
@@ -35,5 +50,13 @@ Future<void> autofillMain() async {
   final controller = await _openVault();
   final bridge = ChannelAutofillBridge();
   final request = await bridge.request();
-  runApp(AutofillApp(controller: controller, bridge: bridge, request: request));
+  final language = await _loadLanguage();
+  runApp(
+    AutofillApp(
+      controller: controller,
+      bridge: bridge,
+      request: request,
+      language: language,
+    ),
+  );
 }

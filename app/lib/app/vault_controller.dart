@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'messages.dart';
 import 'quick_unlock_store.dart';
@@ -17,7 +18,7 @@ String defaultDeviceName() {
     TargetPlatform.macOS => 'macOS',
     TargetPlatform.iOS => 'iOS',
     TargetPlatform.android => 'Android',
-    _ => 'Dispositivo',
+    _ => l10n.controllerDefaultDevice,
   };
   try {
     return '$os · ${Platform.localHostname}';
@@ -124,7 +125,7 @@ class VaultController extends ChangeNotifier {
   Future<void> unlock(String password, {String? secretKey}) async {
     final key = secretKey ?? await secretKeys.read();
     if (key == null) {
-      throw StateError('Secret Key mancante');
+      throw StateError(l10n.controllerMissingSecretKey);
     }
     await handle.unlock(password: utf8.encode(password), secretKey: key);
     if (secretKey != null) {
@@ -341,7 +342,9 @@ class VaultController extends ChangeNotifier {
 
   Future<String> _secretKey() async {
     final key = await secretKeys.read();
-    if (key == null) throw StateError('Secret Key mancante');
+    if (key == null) {
+      throw StateError(l10n.controllerMissingSecretKey);
+    }
     return key;
   }
 
