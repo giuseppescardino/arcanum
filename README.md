@@ -56,3 +56,5 @@ Configuration, backup and restore are covered in [server/README.md](server/READM
 ## CI
 
 The GitHub Actions pipeline ([.github/workflows/ci.yml](.github/workflows/ci.yml)) lints and tests the core, the server and the app, builds the Docker image and produces unsigned builds for Android, iOS, macOS and Windows, downloadable as run artifacts.
+
+The same jobs are also defined for Azure Pipelines in [azure-pipelines.yml](azure-pipelines.yml) (templates in `.azure/steps/`); there the pipeline runs only when started by hand.
