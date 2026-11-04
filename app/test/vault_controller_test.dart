@@ -39,6 +39,23 @@ void main() {
     expect(controller.pendingSecretKey, isNull);
   });
 
+  test('signOut erases the vault and returns to setup', () async {
+    await controller.create('master-password');
+    controller.confirmEmergencyKit();
+    await controller.save(login('GitHub'));
+
+    await controller.signOut();
+    expect(controller.stage, VaultStage.setup);
+    expect(controller.items, isEmpty);
+    expect(controller.hasStoredSecretKey, isFalse);
+    expect(controller.linked, isFalse);
+    expect(keys.value, isNull);
+
+    // A fresh start sees an empty, uninitialized vault.
+    await controller.init();
+    expect(controller.stage, VaultStage.setup);
+  });
+
   test('lock clears decrypted items; unlock uses stored key', () async {
     await controller.create('master-password');
     controller.confirmEmergencyKit();

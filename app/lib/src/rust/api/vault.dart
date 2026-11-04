@@ -86,6 +86,10 @@ abstract class VaultHandle implements RustOpaqueInterface {
     required String deviceName,
   });
 
+  /// Signs this device out and erases the local account; the app goes
+  /// back to first-launch setup.
+  Future<void> signOut();
+
   /// Server and account of the sync link (requires unlock).
   Future<SyncInfo?> syncInfo();
 

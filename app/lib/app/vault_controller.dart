@@ -210,6 +210,30 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Signs this device out: revokes the server session, erases the local
+  /// vault, the stored Secret Key and quick unlock, and returns to setup
+  /// so a different account can be used.
+  Future<void> signOut() async {
+    _autoLockTimer?.cancel();
+    _syncDebounceTimer?.cancel();
+    _periodicSyncTimer?.cancel();
+    await handle.signOut();
+    await secretKeys.delete();
+    await quickUnlock.delete();
+    hasStoredSecretKey = false;
+    quickUnlockEnabled = false;
+    items = const [];
+    linked = false;
+    syncInfo = null;
+    syncError = null;
+    sessionExpired = false;
+    lastSync = null;
+    lastSummary = null;
+    pendingSecretKey = null;
+    stage = VaultStage.setup;
+    notifyListeners();
+  }
+
   /// When synced, the server is updated first and other devices are
   /// signed out until they reconnect with the new password.
   Future<void> changePassword(String current, String next) async {
