@@ -340,13 +340,19 @@ class _VaultScreenState extends State<VaultScreen> {
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: _MenuAction.sync,
-                    child: Text(context.l10n.syncTitle),
+                    child: _MenuEntry(
+                      icon: Icons.sync,
+                      label: context.l10n.syncTitle,
+                    ),
                   ),
                   if (_controller.quickUnlockAvailable)
                     PopupMenuItem(
                       value: _MenuAction.quickUnlock,
-                      child: Text(
-                        _controller.quickUnlockEnabled
+                      child: _MenuEntry(
+                        icon: _controller.quickUnlockEnabled
+                            ? Icons.fingerprint_outlined
+                            : Icons.fingerprint,
+                        label: _controller.quickUnlockEnabled
                             ? context.l10n.vaultDisableQuickUnlock(
                                 _controller.quickUnlock.methodName,
                               )
@@ -358,23 +364,40 @@ class _VaultScreenState extends State<VaultScreen> {
                   if (AndroidAutofill.supported)
                     PopupMenuItem(
                       value: _MenuAction.autofill,
-                      child: Text(context.l10n.vaultEnableAutofill),
+                      child: _MenuEntry(
+                        icon: Icons.password,
+                        label: context.l10n.vaultEnableAutofill,
+                      ),
                     ),
                   PopupMenuItem(
                     value: _MenuAction.language,
-                    child: Text(context.l10n.languageTitle),
+                    child: _MenuEntry(
+                      icon: Icons.language,
+                      label: context.l10n.languageTitle,
+                    ),
                   ),
                   PopupMenuItem(
                     value: _MenuAction.changePassword,
-                    child: Text(context.l10n.vaultChangeMasterPassword),
+                    child: _MenuEntry(
+                      icon: Icons.key,
+                      label: context.l10n.vaultChangeMasterPassword,
+                    ),
                   ),
+                  const PopupMenuDivider(),
                   PopupMenuItem(
                     value: _MenuAction.forgetSecretKey,
-                    child: Text(context.l10n.vaultForgetSecretKey),
+                    child: _MenuEntry(
+                      icon: Icons.key_off,
+                      label: context.l10n.vaultForgetSecretKey,
+                    ),
                   ),
                   PopupMenuItem(
                     value: _MenuAction.signOut,
-                    child: Text(context.l10n.vaultSignOut),
+                    child: _MenuEntry(
+                      icon: Icons.logout,
+                      label: context.l10n.vaultSignOut,
+                      destructive: true,
+                    ),
                   ),
                 ],
               ),
@@ -849,6 +872,33 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(context.l10n.vaultChange),
+        ),
+      ],
+    );
+  }
+}
+
+/// Popup menu row with a leading icon; [destructive] tints it red.
+class _MenuEntry extends StatelessWidget {
+  const _MenuEntry({
+    required this.icon,
+    required this.label,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? Theme.of(context).colorScheme.error : null;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(label, style: TextStyle(color: color)),
         ),
       ],
     );
