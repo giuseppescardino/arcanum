@@ -201,6 +201,21 @@ impl Store {
     }
 
     /// Forget all server state: every item becomes a new local change.
+    /// Deletes every row: account, vaults, items and sync bookkeeping.
+    pub fn wipe(&self) -> Result<()> {
+        self.conn
+            .execute_batch("DELETE FROM items; DELETE FROM vaults; DELETE FROM meta;")?;
+        Ok(())
+    }
+
+    /// Folds the WAL into the database and truncates it, so erased pages
+    /// (overwritten thanks to secure_delete) don't survive in the log.
+    pub fn checkpoint(&self) -> Result<()> {
+        self.conn
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()))?;
+        Ok(())
+    }
+
     pub fn reset_sync_state(&self) -> Result<()> {
         self.conn
             .execute("UPDATE items SET dirty = 1, server_revision = NULL", [])?;

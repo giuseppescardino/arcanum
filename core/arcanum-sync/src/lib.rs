@@ -135,6 +135,16 @@ pub fn unlink(vault: &mut Vault) -> Result<()> {
     Ok(())
 }
 
+/// Signs this device out: revokes the server session (best effort) and
+/// erases the local account so another one can be set up.
+pub fn sign_out(vault: &mut Vault) -> Result<()> {
+    if let Ok(client) = linked_client(vault) {
+        let _ = client.logout();
+    }
+    vault.reset()?;
+    Ok(())
+}
+
 fn linked_client(vault: &Vault) -> Result<Client> {
     let link = vault.sync_link()?.ok_or(SyncError::NotLinked)?;
     Ok(Client::new(&link.server_url)?.with_token(link.token.clone()))

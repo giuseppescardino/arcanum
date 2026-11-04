@@ -214,3 +214,21 @@ fn items_without_group_field_still_load() {
     let old: ItemData = serde_json::from_str(r#"{"title":"Old","password":"p"}"#).unwrap();
     assert_eq!(old.group, "");
 }
+
+#[test]
+fn reset_erases_account_and_allows_new_one() {
+    let mut v = Vault::open_in_memory().unwrap();
+    let old_sk = v.create(PW, KdfParams::DEFAULT).unwrap();
+    v.add_item(&login("GitHub", "gh-pass")).unwrap();
+
+    v.reset().unwrap();
+    assert!(!v.is_unlocked());
+    assert!(!v.is_initialized().unwrap());
+    assert!(!v.is_linked().unwrap());
+    assert!(v.unlock(PW, &old_sk).is_err());
+
+    let sk = v.create(b"another password", KdfParams::DEFAULT).unwrap();
+    assert!(v.items().unwrap().is_empty());
+    v.lock();
+    v.unlock(b"another password", &sk).unwrap();
+}

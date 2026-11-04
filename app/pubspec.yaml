@@ -27,7 +27,33 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
 
 flutter:
   generate: true
   uses-material-design: true
+
+flutter_launcher_icons:
+  image_path: "assets/branding/icon_ios_light_1024.png"
+  ios: true
+  remove_alpha_ios: true
+  android: true
+  adaptive_icon_background: "assets/branding/android_background_432.png"
+  adaptive_icon_foreground: "assets/branding/android_foreground_432.png"
+  adaptive_icon_monochrome: "assets/branding/android_monochrome_432.png"
+  macos:
+    generate: true
+  windows:
+    generate: true
+    icon_size: 256
+
+flutter_native_splash:
+  color: "#283593"
+  image: "assets/branding/splash_logo_512.png"
+  color_dark: "#161826"
+  android_12:
+    color: "#283593"
+    image: "assets/branding/splash_logo_512.png"
+    color_dark: "#161826"
+  web: false
