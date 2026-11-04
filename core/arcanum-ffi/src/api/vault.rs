@@ -267,6 +267,12 @@ impl VaultHandle {
         Ok(arcanum_sync::unlink(&mut *self.vault()?)?)
     }
 
+    /// Signs this device out and erases the local account; the app goes
+    /// back to first-launch setup.
+    pub fn sign_out(&self) -> Result<(), VaultFailure> {
+        Ok(arcanum_sync::sign_out(&mut *self.vault()?)?)
+    }
+
     pub fn list_items(&self) -> Result<Vec<VaultItem>, VaultFailure> {
         Ok(self
             .vault()?

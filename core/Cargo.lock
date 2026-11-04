@@ -83,6 +83,80 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
+name = "arcanum-crypto"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "chacha20poly1305",
+ "data-encoding",
+ "hex",
+ "hkdf",
+ "proptest",
+ "rand_core 0.6.4",
+ "serde",
+ "sha2",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
+name = "arcanum-proto"
+version = "0.1.0"
+dependencies = [
+ "arcanum-crypto",
+ "base64",
+ "opaque-ke",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "arcanum-sync"
+version = "0.1.0"
+dependencies = [
+ "arcanum-crypto",
+ "arcanum-proto",
+ "arcanum-vault",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "ureq",
+ "url",
+]
+
+[[package]]
+name = "arcanum-tools"
+version = "0.1.0"
+dependencies = [
+ "data-encoding",
+ "hmac",
+ "rand_core 0.6.4",
+ "sha1",
+ "sha2",
+ "thiserror",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "arcanum-vault"
+version = "0.1.0"
+dependencies = [
+ "arcanum-crypto",
+ "arcanum-proto",
+ "rand_core 0.6.4",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
 name = "argon2"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1223,80 +1297,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
-name = "arcanum-crypto"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "chacha20poly1305",
- "data-encoding",
- "hex",
- "hkdf",
- "proptest",
- "rand_core 0.6.4",
- "serde",
- "sha2",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
-name = "arcanum-proto"
-version = "0.1.0"
-dependencies = [
- "base64",
- "opaque-ke",
- "arcanum-crypto",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "arcanum-sync"
-version = "0.1.0"
-dependencies = [
- "arcanum-crypto",
- "arcanum-proto",
- "arcanum-vault",
- "rand_core 0.6.4",
- "serde",
- "serde_json",
- "thiserror",
- "ureq",
- "url",
-]
-
-[[package]]
-name = "arcanum-tools"
-version = "0.1.0"
-dependencies = [
- "data-encoding",
- "hmac",
- "rand_core 0.6.4",
- "sha1",
- "sha2",
- "thiserror",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "arcanum-vault"
-version = "0.1.0"
-dependencies = [
- "arcanum-crypto",
- "arcanum-proto",
- "rand_core 0.6.4",
- "rusqlite",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "uuid",
- "zeroize",
-]
-
-[[package]]
 name = "poly1305"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1494,11 +1494,11 @@ dependencies = [
 name = "rust_lib_arcanum"
 version = "0.1.0"
 dependencies = [
- "data-encoding",
- "flutter_rust_bridge",
  "arcanum-sync",
  "arcanum-tools",
  "arcanum-vault",
+ "data-encoding",
+ "flutter_rust_bridge",
  "zeroize",
 ]
 

@@ -175,6 +175,14 @@ impl Vault {
         self.session = None;
     }
 
+    /// Locks and erases the local account, leaving an empty database as
+    /// on first launch. Anything not synced to a server is lost.
+    pub fn reset(&mut self) -> Result<()> {
+        self.lock();
+        self.store.transaction(|s| s.wipe())?;
+        self.store.checkpoint()
+    }
+
     /// Server authentication key; also proves `password` is correct.
     pub fn auth_key(&self, password: &[u8], secret_key: &SecretKey) -> Result<AuthKey> {
         let (account_id, keys) = self.account()?;
