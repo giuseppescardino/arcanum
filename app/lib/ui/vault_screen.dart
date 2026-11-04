@@ -29,6 +29,7 @@ enum _MenuAction {
   language,
   changePassword,
   forgetSecretKey,
+  signOut,
 }
 
 class _VaultScreenState extends State<VaultScreen> {
@@ -254,6 +255,60 @@ class _VaultScreenState extends State<VaultScreen> {
           await _controller.forgetSecretKey();
           _controller.lock();
         }
+      case _MenuAction.signOut:
+        await _signOut();
+    }
+  }
+
+  Future<bool> _confirmSignOut(String body) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.vaultSignOutTitle),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.vaultSignOutConfirm),
+          ),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  Future<void> _signOut() async {
+    final l10n = context.l10n;
+    final linked = _controller.linked;
+    if (!await _confirmSignOut(
+      linked ? l10n.vaultSignOutBodySynced : l10n.vaultSignOutBodyLocal,
+    )) {
+      return;
+    }
+    if (linked) {
+      // Push pending changes first, so nothing is lost with the vault.
+      await _controller.syncNow();
+      if (!mounted) return;
+      if (_controller.syncError != null &&
+          !await _confirmSignOut(l10n.vaultSignOutSyncFailed)) {
+        return;
+      }
+    }
+    try {
+      await _controller.signOut();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(failureMessage(e))));
+      }
     }
   }
 
@@ -316,6 +371,10 @@ class _VaultScreenState extends State<VaultScreen> {
                   PopupMenuItem(
                     value: _MenuAction.forgetSecretKey,
                     child: Text(context.l10n.vaultForgetSecretKey),
+                  ),
+                  PopupMenuItem(
+                    value: _MenuAction.signOut,
+                    child: Text(context.l10n.vaultSignOut),
                   ),
                 ],
               ),

@@ -113,6 +113,27 @@ class AppLocalizationsIt extends AppLocalizations {
   String get vaultForgetSecretKey => 'Rimuovi Secret Key da questo dispositivo';
 
   @override
+  String get vaultSignOut => 'Esci da questo dispositivo';
+
+  @override
+  String get vaultSignOutTitle => 'Uscire?';
+
+  @override
+  String get vaultSignOutBodySynced =>
+      'Il vault verrà cancellato da questo dispositivo insieme alla Secret Key. I dati restano sul server di sincronizzazione: per riutilizzarli accedi con email, master password e la Secret Key dell\'Emergency Kit.';
+
+  @override
+  String get vaultSignOutBodyLocal =>
+      'Questo vault non è sincronizzato con un server: uscendo tutti gli elementi verranno cancellati definitivamente da questo dispositivo. L\'operazione non è reversibile.';
+
+  @override
+  String get vaultSignOutSyncFailed =>
+      'L\'ultima sincronizzazione non è riuscita: le modifiche recenti potrebbero non essere sul server e andrebbero perse. Uscire comunque?';
+
+  @override
+  String get vaultSignOutConfirm => 'Esci';
+
+  @override
   String get vaultSearchHint => 'Cerca · Invio copia la password';
 
   @override

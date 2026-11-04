@@ -113,6 +113,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultForgetSecretKey => 'Remove Secret Key from this device';
 
   @override
+  String get vaultSignOut => 'Sign out of this device';
+
+  @override
+  String get vaultSignOutTitle => 'Sign out?';
+
+  @override
+  String get vaultSignOutBodySynced =>
+      'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.';
+
+  @override
+  String get vaultSignOutBodyLocal =>
+      'This vault is not synced to a server: signing out permanently erases all its items from this device. This cannot be undone.';
+
+  @override
+  String get vaultSignOutSyncFailed =>
+      'Last sync failed, so recent changes may not be on the server and would be lost. Sign out anyway?';
+
+  @override
+  String get vaultSignOutConfirm => 'Sign out';
+
+  @override
   String get vaultSearchHint => 'Search · Enter copies the password';
 
   @override

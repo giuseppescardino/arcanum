@@ -145,6 +145,16 @@ class FakeVaultHandle implements VaultHandle {
   Future<void> unlinkSync() async => link = null;
 
   @override
+  Future<void> signOut() async {
+    link = null;
+    initialized = false;
+    unlocked = false;
+    quickSecret = null;
+    _password = null;
+    _items.clear();
+  }
+
+  @override
   Future<bool> isInitialized() async => initialized;
 
   @override

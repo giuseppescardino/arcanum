@@ -79,6 +79,12 @@
   "vaultEnableAutofill": "Enable autofill",
   "vaultChangeMasterPassword": "Change master password",
   "vaultForgetSecretKey": "Remove Secret Key from this device",
+  "vaultSignOut": "Sign out of this device",
+  "vaultSignOutTitle": "Sign out?",
+  "vaultSignOutBodySynced": "The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.",
+  "vaultSignOutBodyLocal": "This vault is not synced to a server: signing out permanently erases all its items from this device. This cannot be undone.",
+  "vaultSignOutSyncFailed": "Last sync failed, so recent changes may not be on the server and would be lost. Sign out anyway?",
+  "vaultSignOutConfirm": "Sign out",
   "vaultSearchHint": "Search · Enter copies the password",
   "vaultSearchHintWithShortcut": "Search · Enter copies the password · {shortcut} from anywhere",
   "@vaultSearchHintWithShortcut": {

@@ -284,6 +284,42 @@ abstract class AppLocalizations {
   /// **'Remove Secret Key from this device'**
   String get vaultForgetSecretKey;
 
+  /// No description provided for @vaultSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of this device'**
+  String get vaultSignOut;
+
+  /// No description provided for @vaultSignOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get vaultSignOutTitle;
+
+  /// No description provided for @vaultSignOutBodySynced.
+  ///
+  /// In en, this message translates to:
+  /// **'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.'**
+  String get vaultSignOutBodySynced;
+
+  /// No description provided for @vaultSignOutBodyLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'This vault is not synced to a server: signing out permanently erases all its items from this device. This cannot be undone.'**
+  String get vaultSignOutBodyLocal;
+
+  /// No description provided for @vaultSignOutSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync failed, so recent changes may not be on the server and would be lost. Sign out anyway?'**
+  String get vaultSignOutSyncFailed;
+
+  /// No description provided for @vaultSignOutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get vaultSignOutConfirm;
+
   /// No description provided for @vaultSearchHint.
   ///
   /// In en, this message translates to:
