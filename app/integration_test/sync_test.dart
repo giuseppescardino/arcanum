@@ -49,7 +49,6 @@ void main() {
   );
 
   testWidgets('two devices sync through the server', (tester) async {
-    final email = 'it-${DateTime.now().microsecondsSinceEpoch}@test.local';
     final pw = utf8.encode('correct horse battery staple');
 
     // Device A: create, add an item, enable sync.
@@ -58,10 +57,10 @@ void main() {
     await a.addItem(fields: login('GitHub', 'gh-1'));
     final reg = await a.registerSync(
       serverUrl: server,
-      email: email,
       password: pw,
       secretKey: sk,
       deviceName: 'IT device A',
+      invite: const String.fromEnvironment('ARCANUM_INVITE'),
     );
     expect(reg.pushed, 1);
     expect(await a.isLinked(), isTrue);
@@ -70,7 +69,6 @@ void main() {
     final b = await VaultHandle.open(path: '${tmp.path}/b.db');
     final signIn = await b.signIn(
       serverUrl: server,
-      email: email,
       password: pw,
       secretKey: sk,
       deviceName: 'IT device B',
@@ -90,8 +88,7 @@ void main() {
     await expectLater(
       c.signIn(
         serverUrl: server,
-        email: email,
-        password: utf8.encode('wrong'),
+          password: utf8.encode('wrong'),
         secretKey: sk,
         deviceName: 'IT device C',
       ),
@@ -109,8 +106,7 @@ void main() {
     await expectLater(
       d.signIn(
         serverUrl: 'http://localhost@example.com',
-        email: email,
-        password: pw,
+          password: pw,
         secretKey: sk,
         deviceName: 'IT device D',
       ),

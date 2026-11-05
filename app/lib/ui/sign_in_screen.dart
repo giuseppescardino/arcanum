@@ -19,7 +19,6 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _server = TextEditingController();
-  final _email = TextEditingController();
   final _secretKey = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
@@ -27,7 +26,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   void dispose() {
-    for (final c in [_server, _email, _secretKey, _password]) {
+    for (final c in [_server, _secretKey, _password]) {
       c.dispose();
     }
     super.dispose();
@@ -44,7 +43,6 @@ class _SignInScreenState extends State<SignInScreen> {
       // route by itself.
       await widget.controller.signIn(
         serverUrl: _server.text.trim(),
-        email: _email.text.trim(),
         password: _password.text,
         secretKey: _secretKey.text.trim(),
       );
@@ -77,8 +75,6 @@ class _SignInScreenState extends State<SignInScreen> {
                   const SizedBox(height: 24),
                   ErrorBanner(_error),
                   ServerUrlField(controller: _server, autofocus: true),
-                  const SizedBox(height: 16),
-                  EmailField(controller: _email),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _secretKey,

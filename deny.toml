@@ -1,0 +1,49 @@
+# cargo-deny policy for both Rust workspaces (`core/` and `server/`), run
+# in CI from each folder: `cargo deny check`.
+
+[graph]
+all-features = false
+
+[advisories]
+# RustSec advisories: vulnerabilities fail the build, as do yanked crates.
+yanked = "deny"
+ignore = [
+    # crypto-bigint 0.5 (via elliptic-curve 0.13, a dependency of opaque-ke 4
+    # and voprf 0.5): non-constant-time branches. Fixed only in 0.7.6, which
+    # elliptic-curve 0.13 can't use. Arcanum's OPAQUE suite is Ristretto255
+    # (curve25519-dalek), not a NIST curve, so the affected arithmetic is not
+    # on our path. Remove when opaque-ke moves to elliptic-curve 0.14.
+    { id = "RUSTSEC-2026-0387", reason = "not reachable with the Ristretto255 suite; no compatible fix yet" },
+]
+
+[licenses]
+# Licenses compatible with distributing Arcanum under AGPL-3.0-or-later.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "CC0-1.0",
+    "MPL-2.0",
+    "CDLA-Permissive-2.0",
+    "AGPL-3.0-or-later",
+]
+confidence-threshold = 0.9
+
+[licenses.private]
+# The workspace's own crates.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+# The workspace crates depend on each other by path (they are not published).
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

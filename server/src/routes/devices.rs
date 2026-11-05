@@ -1,6 +1,6 @@
 //! Each session is one signed-in device; revoking it signs the device out.
 
-use arcanum_proto::DeviceInfo;
+use arcanum_proto::{DeviceInfo, DeviceNameRequest};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -14,7 +14,7 @@ pub async fn list(
     auth: AuthSession,
     State(s): State<AppState>,
 ) -> ApiResult<Json<Vec<DeviceInfo>>> {
-    let rows: Vec<(Uuid, String, i64, i64)> = sqlx::query_as(
+    let rows: Vec<(Uuid, Option<Vec<u8>>, i64, i64)> = sqlx::query_as(
         "SELECT id, device_name, created_at, last_used_at FROM sessions
          WHERE account_id = $1 AND expires_at > $2
          ORDER BY last_used_at DESC",
@@ -36,6 +36,21 @@ pub async fn list(
     ))
 }
 
+/// Stores this device's name, encrypted by the client.
+pub async fn set_current_name(
+    auth: AuthSession,
+    State(s): State<AppState>,
+    Json(req): Json<DeviceNameRequest>,
+) -> ApiResult<StatusCode> {
+    validate::device_name(&req.name)?;
+    sqlx::query("UPDATE sessions SET device_name = $2 WHERE id = $1")
+        .bind(auth.session_id)
+        .bind(&req.name)
+        .execute(&s.pool)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn revoke(
     auth: AuthSession,
     State(s): State<AppState>,
@@ -51,5 +66,6 @@ pub async fn revoke(
     if deleted == 0 {
         return Err(ApiError::not_found());
     }
+    tracing::info!(account_id = %auth.account_id, device = %id, "device revoked");
     Ok(StatusCode::NO_CONTENT)
 }

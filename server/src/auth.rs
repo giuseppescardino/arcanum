@@ -51,23 +51,19 @@ impl FromRequestParts<AppState> for AuthSession {
 }
 
 /// Creates a session and returns the bearer token (shown only once).
-pub async fn create_session(
-    conn: &mut PgConnection,
-    account_id: Uuid,
-    device_name: &str,
-) -> ApiResult<String> {
+/// The device sets its (encrypted) name afterwards.
+pub async fn create_session(conn: &mut PgConnection, account_id: Uuid) -> ApiResult<String> {
     let mut raw = [0u8; 32];
     OsRng.fill_bytes(&mut raw);
     let token = URL_SAFE_NO_PAD.encode(raw);
     let now = now_ms();
     sqlx::query(
-        "INSERT INTO sessions (id, token_hash, account_id, device_name, created_at, last_used_at, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $5, $6)",
+        "INSERT INTO sessions (id, token_hash, account_id, created_at, last_used_at, expires_at)
+         VALUES ($1, $2, $3, $4, $4, $5)",
     )
     .bind(Uuid::new_v4())
     .bind(hash_token(&token))
     .bind(account_id)
-    .bind(device_name)
     .bind(now)
     .bind(now + SESSION_TTL_MS)
     .execute(conn)

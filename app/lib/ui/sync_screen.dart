@@ -92,10 +92,7 @@ class _LinkedView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                if (info != null) ...[
-                  Text(l10n.syncAccount(info.email)),
-                  Text(l10n.syncServer(info.serverUrl)),
-                ],
+                if (info != null) Text(l10n.syncServer(info.serverUrl)),
                 const SizedBox(height: 8),
                 Text(
                   last == null
@@ -165,14 +162,14 @@ class _EnableSyncForm extends StatefulWidget {
 class _EnableSyncFormState extends State<_EnableSyncForm> {
   final _formKey = GlobalKey<FormState>();
   final _server = TextEditingController();
-  final _email = TextEditingController();
+  final _invite = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
   String? _error;
 
   @override
   void dispose() {
-    for (final c in [_server, _email, _password]) {
+    for (final c in [_server, _invite, _password]) {
       c.dispose();
     }
     super.dispose();
@@ -187,8 +184,8 @@ class _EnableSyncFormState extends State<_EnableSyncForm> {
     try {
       await widget.controller.enableSync(
         serverUrl: _server.text.trim(),
-        email: _email.text.trim(),
         password: _password.text,
+        invite: _invite.text.trim(),
       );
     } catch (e) {
       if (mounted) setState(() => _error = failureMessage(e));
@@ -222,7 +219,7 @@ class _EnableSyncFormState extends State<_EnableSyncForm> {
           ErrorBanner(_error),
           ServerUrlField(controller: _server, autofocus: true),
           const SizedBox(height: 16),
-          EmailField(controller: _email),
+          InviteCodeField(controller: _invite),
           const SizedBox(height: 16),
           PasswordField(
             controller: _password,

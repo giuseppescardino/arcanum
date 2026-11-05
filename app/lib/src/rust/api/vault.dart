@@ -63,13 +63,14 @@ abstract class VaultHandle implements RustOpaqueInterface {
     required String deviceName,
   });
 
-  /// Creates a server account for this vault and uploads it.
+  /// Creates a server account for this vault and uploads it. `invite`
+  /// may be empty when the server accepts open registrations.
   Future<SyncSummary> registerSync({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
+    required String invite,
   });
 
   /// Moves all items of group `from` to `to` (empty `to` ungroups them);
@@ -80,7 +81,6 @@ abstract class VaultHandle implements RustOpaqueInterface {
   /// leaves it unlocked.
   Future<SyncSummary> signIn({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
@@ -90,7 +90,7 @@ abstract class VaultHandle implements RustOpaqueInterface {
   /// back to first-launch setup.
   Future<void> signOut();
 
-  /// Server and account of the sync link (requires unlock).
+  /// Server of the sync link (requires unlock).
   Future<SyncInfo?> syncInfo();
 
   Future<SyncSummary> syncNow();
@@ -162,20 +162,18 @@ class ItemFields {
 
 class SyncInfo {
   final String serverUrl;
-  final String email;
 
-  const SyncInfo({required this.serverUrl, required this.email});
+  const SyncInfo({required this.serverUrl});
 
   @override
-  int get hashCode => serverUrl.hashCode ^ email.hashCode;
+  int get hashCode => serverUrl.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is SyncInfo &&
           runtimeType == other.runtimeType &&
-          serverUrl == other.serverUrl &&
-          email == other.email;
+          serverUrl == other.serverUrl;
 }
 
 /// Outcome of a sync, for a short status line in the UI.
@@ -231,9 +229,23 @@ enum VaultFailureCode {
   alreadyInitialized,
   notFound,
 
-  /// Server sync: wrong email, password or Secret Key.
+  /// Server sync: wrong password or Secret Key.
   invalidLogin,
-  emailTaken,
+
+  /// An account with this Secret Key is already on the server.
+  accountExists,
+
+  /// The server only accepts registrations with an invite code.
+  inviteRequired,
+
+  /// The invite code is unknown, used or expired.
+  invalidInvite,
+
+  /// The server does not accept new accounts.
+  registrationClosed,
+
+  /// The account reached the server's storage quota.
+  quotaExceeded,
 
   /// The server session expired or was revoked: reconnect.
   sessionExpired,

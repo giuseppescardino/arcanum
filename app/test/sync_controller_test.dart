@@ -34,12 +34,22 @@ void main() {
 
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     expect(controller.linked, isTrue);
-    expect(controller.syncInfo?.email, 'a@example.com');
+    expect(controller.syncInfo?.serverUrl, 'https://sync.example');
+    expect(handle.lastInvite, '');
     expect(controller.lastSync, isNotNull);
+  });
+
+  test('enable sync passes the invite code', () async {
+    await createUnlocked();
+    await controller.enableSync(
+      serverUrl: 'https://sync.example',
+      password: 'master-password',
+      invite: 'INV-ABC',
+    );
+    expect(handle.lastInvite, 'INV-ABC');
   });
 
   test('enable sync with wrong password fails and stays unlinked', () async {
@@ -47,8 +57,7 @@ void main() {
     await expectLater(
       controller.enableSync(
         serverUrl: 'https://sync.example',
-        email: 'a@example.com',
-        password: 'nope',
+          password: 'nope',
       ),
       throwsA(isA<VaultFailure>()),
     );
@@ -61,7 +70,6 @@ void main() {
 
     await controller.signIn(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
       secretKey: fakeSecretKey,
     );
@@ -78,7 +86,6 @@ void main() {
 
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     await controller.save(login('B'));
@@ -91,7 +98,6 @@ void main() {
     await createUnlocked();
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     controller.lock();
@@ -104,7 +110,6 @@ void main() {
     await createUnlocked();
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     handle.nextSyncFailure = const VaultFailure(
@@ -124,7 +129,6 @@ void main() {
     await createUnlocked();
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     handle.nextSyncFailure = const VaultFailure(
@@ -143,7 +147,6 @@ void main() {
     await createUnlocked();
     await controller.enableSync(
       serverUrl: 'https://sync.example',
-      email: 'a@example.com',
       password: 'master-password',
     );
     await controller.disableSync();

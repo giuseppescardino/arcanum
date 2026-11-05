@@ -33,7 +33,7 @@ impl ApiError {
         )
     }
 
-    /// Same answer for unknown email and wrong credentials.
+    /// Same answer for an unknown account and wrong credentials.
     pub fn invalid_login() -> Self {
         Self::new(
             StatusCode::UNAUTHORIZED,
@@ -42,11 +42,43 @@ impl ApiError {
         )
     }
 
-    pub fn email_taken() -> Self {
+    pub fn account_exists() -> Self {
         Self::new(
             StatusCode::CONFLICT,
-            ErrorCode::EmailTaken,
-            "an account with this email already exists",
+            ErrorCode::AccountExists,
+            "an account with this login id already exists",
+        )
+    }
+
+    pub fn registration_closed() -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            ErrorCode::RegistrationClosed,
+            "this server does not accept new accounts",
+        )
+    }
+
+    pub fn invite_required() -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            ErrorCode::InviteRequired,
+            "an invite code is required to register on this server",
+        )
+    }
+
+    pub fn invalid_invite() -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            ErrorCode::InvalidInvite,
+            "invalid, used or expired invite code",
+        )
+    }
+
+    pub fn quota_exceeded() -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            ErrorCode::QuotaExceeded,
+            "storage quota exceeded",
         )
     }
 

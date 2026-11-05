@@ -19,4 +19,4 @@ pub use error::{Result, VaultError};
 pub use model::{Item, ItemData, ItemKind};
 pub use quick::QUICK_UNLOCK_MAX_AGE_MS;
 pub use sync::{SyncReport, SyncTransport};
-pub use vault::{AccountBundle, PasswordChange, SyncLink, Vault};
+pub use vault::{AccountBundle, PasswordChange, SyncLink, Vault, MAX_DEVICE_NAME_CHARS};

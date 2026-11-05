@@ -299,7 +299,7 @@ abstract class AppLocalizations {
   /// No description provided for @vaultSignOutBodySynced.
   ///
   /// In en, this message translates to:
-  /// **'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.'**
+  /// **'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with your master password and the Secret Key from your Emergency Kit.'**
   String get vaultSignOutBodySynced;
 
   /// No description provided for @vaultSignOutBodyLocal.
@@ -656,12 +656,6 @@ abstract class AppLocalizations {
   /// **'Sync is on'**
   String get syncActive;
 
-  /// No description provided for @syncAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Account: {email}'**
-  String syncAccount(String email);
-
   /// No description provided for @syncServer.
   ///
   /// In en, this message translates to:
@@ -877,17 +871,17 @@ abstract class AppLocalizations {
   /// **'Full address, e.g. https://sync.example.com'**
   String get commonSyncServerInvalid;
 
-  /// No description provided for @commonEmail.
+  /// No description provided for @commonInviteCode.
   ///
   /// In en, this message translates to:
-  /// **'Email'**
-  String get commonEmail;
+  /// **'Invite code'**
+  String get commonInviteCode;
 
-  /// No description provided for @commonInvalidEmail.
+  /// No description provided for @commonInviteCodeHelper.
   ///
   /// In en, this message translates to:
-  /// **'Invalid email'**
-  String get commonInvalidEmail;
+  /// **'Only if your server requires one'**
+  String get commonInviteCodeHelper;
 
   /// No description provided for @generatorTitle.
   ///
@@ -1090,14 +1084,38 @@ abstract class AppLocalizations {
   /// No description provided for @errorInvalidLogin.
   ///
   /// In en, this message translates to:
-  /// **'Wrong email, master password or Secret Key.'**
+  /// **'Wrong master password or Secret Key, or no account with this Secret Key on the server.'**
   String get errorInvalidLogin;
 
-  /// No description provided for @errorEmailTaken.
+  /// No description provided for @errorAccountExists.
   ///
   /// In en, this message translates to:
-  /// **'An account with this email already exists.'**
-  String get errorEmailTaken;
+  /// **'This vault already has an account on the server: use \"I already have an account\" on your other devices.'**
+  String get errorAccountExists;
+
+  /// No description provided for @errorInviteRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This server only accepts new accounts with an invite code: ask its administrator.'**
+  String get errorInviteRequired;
+
+  /// No description provided for @errorInvalidInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid invite code: it may be mistyped, already used or expired.'**
+  String get errorInvalidInvite;
+
+  /// No description provided for @errorRegistrationClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This server doesn\'t accept new accounts.'**
+  String get errorRegistrationClosed;
+
+  /// No description provided for @errorQuotaExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has reached the server\'s storage limit.'**
+  String get errorQuotaExceeded;
 
   /// No description provided for @errorSessionExpired.
   ///

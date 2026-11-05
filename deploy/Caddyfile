@@ -1,9 +1,23 @@
 {$ARCANUM_DOMAIN} {
+	# Access log on stdout (JSON): client IP, method, path, status, timing.
+	# It contains IP addresses: keep it only as long as needed (see the
+	# logging limits in docker-compose.yml).
+	log {
+		output stdout
+		format json
+	}
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options nosniff
 		-Server
 	}
-	reverse_proxy server:8080
+	# Only the sync API and the health check reach the server.
+	@api path /v1/* /health
+	handle @api {
+		reverse_proxy server:8080
+	}
+	handle {
+		respond 404
+	}
 }

@@ -7,9 +7,21 @@
 # can obtain a Let's Encrypt certificate. The backup service writes a daily
 # age-encrypted dump to BACKUP_DIR (see server/README.md).
 
+# Logs are capped so they don't fill the disk and IP addresses in them
+# don't pile up forever (about 50 MB per service).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
+    # Major version pinned: minor updates are bug and security fixes.
     image: postgres:18
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
     environment:
       POSTGRES_USER: pm
       POSTGRES_DB: pm
@@ -26,9 +38,19 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    networks: [edge, backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
     environment:
       DATABASE_URL: postgres://pm:${POSTGRES_PASSWORD}@db:5432/pm
       RUST_LOG: info
+      ARCANUM_REGISTRATION: ${ARCANUM_REGISTRATION:-invite}
+      ARCANUM_MAX_ITEMS_PER_ACCOUNT: ${ARCANUM_MAX_ITEMS_PER_ACCOUNT:-20000}
+      # Client IPs (rate limits, logs) come from Caddy's X-Forwarded-For.
+      TRUST_PROXY: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -36,6 +58,9 @@ services:
 
   backup:
     build: backup
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
     environment:
       PGHOST: db
       PGUSER: pm
@@ -52,19 +77,35 @@ services:
     restart: unless-stopped
 
   caddy:
-    image: caddy:2
+    image: caddy:2.10
+    networks: [edge]
     ports:
       - "80:80"
       - "443:443"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
     environment:
       ARCANUM_DOMAIN: ${ARCANUM_DOMAIN:?set ARCANUM_DOMAIN in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - server
     restart: unless-stopped
 
+networks:
+  # Caddy and the server; the only network with published ports.
+  edge:
+  # Server, database and backups: no internet access, unreachable from Caddy.
+  backend:
+    internal: true
+
 volumes:
   pgdata:
   caddy_data:
+  caddy_config:

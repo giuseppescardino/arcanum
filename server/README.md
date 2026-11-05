@@ -17,6 +17,44 @@ docker compose up -d --build
 
 Caddy terminates TLS with a Let's Encrypt certificate and forwards requests to `arcanum-server` on the internal network. Database migrations run automatically at startup.
 
+### Configuration
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ARCANUM_REGISTRATION` | `invite` | `invite`: accounts only with a single-use code; `open`: anyone (public instances); `closed`: nobody |
+| `ARCANUM_MAX_ITEMS_PER_ACCOUNT` | `20000` | Item quota per account (deleted items included) |
+| `TRUST_PROXY` | `false` (`true` in the production compose) | Take the client IP from `X-Forwarded-For`; enable only behind a proxy that sets it |
+| `BIND_ADDR` | `0.0.0.0:8080` | Listening address |
+| `DATABASE_URL` | — | PostgreSQL connection string |
+
+### Accounts and invites
+
+Accounts are identified by a login id derived from the user's Secret Key: the server stores no email or name. To let someone in on an `invite` server (including yourself, the first time):
+
+```bash
+docker compose exec server arcanum-server invite create --label "Mario Rossi" --days 7
+```
+
+The command prints a code `INV-…` (shown only once, valid for the given days, single use). The user enters it in the app when enabling sync. The optional label (a name, an employee number…) is copied onto the account, so you can find it later.
+
+```bash
+docker compose exec server arcanum-server invite list
+docker compose exec server arcanum-server invite revoke <invite-id>
+docker compose exec server arcanum-server account list
+docker compose exec server arcanum-server account delete <account-id>   # offboarding, abuse
+```
+
+Deleting an account removes its encrypted data and sessions from the server; its devices keep their local copy. Nobody, the operator included, can decrypt or recover a vault without the user's master password and Secret Key.
+
+### Exposing the server publicly
+
+- **Prefer not to.** If all users can reach the server through a VPN or a zero-trust network (WireGuard, Tailscale), keep it there: the development compose already binds only to `127.0.0.1`.
+- **Firewall:** only 80 and 443 should be reachable. Docker writes its own iptables rules and bypasses UFW, so never add a `ports:` entry for `server` or `db`. Keep SSH reachable only from the VPN or trusted addresses.
+- **The hostname is public anyway:** Let's Encrypt certificates are logged in Certificate Transparency, so scanners find `sync.example.com` within hours. Leave registration on `invite` unless you mean to run a public instance.
+- **Logs:** the server logs registrations, sign-ins, failed logins, rate limiting, password changes and device revocations with the client IP. IP addresses are personal data: keep logs only as long as you need them (e.g. Docker's `max-size`/`max-file` logging options).
+- **Updates:** rebuild the image regularly (`docker compose build --pull && docker compose up -d`) to pick up Rust, Debian, PostgreSQL and Caddy fixes.
+- **Backups:** keep the age private key away from the server; see below.
+
 ## Backup and restore
 
 All server state lives in the database: accounts, encrypted keys, items, sessions and the `server_config` table holding the server's OPAQUE secret (if it is lost, no existing account can sign in again). The `backup` service of both compose files (`deploy/docker-compose.yml` and `deploy/docker-compose.dev.yml`) takes an [age](https://age-encryption.org)-encrypted dump at startup and then once a day, and keeps the last 14 days.
@@ -107,7 +145,7 @@ Alternatively, `deploy/docker-compose.dev.yml` starts PostgreSQL and `arcanum-se
 DATABASE_URL=postgres://postgres@localhost:5433/arcanum_dev BIND_ADDR=127.0.0.1:8080 cargo run
 ```
 
-In the app use `http://localhost:8080` as the server address. Plain HTTP is accepted only for `localhost`, `127.0.0.1`, `[::1]` and `10.0.2.2` (the Android emulator); every other host requires `https://`.
+Locally the server defaults to invite-only: add `ARCANUM_REGISTRATION=open` to the command above, or create an invite with `cargo run -- invite create`. In the app use `http://localhost:8080` as the server address. Plain HTTP is accepted only for `localhost`, `127.0.0.1`, `[::1]` and `10.0.2.2` (the Android emulator); every other host requires `https://`.
 
 ## Tests
 
@@ -121,12 +159,13 @@ The end-to-end tests use `TEST_DATABASE_URL`, which defaults to `postgres://post
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| POST | `/register/start`, `/register/finish` | — | OPAQUE registration and vault upload |
-| POST | `/prelogin` | — | KDF parameters and salt (fake but stable for non-existent emails) |
+| POST | `/register/start`, `/register/finish` | — | OPAQUE registration and vault upload (with an invite code on `invite` servers) |
+| POST | `/prelogin` | — | KDF parameters and salt (fake but stable for non-existent login ids) |
 | POST | `/login/start`, `/login/finish` | — | OPAQUE login, returns the token |
 | POST | `/logout` | Bearer | Revokes the current session |
 | POST | `/password/start`, `/password/finish` | Bearer | Password change, signing out the other devices |
 | GET | `/sync?since=N` | Bearer | Pulls the changes after the cursor |
 | POST | `/sync` | Bearer | Push with optimistic concurrency control |
-| GET | `/devices` | Bearer | Lists the sessions |
+| GET | `/devices` | Bearer | Lists the sessions (names encrypted by the client) |
+| PUT | `/devices/current` | Bearer | Sets this session's encrypted device name |
 | DELETE | `/devices/{id}` | Bearer | Revokes a session |

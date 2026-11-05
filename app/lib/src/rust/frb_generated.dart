@@ -147,10 +147,10 @@ abstract class RustLibApi extends BaseApi {
   Future<SyncSummary> crateApiVaultVaultHandleRegisterSync({
     required VaultHandle that,
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
+    required String invite,
   });
 
   Future<int> crateApiVaultVaultHandleRenameGroup({
@@ -162,7 +162,6 @@ abstract class RustLibApi extends BaseApi {
   Future<SyncSummary> crateApiVaultVaultHandleSignIn({
     required VaultHandle that,
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
@@ -768,10 +767,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<SyncSummary> crateApiVaultVaultHandleRegisterSync({
     required VaultHandle that,
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
+    required String invite,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -782,10 +781,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             serializer,
           );
           sse_encode_String(serverUrl, serializer);
-          sse_encode_String(email, serializer);
           sse_encode_list_prim_u_8_loose(password, serializer);
           sse_encode_String(secretKey, serializer);
           sse_encode_String(deviceName, serializer);
+          sse_encode_String(invite, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -798,7 +797,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_vault_failure,
         ),
         constMeta: kCrateApiVaultVaultHandleRegisterSyncConstMeta,
-        argValues: [that, serverUrl, email, password, secretKey, deviceName],
+        argValues: [that, serverUrl, password, secretKey, deviceName, invite],
         apiImpl: this,
       ),
     );
@@ -810,10 +809,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         argNames: [
           "that",
           "serverUrl",
-          "email",
           "password",
           "secretKey",
           "deviceName",
+          "invite",
         ],
       );
 
@@ -861,7 +860,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<SyncSummary> crateApiVaultVaultHandleSignIn({
     required VaultHandle that,
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
@@ -875,7 +873,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             serializer,
           );
           sse_encode_String(serverUrl, serializer);
-          sse_encode_String(email, serializer);
           sse_encode_list_prim_u_8_loose(password, serializer);
           sse_encode_String(secretKey, serializer);
           sse_encode_String(deviceName, serializer);
@@ -891,7 +888,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_vault_failure,
         ),
         constMeta: kCrateApiVaultVaultHandleSignInConstMeta,
-        argValues: [that, serverUrl, email, password, secretKey, deviceName],
+        argValues: [that, serverUrl, password, secretKey, deviceName],
         apiImpl: this,
       ),
     );
@@ -900,14 +897,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiVaultVaultHandleSignInConstMeta =>
       const TaskConstMeta(
         debugName: "VaultHandle_sign_in",
-        argNames: [
-          "that",
-          "serverUrl",
-          "email",
-          "password",
-          "secretKey",
-          "deviceName",
-        ],
+        argNames: ["that", "serverUrl", "password", "secretKey", "deviceName"],
       );
 
   @override
@@ -1518,12 +1508,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SyncInfo dco_decode_sync_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return SyncInfo(
-      serverUrl: dco_decode_String(arr[0]),
-      email: dco_decode_String(arr[1]),
-    );
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return SyncInfo(serverUrl: dco_decode_String(arr[0]));
   }
 
   @protected
@@ -1847,8 +1834,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SyncInfo sse_decode_sync_info(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_serverUrl = sse_decode_String(deserializer);
-    var var_email = sse_decode_String(deserializer);
-    return SyncInfo(serverUrl: var_serverUrl, email: var_email);
+    return SyncInfo(serverUrl: var_serverUrl);
   }
 
   @protected
@@ -2159,7 +2145,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_sync_info(SyncInfo self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.serverUrl, serializer);
-    sse_encode_String(self.email, serializer);
   }
 
   @protected
@@ -2320,20 +2305,21 @@ class VaultHandleImpl extends RustOpaque implements VaultHandle {
     deviceName: deviceName,
   );
 
-  /// Creates a server account for this vault and uploads it.
+  /// Creates a server account for this vault and uploads it. `invite`
+  /// may be empty when the server accepts open registrations.
   Future<SyncSummary> registerSync({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
+    required String invite,
   }) => RustLib.instance.api.crateApiVaultVaultHandleRegisterSync(
     that: this,
     serverUrl: serverUrl,
-    email: email,
     password: password,
     secretKey: secretKey,
     deviceName: deviceName,
+    invite: invite,
   );
 
   /// Moves all items of group `from` to `to` (empty `to` ungroups them);
@@ -2347,14 +2333,12 @@ class VaultHandleImpl extends RustOpaque implements VaultHandle {
   /// leaves it unlocked.
   Future<SyncSummary> signIn({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
   }) => RustLib.instance.api.crateApiVaultVaultHandleSignIn(
     that: this,
     serverUrl: serverUrl,
-    email: email,
     password: password,
     secretKey: secretKey,
     deviceName: deviceName,
@@ -2365,7 +2349,7 @@ class VaultHandleImpl extends RustOpaque implements VaultHandle {
   Future<void> signOut() =>
       RustLib.instance.api.crateApiVaultVaultHandleSignOut(that: this);
 
-  /// Server and account of the sync link (requires unlock).
+  /// Server of the sync link (requires unlock).
   Future<SyncInfo?> syncInfo() =>
       RustLib.instance.api.crateApiVaultVaultHandleSyncInfo(that: this);
 

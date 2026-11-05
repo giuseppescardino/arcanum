@@ -1,0 +1,25 @@
+# Weekly update PRs for dependencies and base images.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /core
+    schedule:
+      interval: weekly
+  - package-ecosystem: cargo
+    directory: /server
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directories:
+      - /deploy
+      - /deploy/backup
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

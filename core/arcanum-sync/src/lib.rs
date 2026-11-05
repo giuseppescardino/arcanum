@@ -1,6 +1,10 @@
 //! Sync client: talks to `arcanum-server` over HTTPS and drives the account
 //! flows (register, sign in on a new device, sync, password change) on a
 //! local [`Vault`].
+//!
+//! The account is identified on the server by its login id, derived from
+//! the Secret Key (`arcanum_crypto::kdf::login_id`): signing in needs only
+//! the server address, the master password and the Secret Key.
 
 mod client;
 mod error;
@@ -8,28 +12,40 @@ mod error;
 pub use client::Client;
 pub use error::{Result, SyncError};
 
-use arcanum_crypto::kdf::derive_keys;
+use arcanum_crypto::kdf::{derive_keys, login_id};
 use arcanum_vault::{AccountBundle, KdfParams, SecretKey, SyncLink, SyncReport, Vault};
 
+/// A signed-in device of the account, as listed by the server.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Device {
+    pub id: String,
+    /// `None` if the device hasn't set a name yet or it doesn't decrypt.
+    pub name: Option<String>,
+    pub created_at: i64,
+    pub last_used_at: i64,
+    pub current: bool,
+}
+
 /// Creates the server account for an existing local vault and uploads it.
+/// `invite` is needed when the server only accepts invited registrations.
 pub fn register(
     vault: &mut Vault,
     server_url: &str,
-    email: &str,
     password: &[u8],
     secret_key: &SecretKey,
     device_name: &str,
+    invite: Option<&str>,
 ) -> Result<SyncReport> {
     // Fails fast on a wrong password, before anything is sent.
     let auth_key = vault.auth_key(password, secret_key)?;
     let bundle = vault.account_bundle()?;
     let mut client = Client::new(server_url)?;
-    let session = client.register(email, &auth_key, &bundle, device_name)?;
+    let session = client.register(&login_id(secret_key)?, &auth_key, &bundle, invite)?;
     vault.set_sync_link(&SyncLink {
         server_url: client.base_url().to_owned(),
-        email: email.trim().to_lowercase(),
         token: session.token,
     })?;
+    name_this_device(vault, &client, device_name);
     Ok(vault.sync(&mut client)?)
 }
 
@@ -38,17 +54,17 @@ pub fn register(
 pub fn sign_in(
     vault: &mut Vault,
     server_url: &str,
-    email: &str,
     password: &[u8],
     secret_key: &SecretKey,
     device_name: &str,
 ) -> Result<SyncReport> {
     let mut client = Client::new(server_url)?;
-    let pre = client.prelogin(email)?;
+    let id = login_id(secret_key)?;
+    let pre = client.prelogin(&id)?;
     // `derive_keys` refuses KDF parameters below the minimum, so a
     // malicious server can't make us compute a cheap auth key.
     let keys = derive_keys(password, secret_key, &pre.salt, &pre.kdf)?;
-    let session = client.login(email, &keys.auth_key, device_name)?;
+    let session = client.login(&id, &keys.auth_key)?;
 
     let vault_record = session
         .vaults
@@ -63,9 +79,9 @@ pub fn sign_in(
     vault.unlock(password, secret_key)?;
     vault.set_sync_link(&SyncLink {
         server_url: client.base_url().to_owned(),
-        email: email.trim().to_lowercase(),
         token: session.token,
     })?;
+    name_this_device(vault, &client, device_name);
     Ok(vault.sync(&mut client)?)
 }
 
@@ -80,16 +96,52 @@ pub fn reconnect(
 ) -> Result<SyncReport> {
     let link = vault.sync_link()?.ok_or(SyncError::NotLinked)?;
     let mut client = Client::new(&link.server_url)?;
-    let pre = client.prelogin(&link.email)?;
+    let id = login_id(secret_key)?;
+    let pre = client.prelogin(&id)?;
     let keys = derive_keys(password, secret_key, &pre.salt, &pre.kdf)?;
-    let session = client.login(&link.email, &keys.auth_key, device_name)?;
+    let session = client.login(&id, &keys.auth_key)?;
     vault.adopt_account_keys(password, secret_key, &session.account_keys)?;
     vault.set_sync_link(&SyncLink {
         server_url: link.server_url.clone(),
-        email: link.email.clone(),
         token: session.token,
     })?;
+    name_this_device(vault, &client, device_name);
     Ok(vault.sync(&mut client)?)
+}
+
+/// The signed-in devices of this account, with their names decrypted.
+/// The vault must be unlocked.
+pub fn devices(vault: &Vault) -> Result<Vec<Device>> {
+    linked_client(vault)?
+        .devices()?
+        .into_iter()
+        .map(|d| {
+            let name = match &d.name {
+                Some(sealed) => vault.open_device_name(sealed)?,
+                None => None,
+            };
+            Ok(Device {
+                id: d.id,
+                name,
+                created_at: d.created_at,
+                last_used_at: d.last_used_at,
+                current: d.current,
+            })
+        })
+        .collect()
+}
+
+/// Signs a device of this account out (revokes its session).
+pub fn revoke_device(vault: &Vault, id: &str) -> Result<()> {
+    linked_client(vault)?.revoke_device(id)
+}
+
+/// Best effort: a missing name only makes the device list less readable,
+/// so it must not fail a sign-in that already succeeded.
+fn name_this_device(vault: &Vault, client: &Client, device_name: &str) {
+    if let Ok(sealed) = vault.seal_device_name(device_name) {
+        let _ = client.set_device_name(sealed);
+    }
 }
 
 /// Pull + push with the stored link. The vault must be unlocked.
@@ -108,14 +160,9 @@ pub fn change_password(
 ) -> Result<()> {
     let change = vault.prepare_password_change(current, new, secret_key, KdfParams::DEFAULT)?;
     if vault.is_linked()? {
-        let email = vault
-            .sync_link()?
-            .ok_or(SyncError::NotLinked)?
-            .email
-            .clone();
         let current_auth_key = vault.auth_key(current, secret_key)?;
         linked_client(vault)?.change_password(
-            &email,
+            &login_id(secret_key)?,
             &current_auth_key,
             &change.auth_key,
             &change.keys,

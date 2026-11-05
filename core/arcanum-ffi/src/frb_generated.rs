@@ -819,10 +819,10 @@ fn wire__crate__api__vault__VaultHandle_register_sync_impl(
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VaultHandle>,
             >>::sse_decode(&mut deserializer);
             let api_server_url = <String>::sse_decode(&mut deserializer);
-            let api_email = <String>::sse_decode(&mut deserializer);
             let api_password = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_secret_key = <String>::sse_decode(&mut deserializer);
             let api_device_name = <String>::sse_decode(&mut deserializer);
+            let api_invite = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, crate::api::vault::VaultFailure>((move || {
@@ -843,10 +843,10 @@ fn wire__crate__api__vault__VaultHandle_register_sync_impl(
                     let output_ok = crate::api::vault::VaultHandle::register_sync(
                         &*api_that_guard,
                         api_server_url,
-                        api_email,
                         api_password,
                         api_secret_key,
                         api_device_name,
+                        api_invite,
                     )?;
                     std::result::Result::Ok(output_ok)
                 })())
@@ -935,7 +935,6 @@ fn wire__crate__api__vault__VaultHandle_sign_in_impl(
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VaultHandle>,
             >>::sse_decode(&mut deserializer);
             let api_server_url = <String>::sse_decode(&mut deserializer);
-            let api_email = <String>::sse_decode(&mut deserializer);
             let api_password = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_secret_key = <String>::sse_decode(&mut deserializer);
             let api_device_name = <String>::sse_decode(&mut deserializer);
@@ -959,7 +958,6 @@ fn wire__crate__api__vault__VaultHandle_sign_in_impl(
                     let output_ok = crate::api::vault::VaultHandle::sign_in(
                         &*api_that_guard,
                         api_server_url,
-                        api_email,
                         api_password,
                         api_secret_key,
                         api_device_name,
@@ -1703,10 +1701,8 @@ impl SseDecode for crate::api::vault::SyncInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_serverUrl = <String>::sse_decode(deserializer);
-        let mut var_email = <String>::sse_decode(deserializer);
         return crate::api::vault::SyncInfo {
             server_url: var_serverUrl,
-            email: var_email,
         };
     }
 }
@@ -1789,15 +1785,19 @@ impl SseDecode for crate::api::vault::VaultFailureCode {
             4 => crate::api::vault::VaultFailureCode::AlreadyInitialized,
             5 => crate::api::vault::VaultFailureCode::NotFound,
             6 => crate::api::vault::VaultFailureCode::InvalidLogin,
-            7 => crate::api::vault::VaultFailureCode::EmailTaken,
-            8 => crate::api::vault::VaultFailureCode::SessionExpired,
-            9 => crate::api::vault::VaultFailureCode::TooManyRequests,
-            10 => crate::api::vault::VaultFailureCode::InvalidServerUrl,
-            11 => crate::api::vault::VaultFailureCode::Network,
-            12 => crate::api::vault::VaultFailureCode::NotLinked,
-            13 => crate::api::vault::VaultFailureCode::InvalidInput,
-            14 => crate::api::vault::VaultFailureCode::PasswordRequired,
-            15 => crate::api::vault::VaultFailureCode::Internal,
+            7 => crate::api::vault::VaultFailureCode::AccountExists,
+            8 => crate::api::vault::VaultFailureCode::InviteRequired,
+            9 => crate::api::vault::VaultFailureCode::InvalidInvite,
+            10 => crate::api::vault::VaultFailureCode::RegistrationClosed,
+            11 => crate::api::vault::VaultFailureCode::QuotaExceeded,
+            12 => crate::api::vault::VaultFailureCode::SessionExpired,
+            13 => crate::api::vault::VaultFailureCode::TooManyRequests,
+            14 => crate::api::vault::VaultFailureCode::InvalidServerUrl,
+            15 => crate::api::vault::VaultFailureCode::Network,
+            16 => crate::api::vault::VaultFailureCode::NotLinked,
+            17 => crate::api::vault::VaultFailureCode::InvalidInput,
+            18 => crate::api::vault::VaultFailureCode::PasswordRequired,
+            19 => crate::api::vault::VaultFailureCode::Internal,
             _ => unreachable!("Invalid variant for VaultFailureCode: {}", inner),
         };
     }
@@ -2078,11 +2078,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::tools::PasswordStrengthLevel>
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::vault::SyncInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.server_url.into_into_dart().into_dart(),
-            self.email.into_into_dart().into_dart(),
-        ]
-        .into_dart()
+        [self.server_url.into_into_dart().into_dart()].into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::vault::SyncInfo {}
@@ -2166,15 +2162,19 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::VaultFailureCode {
             Self::AlreadyInitialized => 4.into_dart(),
             Self::NotFound => 5.into_dart(),
             Self::InvalidLogin => 6.into_dart(),
-            Self::EmailTaken => 7.into_dart(),
-            Self::SessionExpired => 8.into_dart(),
-            Self::TooManyRequests => 9.into_dart(),
-            Self::InvalidServerUrl => 10.into_dart(),
-            Self::Network => 11.into_dart(),
-            Self::NotLinked => 12.into_dart(),
-            Self::InvalidInput => 13.into_dart(),
-            Self::PasswordRequired => 14.into_dart(),
-            Self::Internal => 15.into_dart(),
+            Self::AccountExists => 7.into_dart(),
+            Self::InviteRequired => 8.into_dart(),
+            Self::InvalidInvite => 9.into_dart(),
+            Self::RegistrationClosed => 10.into_dart(),
+            Self::QuotaExceeded => 11.into_dart(),
+            Self::SessionExpired => 12.into_dart(),
+            Self::TooManyRequests => 13.into_dart(),
+            Self::InvalidServerUrl => 14.into_dart(),
+            Self::Network => 15.into_dart(),
+            Self::NotLinked => 16.into_dart(),
+            Self::InvalidInput => 17.into_dart(),
+            Self::PasswordRequired => 18.into_dart(),
+            Self::Internal => 19.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2395,7 +2395,6 @@ impl SseEncode for crate::api::vault::SyncInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.server_url, serializer);
-        <String>::sse_encode(self.email, serializer);
     }
 }
 
@@ -2466,15 +2465,19 @@ impl SseEncode for crate::api::vault::VaultFailureCode {
                 crate::api::vault::VaultFailureCode::AlreadyInitialized => 4,
                 crate::api::vault::VaultFailureCode::NotFound => 5,
                 crate::api::vault::VaultFailureCode::InvalidLogin => 6,
-                crate::api::vault::VaultFailureCode::EmailTaken => 7,
-                crate::api::vault::VaultFailureCode::SessionExpired => 8,
-                crate::api::vault::VaultFailureCode::TooManyRequests => 9,
-                crate::api::vault::VaultFailureCode::InvalidServerUrl => 10,
-                crate::api::vault::VaultFailureCode::Network => 11,
-                crate::api::vault::VaultFailureCode::NotLinked => 12,
-                crate::api::vault::VaultFailureCode::InvalidInput => 13,
-                crate::api::vault::VaultFailureCode::PasswordRequired => 14,
-                crate::api::vault::VaultFailureCode::Internal => 15,
+                crate::api::vault::VaultFailureCode::AccountExists => 7,
+                crate::api::vault::VaultFailureCode::InviteRequired => 8,
+                crate::api::vault::VaultFailureCode::InvalidInvite => 9,
+                crate::api::vault::VaultFailureCode::RegistrationClosed => 10,
+                crate::api::vault::VaultFailureCode::QuotaExceeded => 11,
+                crate::api::vault::VaultFailureCode::SessionExpired => 12,
+                crate::api::vault::VaultFailureCode::TooManyRequests => 13,
+                crate::api::vault::VaultFailureCode::InvalidServerUrl => 14,
+                crate::api::vault::VaultFailureCode::Network => 15,
+                crate::api::vault::VaultFailureCode::NotLinked => 16,
+                crate::api::vault::VaultFailureCode::InvalidInput => 17,
+                crate::api::vault::VaultFailureCode::PasswordRequired => 18,
+                crate::api::vault::VaultFailureCode::Internal => 19,
                 _ => {
                     unimplemented!("");
                 }

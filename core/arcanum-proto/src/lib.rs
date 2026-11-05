@@ -30,6 +30,9 @@ pub mod limits {
     pub const MAX_PULL_ITEMS: i64 = 500;
     pub const MAX_CIPHERTEXT_BYTES: usize = 1024 * 1024;
     pub const MAX_DEVICE_NAME_CHARS: usize = 100;
+    /// Encrypted device name: version + nonce + 4 bytes per char + tag.
+    pub const MAX_DEVICE_NAME_BYTES: usize = 512;
+    pub const MAX_INVITE_CHARS: usize = 64;
 }
 
 pub mod b64 {
@@ -47,11 +50,31 @@ pub mod b64 {
     }
 }
 
+pub mod b64_opt {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    use serde::{de, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(bytes: &Option<Vec<u8>>, s: S) -> Result<S::Ok, S::Error> {
+        match bytes {
+            Some(b) => s.serialize_some(&STANDARD.encode(b)),
+            None => s.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Vec<u8>>, D::Error> {
+        Option::<String>::deserialize(d)?
+            .map(|s| STANDARD.decode(s).map_err(de::Error::custom))
+            .transpose()
+    }
+}
+
 // ---- Registration -------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisterStartRequest {
-    pub email: String,
+    /// `arcanum_crypto::kdf::login_id` of the Secret Key.
+    pub login_id: String,
     #[serde(with = "b64")]
     pub message: Vec<u8>,
 }
@@ -64,14 +87,16 @@ pub struct OpaqueMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisterFinishRequest {
-    pub email: String,
+    pub login_id: String,
     #[serde(with = "b64")]
     pub message: Vec<u8>,
     /// Chosen by the client (it is bound into the Account Key's AAD).
     pub account_id: String,
     pub account_keys: EncryptedAccountKeys,
     pub vault: VaultRecord,
-    pub device_name: String,
+    /// Required when the server's registration policy is `invite`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub invite: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -85,10 +110,10 @@ pub struct VaultRecord {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreloginRequest {
-    pub email: String,
+    pub login_id: String,
 }
 
-/// Returned for every email, existing or not, so it can't be used to
+/// Returned for every login id, existing or not, so it can't be used to
 /// enumerate accounts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PreloginResponse {
@@ -98,24 +123,24 @@ pub struct PreloginResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginStartRequest {
-    pub email: String,
+    pub login_id: String,
     #[serde(with = "b64")]
     pub message: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginStartResponse {
-    pub login_id: String,
+    /// Identifies this login attempt for `/v1/login/finish`.
+    pub attempt_id: String,
     #[serde(with = "b64")]
     pub message: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginFinishRequest {
-    pub login_id: String,
+    pub attempt_id: String,
     #[serde(with = "b64")]
     pub message: Vec<u8>,
-    pub device_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,7 +159,7 @@ pub struct SessionResponse {
 /// with `/v1/login/start`, finished here instead of `/v1/login/finish`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PasswordFinishRequest {
-    pub login_id: String,
+    pub attempt_id: String,
     /// OPAQUE `CredentialFinalization` for the current password.
     #[serde(with = "b64")]
     pub login_message: Vec<u8>,
@@ -200,10 +225,20 @@ pub struct PushResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceInfo {
     pub id: String,
-    pub name: String,
+    /// Encrypted by the client with the Account Key (`None` until the
+    /// device sets it with `PUT /v1/devices/current`).
+    #[serde(default, with = "b64_opt")]
+    pub name: Option<Vec<u8>>,
     pub created_at: i64,
     pub last_used_at: i64,
     pub current: bool,
+}
+
+/// `PUT /v1/devices/current`: the device name, encrypted by the client.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeviceNameRequest {
+    #[serde(with = "b64")]
+    pub name: Vec<u8>,
 }
 
 // ---- Errors -------------------------------------------------------------
@@ -214,13 +249,25 @@ pub enum ErrorCode {
     BadRequest,
     Unauthorized,
     InvalidLogin,
-    EmailTaken,
+    /// An account with this login id already exists.
+    AccountExists,
+    /// The server only accepts registrations with an invite code.
+    InviteRequired,
+    /// The invite code is unknown, already used, revoked or expired.
+    InvalidInvite,
+    /// The server does not accept new registrations.
+    RegistrationClosed,
+    /// The account reached the server's storage quota.
+    QuotaExceeded,
     NotFound,
     TooManyRequests,
     /// The pull cursor is ahead of the server: its database went back in
     /// time (restored from a backup). Resync from scratch.
     CursorAhead,
     Internal,
+    /// A code this client doesn't know yet (from a newer server).
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -247,5 +294,30 @@ mod tests {
     #[test]
     fn invalid_base64_is_rejected() {
         assert!(serde_json::from_str::<OpaqueMessage>(r#"{"message":"!!"}"#).is_err());
+    }
+
+    #[test]
+    fn unknown_error_codes_parse() {
+        let e: ErrorResponse =
+            serde_json::from_str(r#"{"error":"something_new","message":"x"}"#).unwrap();
+        assert_eq!(e.error, ErrorCode::Unknown);
+        let e: ErrorResponse =
+            serde_json::from_str(r#"{"error":"invite_required","message":"x"}"#).unwrap();
+        assert_eq!(e.error, ErrorCode::InviteRequired);
+    }
+
+    #[test]
+    fn device_name_is_optional() {
+        let d: DeviceInfo = serde_json::from_str(
+            r#"{"id":"a","name":null,"created_at":1,"last_used_at":2,"current":true}"#,
+        )
+        .unwrap();
+        assert_eq!(d.name, None);
+        let json = serde_json::to_string(&DeviceInfo {
+            name: Some(vec![1, 2]),
+            ..d
+        })
+        .unwrap();
+        assert!(json.contains(r#""name":"AQI=""#), "{json}");
     }
 }

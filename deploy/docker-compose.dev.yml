@@ -12,6 +12,7 @@ name: arcanum-dev
 services:
   db:
     image: postgres:18
+    security_opt: ["no-new-privileges:true"]
     environment:
       POSTGRES_USER: pm
       POSTGRES_DB: pm
@@ -28,9 +29,15 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     environment:
       DATABASE_URL: postgres://pm:${POSTGRES_PASSWORD}@db:5432/pm
       RUST_LOG: info
+      ARCANUM_REGISTRATION: ${ARCANUM_REGISTRATION:-invite}
+      ARCANUM_MAX_ITEMS_PER_ACCOUNT: ${ARCANUM_MAX_ITEMS_PER_ACCOUNT:-20000}
     ports:
       - "127.0.0.1:8081:8080"
     depends_on:
@@ -40,6 +47,7 @@ services:
 
   backup:
     build: backup
+    security_opt: ["no-new-privileges:true"]
     environment:
       PGHOST: db
       PGUSER: pm

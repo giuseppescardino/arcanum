@@ -18,6 +18,9 @@ pub(crate) const META_SYNC_CURSOR: &str = "sync_cursor";
 pub(crate) const META_SYNC_EPOCH: &str = "sync_epoch";
 pub(crate) const META_RESYNC: &str = "sync_resync";
 const SYNC_LINK_LABEL: &str = "pm/sync-link/v1";
+const DEVICE_NAME_LABEL: &str = "pm/device-name/v1";
+/// Longer device names are cut before encryption.
+pub const MAX_DEVICE_NAME_CHARS: usize = 100;
 
 /// Keys held in memory only while unlocked; wiped on drop.
 pub(crate) struct Session {
@@ -37,12 +40,13 @@ pub struct AccountBundle {
     pub wrapped_vault_key: Vec<u8>,
 }
 
-/// Where and as whom this vault syncs. Stored encrypted under the Account
-/// Key, so the session token is unreadable while locked.
+/// Where this vault syncs. Stored encrypted under the Account Key, so the
+/// session token is unreadable while locked. The account is identified by
+/// the login id derived from the Secret Key, so it isn't stored here (links
+/// saved by older versions still carry an `email`, which is ignored).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
 pub struct SyncLink {
     pub server_url: String,
-    pub email: String,
     pub token: String,
 }
 
@@ -269,6 +273,33 @@ impl Vault {
         Ok(Some(link))
     }
 
+    /// Encrypts this device's name for the server's device list (the
+    /// server stores it but can't read it). Names are trimmed and cut to
+    /// [`MAX_DEVICE_NAME_CHARS`].
+    pub fn seal_device_name(&self, name: &str) -> Result<Vec<u8>> {
+        let session = self.session()?;
+        let mut name: String = name.trim().chars().take(MAX_DEVICE_NAME_CHARS).collect();
+        if name.is_empty() {
+            name.push('?');
+        }
+        Ok(aead::seal(
+            &session.account_key,
+            name.as_bytes(),
+            &device_name_aad(session),
+        )?)
+    }
+
+    /// Decrypts a name sealed by [`Vault::seal_device_name`] on any device
+    /// of this account; `None` if it doesn't open (tampered or foreign).
+    pub fn open_device_name(&self, sealed: &[u8]) -> Result<Option<String>> {
+        let session = self.session()?;
+        Ok(
+            aead::open(&session.account_key, sealed, &device_name_aad(session))
+                .ok()
+                .and_then(|bytes| String::from_utf8(bytes.to_vec()).ok()),
+        )
+    }
+
     /// Whether a sync link exists; readable while locked.
     pub fn is_linked(&self) -> Result<bool> {
         Ok(self.store.get_meta(META_SYNC_LINK)?.is_some())
@@ -444,6 +475,10 @@ impl Vault {
 
 fn sync_link_aad(session: &Session) -> Aad {
     Aad::new(SYNC_LINK_LABEL).field(session.account_id.as_bytes())
+}
+
+fn device_name_aad(session: &Session) -> Aad {
+    Aad::new(DEVICE_NAME_LABEL).field(session.account_id.as_bytes())
 }
 
 /// Encrypts `data` (or a tombstone when `None`) into a row marked dirty.
