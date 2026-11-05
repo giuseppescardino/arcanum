@@ -151,9 +151,26 @@ impl IpLimiter {
     }
 
     fn allow_at(&self, ip: IpAddr, now: i64) -> bool {
+        let key = limit_key(ip);
         self.inner
             .lock()
-            .map_or(true, |mut w| w.bump(ip, now) <= self.limit)
+            .map_or(true, |mut w| w.bump(key, now) <= self.limit)
+    }
+}
+
+/// IPv4 addresses are limited one by one; IPv6 ones by /64, the smallest
+/// block usually assigned to a single customer (otherwise one host could
+/// rotate through 2^64 addresses, each with a fresh limit).
+fn limit_key(ip: IpAddr) -> IpAddr {
+    match ip {
+        IpAddr::V6(v6) => match v6.to_ipv4_mapped() {
+            Some(v4) => IpAddr::V4(v4),
+            None => {
+                let prefix = u128::from(v6) & !((1u128 << 64) - 1);
+                IpAddr::V6(prefix.into())
+            }
+        },
+        v4 => v4,
     }
 }
 
@@ -209,5 +226,19 @@ mod tests {
         assert!(!l.allow_at(a, 1));
         assert!(l.allow_at(b, 1));
         assert!(l.allow_at(a, 60_000), "new window");
+    }
+
+    #[test]
+    fn ipv6_is_limited_per_64() {
+        let l = IpLimiter::with_capacity(2, 60_000, 10);
+        let a: IpAddr = "2001:db8:1:2::1".parse().unwrap();
+        let b: IpAddr = "2001:db8:1:2:ffff::9".parse().unwrap();
+        let other: IpAddr = "2001:db8:1:3::1".parse().unwrap();
+        assert!(l.allow_at(a, 0));
+        assert!(l.allow_at(b, 0));
+        assert!(!l.allow_at(a, 0), "same /64 shares the limit");
+        assert!(l.allow_at(other, 0));
+        let mapped: IpAddr = "::ffff:192.0.2.1".parse().unwrap();
+        assert_eq!(limit_key(mapped), "192.0.2.1".parse::<IpAddr>().unwrap());
     }
 }
