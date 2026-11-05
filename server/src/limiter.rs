@@ -113,11 +113,19 @@ impl LoginLimiter {
             .is_ok_and(|mut w| w.count(&login_id.to_owned(), now) >= MAX_LOGIN_FAILURES)
     }
 
-    pub fn record_failure(&self, login_id: &str) {
+    /// Checks and counts an attempt under one lock, so concurrent requests
+    /// can't all pass the check before any of them is counted. False when
+    /// the account is blocked (the refused attempt is not counted).
+    pub fn try_attempt(&self, login_id: &str) -> bool {
         let now = now_ms();
-        if let Ok(mut w) = self.inner.lock() {
-            w.bump(login_id.to_owned(), now);
-        }
+        let key = login_id.to_owned();
+        self.inner.lock().is_ok_and(|mut w| {
+            if w.count(&key, now) >= MAX_LOGIN_FAILURES {
+                return false;
+            }
+            w.bump(key, now);
+            true
+        })
     }
 
     pub fn reset(&self, login_id: &str) {
@@ -183,7 +191,7 @@ mod tests {
         let l = LoginLimiter::default();
         for _ in 0..MAX_LOGIN_FAILURES {
             assert!(!l.is_blocked("a"));
-            l.record_failure("a");
+            l.try_attempt("a");
         }
         assert!(l.is_blocked("a"));
         assert!(!l.is_blocked("other"));
@@ -192,15 +200,27 @@ mod tests {
     }
 
     #[test]
+    fn try_attempt_counts_and_blocks_atomically() {
+        let l = LoginLimiter::default();
+        for _ in 0..MAX_LOGIN_FAILURES {
+            assert!(l.try_attempt("a"));
+        }
+        assert!(!l.try_attempt("a"));
+        assert!(l.is_blocked("a"));
+        l.reset("a");
+        assert!(l.try_attempt("a"));
+    }
+
+    #[test]
     fn maps_stay_bounded() {
         let l = LoginLimiter::with_capacity(100);
         for i in 0..1000 {
-            l.record_failure(&format!("id-{i}"));
+            l.try_attempt(&format!("id-{i}"));
         }
         assert!(l.inner.lock().unwrap().len() <= 100);
         // Keys already tracked keep counting.
         for _ in 0..MAX_LOGIN_FAILURES {
-            l.record_failure("id-0");
+            l.try_attempt("id-0");
         }
         assert!(l.is_blocked("id-0"));
     }

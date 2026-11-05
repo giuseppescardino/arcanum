@@ -184,10 +184,6 @@ pub async fn login_start(
     Json(req): Json<LoginStartRequest>,
 ) -> ApiResult<Json<LoginStartResponse>> {
     let login_id = validate::login_id(&req.login_id)?;
-    if s.limiter.is_blocked(&login_id) {
-        tracing::info!(%ip, "login refused: too many attempts for this account");
-        return Err(ApiError::too_many_requests());
-    }
     let request =
         CredentialRequest::<OpaqueSuite>::deserialize(&req.message).map_err(bad_opaque)?;
     let record: Option<Vec<u8>> =
@@ -197,11 +193,11 @@ pub async fn login_start(
             .await?;
     // With OPAQUE a wrong password is detected by the *client*, which then
     // never calls finish; so every well-formed start counts as an attempt
-    // until a successful finish resets the counter. Only existing accounts
-    // are tracked: random login ids can't fill the limiter and push real
-    // accounts out of it (login ids can't be guessed, so this reveals nothing).
-    if record.is_some() {
-        s.limiter.record_failure(&login_id);
+    // until a successful finish resets the counter. Check and count happen
+    // atomically, so parallel requests can't overshoot the limit.
+    if record.is_some() && !s.limiter.try_attempt(&login_id) {
+        tracing::info!(%ip, "login refused: too many attempts for this account");
+        return Err(ApiError::too_many_requests());
     }
     // Unknown login ids still get a well-formed (fake) response.
     let password_file = record
