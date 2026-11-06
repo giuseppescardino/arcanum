@@ -64,6 +64,7 @@ class FakeVaultHandle implements VaultHandle {
   SyncInfo? link;
   int syncCalls = 0;
   int syncedRegistrations = 0;
+  String? lastInvite;
 
   /// Thrown by the next [syncNow] call, then cleared.
   VaultFailure? nextSyncFailure;
@@ -82,10 +83,10 @@ class FakeVaultHandle implements VaultHandle {
   @override
   Future<SyncSummary> registerSync({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
+    required String invite,
   }) async {
     _requireUnlocked();
     if (utf8.decode(password) != _password) {
@@ -94,7 +95,8 @@ class FakeVaultHandle implements VaultHandle {
         message: '',
       );
     }
-    link = SyncInfo(serverUrl: serverUrl, email: email);
+    lastInvite = invite;
+    link = SyncInfo(serverUrl: serverUrl);
     syncedRegistrations++;
     return SyncSummary(pulled: 0, pushed: _items.length, conflicts: 0);
   }
@@ -102,7 +104,6 @@ class FakeVaultHandle implements VaultHandle {
   @override
   Future<SyncSummary> signIn({
     required String serverUrl,
-    required String email,
     required List<int> password,
     required String secretKey,
     required String deviceName,
@@ -116,7 +117,7 @@ class FakeVaultHandle implements VaultHandle {
     initialized = true;
     unlocked = true;
     _password = utf8.decode(password);
-    link = SyncInfo(serverUrl: serverUrl, email: email);
+    link = SyncInfo(serverUrl: serverUrl);
     return _summary;
   }
 

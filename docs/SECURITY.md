@@ -54,7 +54,8 @@ The version byte is authenticated. The associated data (AAD) is built with `Aad`
 | Vault Key | `pm/vault-key/v1` | vault_id |
 | Item Key | `pm/item-key/v1` | vault_id, item_id |
 | Item | `pm/item/v1` | vault_id, item_id, revision |
-| Server link (URL, email, token) | `pm/sync-link/v1` | account_id |
+| Server link (URL, token) | `pm/sync-link/v1` | account_id |
+| Device name | `pm/device-name/v1` | account_id |
 
 As a result, a ciphertext cannot be moved to another vault or item. Nor can it be replayed as a different revision or swapped with a ciphertext of another type.
 
@@ -65,6 +66,14 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
 - It is stored only on the devices (system keychain) and on the printed Emergency Kit. **It is never sent to the server.**
 - A new device gets it via QR code from an already authorized device, or from the Emergency Kit.
 
+## Login identifier
+
+- The server knows an account only by its **login id**: `HKDF-SHA256(IKM = Secret Key, info "pm/login-id/v1")`, 32 bytes in base64url (`kdf::login_id`). No email or username is stored.
+- There is nothing extra to remember: every new device already needs the Secret Key, and the login id is recomputed from it.
+- It carries the Secret Key's 128 bits of entropy, so it can't be guessed. That rules out account enumeration, squatting someone else's name, and lockouts aimed at a specific user (blocking an account requires its Secret Key).
+- HKDF is one-way: the login id reveals nothing about the Secret Key, and its label keeps it independent of the MUK and the Auth Key.
+- Losing the Secret Key already meant losing the account; the login id adds no new way to lose it.
+
 ## Server authentication
 
 - **OPAQUE** (`opaque-ke` 4, Ristretto255 + TripleDH + SHA-512 suite). The OPAQUE "password" is the **Auth Key**, derived from the same Argon2id run but with an HKDF label different from the MUK's.
@@ -72,10 +81,12 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
   - Nor does it receive a hash that can be brute-forced: the Auth Key contains the 128 bits of the Secret Key.
   - Since the Auth Key is already hardened by Argon2id, OPAQUE's internal stretching function is the identity.
 - **Role separation:** knowing the Auth Key does not help compute the MUK. The OPAQUE session key and export key are not used to encrypt anything.
-- **Prelogin:** returns the KDF parameters and salt for the email. For non-existent emails it answers with fake but deterministic values (HMAC with a server secret), so nobody can find out which accounts exist. Login fails the same way for an unknown email, a wrong password or a wrong Secret Key.
-- **Attempt limit:** with OPAQUE it is the client that notices a wrong password, so the server counts every `login/start` as an attempt and resets the count only after a successful sign-in (10 attempts every 15 minutes per email).
+- **Prelogin:** returns the KDF parameters and salt for the login id. For non-existent ids it answers with fake but deterministic values (HMAC with a server secret). Login fails the same way for an unknown account, a wrong password or a wrong Secret Key.
+- **Attempt limit:** with OPAQUE it is the client that notices a wrong password, so the server counts every well-formed `login/start` as an attempt and resets the count only after a successful sign-in (10 attempts every 15 minutes per login id). Malformed OPAQUE messages are rejected without counting. Since the login id can't be guessed, the limit only matters to someone holding a stolen Emergency Kit.
+- **Per-IP limits** (in memory, bounded; IPv6 addresses are grouped by /64): 60 requests per minute on prelogin and login, 20 per hour on registration, 600 per minute on the whole API. Unauthenticated request bodies are capped at 64 KiB (32 MiB only for item uploads), requests time out after 30 seconds and at most 256 run at once.
+- **Registration policy** (`ARCANUM_REGISTRATION`): `invite` (default: single-use codes created by the operator, stored as SHA-256 hashes, consumed in the same transaction that creates the account), `open` (public instances) or `closed`. A per-account item quota (`ARCANUM_MAX_ITEMS_PER_ACCOUNT`) bounds what an open registration can cost.
 - **Sessions:** random 256-bit bearer tokens. The server stores only their SHA-256 hash, with a 90-day expiry renewed on every use.
-  - Each session corresponds to a device and can be revoked.
+  - Each session corresponds to a device and can be revoked. The device name is encrypted by the client with the Account Key, so the server can't read it (it is set right after sign-in, once a new device has the key).
   - A password change signs out every other device.
   - On the client the token is stored encrypted with the Account Key.
 - **TLS required:** the client accepts plain HTTP only towards local development hosts. URLs are analyzed with a real parser and those carrying credentials are rejected, to prevent tricks like `http://localhost@evil.com`.
@@ -120,13 +131,15 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
 ## Known residual risks
 
 - **Session token theft:** whoever holds the token can read the ciphertexts and write bogus data, which clients will discard because it does not decrypt. They **cannot** change the password: `/password/finish` also requires a fresh OPAQUE login with the current password, verified by the server.
-- **No email verification at sign-up:** anyone can register an address that is not theirs, but gains no access to other people's data.
+- **Stolen Emergency Kit:** it reveals the login id, so the thief can try master passwords online, slowed down by the per-account and per-IP limits. Choose a strong master password and keep the kit safe.
+- **Open registration:** on `open` servers anyone can create accounts. They can't touch other people's data, and quotas and per-IP limits bound the cost; the operator removes abusive accounts with `arcanum-server account delete`.
+- **Metadata:** the server still sees client IP addresses, request times, item counts and ciphertext sizes. Its logs contain IP addresses (personal data under the GDPR): keep them only as long as needed.
 - **Modification dates come from the client:** a malicious server could alter them and influence which version wins a conflict, but the losing version is still kept as a copy.
-- **The attempt limit is in memory:** with multiple server instances it must move to the database or the reverse proxy.
+- **Rate limits are in memory:** with multiple server instances they must move to the database or the reverse proxy.
 
 ## Development requirements
 
 - `unsafe_code = "forbid"` applies across the workspace, and `clippy::unwrap_used` is denied outside tests.
 - Decryption errors are indistinguishable (`CryptoError::Decrypt`) so as not to create oracles.
 - Every new data format requires a new, versioned domain label.
-- To add to CI: `cargo audit`, `cargo deny`, fuzzing (`cargo fuzz`) on `aead::open` and on parsing.
+- CI runs `cargo deny` (advisories, licenses, sources; policy in `deny.toml`) and `cargo audit` on both workspaces; Dependabot proposes weekly updates. Still to add: fuzzing (`cargo fuzz`) on `aead::open` and on parsing.

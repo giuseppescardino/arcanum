@@ -123,6 +123,15 @@ pub async fn push(
         .into_iter()
         .collect();
 
+    // Items (tombstones included) already stored for the account; new
+    // inserts beyond the operator's quota are refused.
+    let mut stored: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM items i JOIN vaults v ON v.id = i.vault_id WHERE v.account_id = $1",
+    )
+    .bind(auth.account_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
     let mut response = PushResponse::default();
     for push in req.items {
         let rec = push.item;
@@ -155,6 +164,11 @@ pub async fn push(
 
         match current {
             None => {
+                if stored >= s.config.max_items_per_account {
+                    tracing::info!(account_id = %auth.account_id, "push refused: item quota reached");
+                    return Err(ApiError::quota_exceeded());
+                }
+                stored += 1;
                 sqlx::query(
                     "INSERT INTO items (id, vault_id, revision, wrapped_key, ciphertext, deleted, updated_at, seq)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, nextval('item_seq'))",

@@ -1,0 +1,8 @@
+// Local code signing for iOS and macOS. Copy this file to
+// signing.local.xcconfig (ignored by git) and set your Apple Team ID,
+// shown in Xcode → Settings → Accounts or at developer.apple.com/account.
+DEVELOPMENT_TEAM = ABCDE12345
+
+// macOS signs ad hoc ("-") by default, which is not enough for the
+// keychain access group: use the development certificate instead.
+CODE_SIGN_IDENTITY[sdk=macosx*] = Apple Development

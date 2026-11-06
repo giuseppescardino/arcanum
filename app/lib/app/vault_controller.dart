@@ -104,13 +104,11 @@ class VaultController extends ChangeNotifier {
   /// Sets up this device from an existing server account.
   Future<void> signIn({
     required String serverUrl,
-    required String email,
     required String password,
     required String secretKey,
   }) async {
     lastSummary = await handle.signIn(
       serverUrl: serverUrl,
-      email: email,
       password: utf8.encode(password),
       secretKey: secretKey,
       deviceName: deviceName(),
@@ -281,18 +279,19 @@ class VaultController extends ChangeNotifier {
 
   // ---- Sync ----
 
-  /// Creates the server account for this vault and uploads it.
+  /// Creates the server account for this vault and uploads it. [invite]
+  /// is needed only by servers that accept invited registrations.
   Future<void> enableSync({
     required String serverUrl,
-    required String email,
     required String password,
+    String invite = '',
   }) async {
     lastSummary = await handle.registerSync(
       serverUrl: serverUrl,
-      email: email,
       password: utf8.encode(password),
       secretKey: await _secretKey(),
       deviceName: deviceName(),
+      invite: invite,
     );
     lastSync = DateTime.now();
     syncError = null;

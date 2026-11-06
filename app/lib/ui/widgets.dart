@@ -180,8 +180,9 @@ class ServerUrlField extends StatelessWidget {
   }
 }
 
-class EmailField extends StatelessWidget {
-  const EmailField({super.key, required this.controller});
+/// Optional invite code, for servers with invite-only registration.
+class InviteCodeField extends StatelessWidget {
+  const InviteCodeField({super.key, required this.controller});
 
   final TextEditingController controller;
 
@@ -190,16 +191,15 @@ class EmailField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       autocorrect: false,
-      keyboardType: TextInputType.emailAddress,
+      enableSuggestions: false,
+      textCapitalization: TextCapitalization.characters,
+      style: const TextStyle(fontFamily: 'monospace'),
       textInputAction: TextInputAction.next,
-      decoration: InputDecoration(labelText: context.l10n.commonEmail),
-      validator: (v) {
-        final value = (v ?? '').trim();
-        final at = value.indexOf('@');
-        return at > 0 && at < value.length - 1
-            ? null
-            : context.l10n.commonInvalidEmail;
-      },
+      decoration: InputDecoration(
+        labelText: context.l10n.commonInviteCode,
+        helperText: context.l10n.commonInviteCodeHelper,
+        hintText: 'INV-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
+      ),
     );
   }
 }

@@ -27,9 +27,9 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   FlutterMacOS: c232990155153907050900a2e175c7773903ba4e
   HotKey: 400beb7caa29054ea8d864c96f5ba7e5b4852277
-  hotkey_manager_macos: 1e2edb0c7ae4fe67108af44a9d3445de41404160
-  rust_lib_arcanum: 87cee89b91b38e8598acf2062086921fbe950122
+  hotkey_manager_macos: a4317849af96d2430fa89944d3c58977ca089fbe
+  rust_lib_arcanum: 0fc7cf45ad43dcfe383c3066ac413c97736ab8ce
 
 PODFILE CHECKSUM: 1e95c36afbfd1cb6423ceca4de7a8e1b256fb6ac
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.17.0

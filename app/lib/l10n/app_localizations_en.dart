@@ -120,7 +120,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vaultSignOutBodySynced =>
-      'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.';
+      'The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with your master password and the Secret Key from your Emergency Kit.';
 
   @override
   String get vaultSignOutBodyLocal =>
@@ -318,11 +318,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncActive => 'Sync is on';
 
   @override
-  String syncAccount(String email) {
-    return 'Account: $email';
-  }
-
-  @override
   String syncServer(String url) {
     return 'Server: $url';
   }
@@ -459,10 +454,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Full address, e.g. https://sync.example.com';
 
   @override
-  String get commonEmail => 'Email';
+  String get commonInviteCode => 'Invite code';
 
   @override
-  String get commonInvalidEmail => 'Invalid email';
+  String get commonInviteCodeHelper => 'Only if your server requires one';
 
   @override
   String get generatorTitle => 'Generate password';
@@ -571,10 +566,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorNotFound => 'Item not found.';
 
   @override
-  String get errorInvalidLogin => 'Wrong email, master password or Secret Key.';
+  String get errorInvalidLogin =>
+      'Wrong master password or Secret Key, or no account with this Secret Key on the server.';
 
   @override
-  String get errorEmailTaken => 'An account with this email already exists.';
+  String get errorAccountExists =>
+      'This vault already has an account on the server: use \"I already have an account\" on your other devices.';
+
+  @override
+  String get errorInviteRequired =>
+      'This server only accepts new accounts with an invite code: ask its administrator.';
+
+  @override
+  String get errorInvalidInvite =>
+      'Invalid invite code: it may be mistyped, already used or expired.';
+
+  @override
+  String get errorRegistrationClosed =>
+      'This server doesn\'t accept new accounts.';
+
+  @override
+  String get errorQuotaExceeded =>
+      'Your account has reached the server\'s storage limit.';
 
   @override
   String get errorSessionExpired =>

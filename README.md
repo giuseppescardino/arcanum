@@ -49,6 +49,7 @@ cd app && flutter run
 cd deploy
 cp .env.example .env   # set ARCANUM_DOMAIN, POSTGRES_PASSWORD and BACKUP_AGE_RECIPIENT
 docker compose up -d --build
+docker compose exec server arcanum-server invite create --label "me"   # invite code for the first account
 ```
 
 Configuration, backup and restore are covered in [server/README.md](server/README.md).

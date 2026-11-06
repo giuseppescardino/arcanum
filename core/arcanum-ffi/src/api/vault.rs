@@ -47,9 +47,18 @@ pub enum VaultFailureCode {
     NotInitialized,
     AlreadyInitialized,
     NotFound,
-    /// Server sync: wrong email, password or Secret Key.
+    /// Server sync: wrong password or Secret Key.
     InvalidLogin,
-    EmailTaken,
+    /// An account with this Secret Key is already on the server.
+    AccountExists,
+    /// The server only accepts registrations with an invite code.
+    InviteRequired,
+    /// The invite code is unknown, used or expired.
+    InvalidInvite,
+    /// The server does not accept new accounts.
+    RegistrationClosed,
+    /// The account reached the server's storage quota.
+    QuotaExceeded,
     /// The server session expired or was revoked: reconnect.
     SessionExpired,
     TooManyRequests,
@@ -74,7 +83,6 @@ pub struct SyncSummary {
 #[derive(Debug, Clone)]
 pub struct SyncInfo {
     pub server_url: String,
-    pub email: String,
 }
 
 /// Errors surfaced to Dart as a typed exception. `message` is diagnostic
@@ -190,32 +198,33 @@ impl VaultHandle {
         Ok(self.vault()?.is_linked()?)
     }
 
-    /// Server and account of the sync link (requires unlock).
+    /// Server of the sync link (requires unlock).
     pub fn sync_info(&self) -> Result<Option<SyncInfo>, VaultFailure> {
         Ok(self.vault()?.sync_link()?.map(|l| SyncInfo {
             server_url: l.server_url.clone(),
-            email: l.email.clone(),
         }))
     }
 
-    /// Creates a server account for this vault and uploads it.
+    /// Creates a server account for this vault and uploads it. `invite`
+    /// may be empty when the server accepts open registrations.
     pub fn register_sync(
         &self,
         server_url: String,
-        email: String,
         password: Vec<u8>,
         secret_key: String,
         device_name: String,
+        invite: String,
     ) -> Result<SyncSummary, VaultFailure> {
         let password = Zeroizing::new(password);
         let secret_key = parse_secret_key(secret_key)?;
+        let invite = invite.trim();
         let report = arcanum_sync::register(
             &mut *self.vault()?,
             &server_url,
-            &email,
             &password,
             &secret_key,
             &device_name,
+            (!invite.is_empty()).then_some(invite),
         )?;
         Ok(report.into())
     }
@@ -225,7 +234,6 @@ impl VaultHandle {
     pub fn sign_in(
         &self,
         server_url: String,
-        email: String,
         password: Vec<u8>,
         secret_key: String,
         device_name: String,
@@ -235,7 +243,6 @@ impl VaultHandle {
         let report = arcanum_sync::sign_in(
             &mut *self.vault()?,
             &server_url,
-            &email,
             &password,
             &secret_key,
             &device_name,
@@ -344,7 +351,11 @@ impl From<SyncError> for VaultFailure {
                 message: m,
             },
             SyncError::InvalidLogin => Self::new(C::InvalidLogin),
-            SyncError::EmailTaken => Self::new(C::EmailTaken),
+            SyncError::AccountExists => Self::new(C::AccountExists),
+            SyncError::InviteRequired => Self::new(C::InviteRequired),
+            SyncError::InvalidInvite => Self::new(C::InvalidInvite),
+            SyncError::RegistrationClosed => Self::new(C::RegistrationClosed),
+            SyncError::QuotaExceeded => Self::new(C::QuotaExceeded),
             SyncError::Unauthorized => Self::new(C::SessionExpired),
             SyncError::TooManyRequests => Self::new(C::TooManyRequests),
             SyncError::NotLinked => Self::new(C::NotLinked),

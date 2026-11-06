@@ -9,10 +9,18 @@ pub enum SyncError {
     InvalidUrl(&'static str),
     #[error("cannot reach the server: {0}")]
     Network(String),
-    #[error("wrong email, master password or Secret Key")]
+    #[error("wrong master password or Secret Key")]
     InvalidLogin,
-    #[error("an account with this email already exists")]
-    EmailTaken,
+    #[error("an account with this Secret Key already exists on the server")]
+    AccountExists,
+    #[error("this server requires an invite code to register")]
+    InviteRequired,
+    #[error("invalid, used or expired invite code")]
+    InvalidInvite,
+    #[error("this server does not accept new accounts")]
+    RegistrationClosed,
+    #[error("storage quota exceeded on the server")]
+    QuotaExceeded,
     #[error("session expired, sign in again")]
     Unauthorized,
     #[error("too many attempts, try again later")]

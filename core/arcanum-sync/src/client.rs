@@ -6,7 +6,7 @@ use arcanum_proto::opaque_ke::{
     ClientRegistrationFinishParameters, CredentialResponse, Identifiers, RegistrationResponse,
 };
 use arcanum_proto::{
-    DeviceInfo, ErrorCode, ErrorResponse, LoginFinishRequest, LoginStartRequest,
+    DeviceInfo, DeviceNameRequest, ErrorCode, ErrorResponse, LoginFinishRequest, LoginStartRequest,
     LoginStartResponse, OpaqueMessage, OpaqueSuite, PasswordFinishRequest, PreloginRequest,
     PreloginResponse, PullResponse, PushRequest, PushResponse, RegisterFinishRequest,
     RegisterStartRequest, SessionResponse, VaultRecord, OPAQUE_CONTEXT,
@@ -51,27 +51,28 @@ impl Client {
         &self.base
     }
 
-    pub fn prelogin(&self, email: &str) -> Result<PreloginResponse> {
+    /// `login_id` is `arcanum_crypto::kdf::login_id` of the Secret Key.
+    pub fn prelogin(&self, login_id: &str) -> Result<PreloginResponse> {
         self.post(
             "/v1/prelogin",
             &PreloginRequest {
-                email: email.to_owned(),
+                login_id: login_id.to_owned(),
             },
         )
     }
 
     pub fn register(
         &mut self,
-        email: &str,
+        login_id: &str,
         auth_key: &AuthKey,
         bundle: &AccountBundle,
-        device_name: &str,
+        invite: Option<&str>,
     ) -> Result<SessionResponse> {
-        let upload = self.opaque_registration("/v1/register/start", Some(email), auth_key)?;
+        let upload = self.opaque_registration("/v1/register/start", Some(login_id), auth_key)?;
         let session: SessionResponse = self.post(
             "/v1/register/finish",
             &RegisterFinishRequest {
-                email: email.to_owned(),
+                login_id: login_id.to_owned(),
                 message: upload,
                 account_id: bundle.account_id.clone(),
                 account_keys: bundle.keys.clone(),
@@ -79,26 +80,23 @@ impl Client {
                     id: bundle.vault_id.clone(),
                     wrapped_key: bundle.wrapped_vault_key.clone(),
                 },
-                device_name: device_name.to_owned(),
+                invite: invite
+                    .map(str::trim)
+                    .filter(|c| !c.is_empty())
+                    .map(str::to_owned),
             },
         )?;
         self.token = Some(session.token.clone());
         Ok(session)
     }
 
-    pub fn login(
-        &mut self,
-        email: &str,
-        auth_key: &AuthKey,
-        device_name: &str,
-    ) -> Result<SessionResponse> {
-        let (login_id, message) = self.opaque_login(email, auth_key)?;
+    pub fn login(&mut self, login_id: &str, auth_key: &AuthKey) -> Result<SessionResponse> {
+        let (attempt_id, message) = self.opaque_login(login_id, auth_key)?;
         let session: SessionResponse = self.post(
             "/v1/login/finish",
             &LoginFinishRequest {
-                login_id,
+                attempt_id,
                 message,
-                device_name: device_name.to_owned(),
             },
         )?;
         self.token = Some(session.token.clone());
@@ -111,17 +109,17 @@ impl Client {
     /// out by the server.
     pub fn change_password(
         &self,
-        email: &str,
+        login_id: &str,
         current_auth_key: &AuthKey,
         new_auth_key: &AuthKey,
         keys: &EncryptedAccountKeys,
     ) -> Result<()> {
-        let (login_id, login_message) = self.opaque_login(email, current_auth_key)?;
+        let (attempt_id, login_message) = self.opaque_login(login_id, current_auth_key)?;
         let upload = self.opaque_registration("/v1/password/start", None, new_auth_key)?;
         self.post_no_content(
             "/v1/password/finish",
             &PasswordFinishRequest {
-                login_id,
+                attempt_id,
                 login_message,
                 message: upload,
                 account_keys: keys.clone(),
@@ -129,22 +127,22 @@ impl Client {
         )
     }
 
-    /// OPAQUE login up to the client's final message; returns the login id
-    /// and the `CredentialFinalization` to send to the server.
-    fn opaque_login(&self, email: &str, auth_key: &AuthKey) -> Result<(String, Vec<u8>)> {
+    /// OPAQUE login up to the client's final message; returns the attempt
+    /// id and the `CredentialFinalization` to send to the server.
+    fn opaque_login(&self, login_id: &str, auth_key: &AuthKey) -> Result<(String, Vec<u8>)> {
         let mut rng = OsRng;
         let start = ClientLogin::<OpaqueSuite>::start(&mut rng, auth_key.as_bytes())
             .map_err(|_| SyncError::Protocol("OPAQUE login start"))?;
         let challenge: LoginStartResponse = self.post(
             "/v1/login/start",
             &LoginStartRequest {
-                email: email.to_owned(),
+                login_id: login_id.to_owned(),
                 message: start.message.serialize().to_vec(),
             },
         )?;
         let response = CredentialResponse::<OpaqueSuite>::deserialize(&challenge.message)
             .map_err(|_| SyncError::Protocol("OPAQUE credential response"))?;
-        // Fails here (client side) on a wrong password or unknown email.
+        // Fails here (client side) on a wrong password or unknown account.
         let finish = start
             .state
             .finish(
@@ -158,14 +156,24 @@ impl Client {
                 ),
             )
             .map_err(|_| SyncError::InvalidLogin)?;
-        Ok((challenge.login_id, finish.message.serialize().to_vec()))
+        Ok((challenge.attempt_id, finish.message.serialize().to_vec()))
     }
+
     pub fn logout(&self) -> Result<()> {
         self.post_no_content("/v1/logout", &())
     }
 
     pub fn devices(&self) -> Result<Vec<DeviceInfo>> {
         self.get("/v1/devices")
+    }
+
+    /// Sets this session's name, already encrypted by the vault.
+    pub fn set_device_name(&self, sealed_name: Vec<u8>) -> Result<()> {
+        Self::check(
+            self.request("PUT", "/v1/devices/current")
+                .send_json(&DeviceNameRequest { name: sealed_name }),
+        )
+        .map(drop)
     }
 
     pub fn revoke_device(&self, id: &str) -> Result<()> {
@@ -176,18 +184,18 @@ impl Client {
     fn opaque_registration(
         &self,
         start_path: &str,
-        email: Option<&str>,
+        login_id: Option<&str>,
         auth_key: &AuthKey,
     ) -> Result<Vec<u8>> {
         let mut rng = OsRng;
         let start = ClientRegistration::<OpaqueSuite>::start(&mut rng, auth_key.as_bytes())
             .map_err(|_| SyncError::Protocol("OPAQUE registration start"))?;
         let message = start.message.serialize().to_vec();
-        let reply: OpaqueMessage = match email {
-            Some(email) => self.post(
+        let reply: OpaqueMessage = match login_id {
+            Some(login_id) => self.post(
                 start_path,
                 &RegisterStartRequest {
-                    email: email.to_owned(),
+                    login_id: login_id.to_owned(),
                     message,
                 },
             )?,
@@ -240,7 +248,11 @@ impl Client {
                 Err(match body.map(|b| (b.error, b.message)) {
                     Some((ErrorCode::Unauthorized, _)) => SyncError::Unauthorized,
                     Some((ErrorCode::InvalidLogin, _)) => SyncError::InvalidLogin,
-                    Some((ErrorCode::EmailTaken, _)) => SyncError::EmailTaken,
+                    Some((ErrorCode::AccountExists, _)) => SyncError::AccountExists,
+                    Some((ErrorCode::InviteRequired, _)) => SyncError::InviteRequired,
+                    Some((ErrorCode::InvalidInvite, _)) => SyncError::InvalidInvite,
+                    Some((ErrorCode::RegistrationClosed, _)) => SyncError::RegistrationClosed,
+                    Some((ErrorCode::QuotaExceeded, _)) => SyncError::QuotaExceeded,
                     Some((ErrorCode::TooManyRequests, _)) => SyncError::TooManyRequests,
                     Some((ErrorCode::CursorAhead, _)) => SyncError::ServerRestored,
                     Some((_, message)) => SyncError::Server(message),

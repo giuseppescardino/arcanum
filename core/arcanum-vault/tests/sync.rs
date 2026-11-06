@@ -285,7 +285,6 @@ fn sync_link_is_encrypted_and_requires_unlock() {
     let (mut a, _, sk) = two_devices();
     let link = SyncLink {
         server_url: "https://sync.example".into(),
-        email: "a@example.com".into(),
         token: "secret-token".into(),
     };
     a.set_sync_link(&link).unwrap();
@@ -527,4 +526,29 @@ fn second_device_resyncs_without_spurious_conflicts() {
         assert_eq!(v.item(&edited.id).unwrap().data.password, "changed");
     }
     assert_eq!(server.live_titles(&a), ["Edited", "From B"]);
+}
+
+#[test]
+fn device_names_are_shared_by_the_account_only() {
+    let (a, b, _) = two_devices();
+    let sealed = a.seal_device_name("  Laptop di prova  ").unwrap();
+    assert!(!sealed.windows(6).any(|w| w == b"Laptop"));
+    // Any device of the same account can read it.
+    assert_eq!(
+        b.open_device_name(&sealed).unwrap().as_deref(),
+        Some("Laptop di prova")
+    );
+    // Another account can't, and tampering is detected.
+    let mut other = Vault::open_in_memory().unwrap();
+    other.create(PW, KdfParams::DEFAULT).unwrap();
+    assert_eq!(other.open_device_name(&sealed).unwrap(), None);
+    let mut tampered = sealed.clone();
+    *tampered.last_mut().unwrap() ^= 1;
+    assert_eq!(a.open_device_name(&tampered).unwrap(), None);
+    // Long names are cut.
+    let long = a.seal_device_name(&"x".repeat(500)).unwrap();
+    assert_eq!(
+        a.open_device_name(&long).unwrap().unwrap().chars().count(),
+        arcanum_vault::MAX_DEVICE_NAME_CHARS
+    );
 }

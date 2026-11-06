@@ -2,12 +2,16 @@
 //!
 //! Needs a database: `TEST_DATABASE_URL` (default
 //! `postgres://postgres@localhost:5433/arcanum_test`). Each test starts its own
-//! server on a random port and uses unique emails, so tests can share it.
+//! server on a random port and creates fresh accounts (each with its own
+//! Secret Key, hence login id), so tests can share it.
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::env;
+use std::net::SocketAddr;
 
+use arcanum_crypto::kdf::login_id;
+use arcanum_server::{Config, Registration};
 use arcanum_sync::SyncError;
 use arcanum_vault::{ItemData, KdfParams, SecretKey, Vault, VaultError};
 use sqlx::postgres::PgPoolOptions;
@@ -29,19 +33,31 @@ async fn pool() -> PgPool {
     pool
 }
 
-/// Returns the base URL of a fresh server instance.
+/// Returns the base URL of a fresh server instance with open registration.
 async fn start_server(pool: PgPool) -> String {
-    let app = arcanum_server::app(pool).await.expect("app");
+    start_server_with(
+        pool,
+        Config {
+            registration: Registration::Open,
+            ..Config::default()
+        },
+    )
+    .await
+}
+
+async fn start_server_with(pool: PgPool, config: Config) -> String {
+    let app = arcanum_server::app(pool, config).await.expect("app");
     let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
     let port = listener.local_addr().expect("addr").port();
     tokio::spawn(async move {
-        axum::serve(listener, app).await.expect("serve");
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .expect("serve");
     });
     format!("http://127.0.0.1:{port}")
-}
-
-fn email() -> String {
-    format!("{}@test.local", Uuid::new_v4())
 }
 
 fn login(title: &str, password: &str) -> ItemData {
@@ -53,11 +69,11 @@ fn login(title: &str, password: &str) -> ItemData {
 }
 
 /// Device A: new local vault with one item, registered on the server.
-fn registered_device(url: &str, email: &str) -> (Vault, SecretKey) {
+fn registered_device(url: &str) -> (Vault, SecretKey) {
     let mut a = Vault::open_in_memory().unwrap();
     let sk = a.create(PW, KdfParams::DEFAULT).unwrap();
     a.add_item(&login("GitHub", "gh-secret-1")).unwrap();
-    let r = arcanum_sync::register(&mut a, url, email, PW, &sk, "Laptop").unwrap();
+    let r = arcanum_sync::register(&mut a, url, PW, &sk, "Laptop", None).unwrap();
     assert_eq!(r.pushed, 1);
     (a, sk)
 }
@@ -72,11 +88,10 @@ fn blocking<T: Send + 'static>(
 async fn register_sign_in_and_sync_both_ways() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (mut a, sk) = registered_device(&url, &email);
+        let (mut a, sk) = registered_device(&url);
 
         let mut b = Vault::open_in_memory().unwrap();
-        let r = arcanum_sync::sign_in(&mut b, &url, &email, PW, &sk, "Phone").unwrap();
+        let r = arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
         assert_eq!(r.pulled, 1);
         assert!(b.is_unlocked());
         let item = b.items().unwrap().pop().unwrap();
@@ -105,13 +120,11 @@ async fn register_sign_in_and_sync_both_ways() {
 async fn bad_credentials_look_like_unknown_accounts() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (_, sk) = registered_device(&url, &email);
+        let (_, sk) = registered_device(&url);
 
         let wrong_pw = arcanum_sync::sign_in(
             &mut Vault::open_in_memory().unwrap(),
             &url,
-            &email,
             b"nope",
             &sk,
             "X",
@@ -125,7 +138,6 @@ async fn bad_credentials_look_like_unknown_accounts() {
         let wrong_sk = arcanum_sync::sign_in(
             &mut Vault::open_in_memory().unwrap(),
             &url,
-            &email,
             PW,
             &other_sk,
             "X",
@@ -135,22 +147,9 @@ async fn bad_credentials_look_like_unknown_accounts() {
             "{wrong_sk:?}"
         );
 
-        let unknown = arcanum_sync::sign_in(
-            &mut Vault::open_in_memory().unwrap(),
-            &url,
-            &self::email(),
-            PW,
-            &sk,
-            "X",
-        );
-        assert!(
-            matches!(unknown, Err(SyncError::InvalidLogin)),
-            "{unknown:?}"
-        );
-
         // Prelogin answers consistently for accounts that don't exist.
         let client = arcanum_sync::Client::new(&url).unwrap();
-        let ghost = self::email();
+        let ghost = login_id(&SecretKey::generate().unwrap()).unwrap();
         assert_eq!(
             client.prelogin(&ghost).unwrap(),
             client.prelogin(&ghost).unwrap()
@@ -161,15 +160,13 @@ async fn bad_credentials_look_like_unknown_accounts() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn email_cannot_be_registered_twice() {
+async fn account_cannot_be_registered_twice() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        registered_device(&url, &email);
-        let mut other = Vault::open_in_memory().unwrap();
-        let sk = other.create(PW, KdfParams::DEFAULT).unwrap();
-        let r = arcanum_sync::register(&mut other, &url, &email.to_uppercase(), PW, &sk, "X");
-        assert!(matches!(r, Err(SyncError::EmailTaken)), "{r:?}");
+        let (mut a, sk) = registered_device(&url);
+        arcanum_sync::unlink(&mut a).unwrap();
+        let r = arcanum_sync::register(&mut a, &url, PW, &sk, "X", None);
+        assert!(matches!(r, Err(SyncError::AccountExists)), "{r:?}");
     })
     .await
     .unwrap();
@@ -179,10 +176,9 @@ async fn email_cannot_be_registered_twice() {
 async fn password_change_signs_out_other_devices() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (mut a, sk) = registered_device(&url, &email);
+        let (mut a, sk) = registered_device(&url);
         let mut b = Vault::open_in_memory().unwrap();
-        arcanum_sync::sign_in(&mut b, &url, &email, PW, &sk, "Phone").unwrap();
+        arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
 
         arcanum_sync::change_password(&mut a, PW, b"new password!", &sk).unwrap();
         assert!(
@@ -196,17 +192,10 @@ async fn password_change_signs_out_other_devices() {
             "{r:?}"
         );
 
-        let old = arcanum_sync::sign_in(
-            &mut Vault::open_in_memory().unwrap(),
-            &url,
-            &email,
-            PW,
-            &sk,
-            "C",
-        );
+        let old = arcanum_sync::sign_in(&mut Vault::open_in_memory().unwrap(), &url, PW, &sk, "C");
         assert!(matches!(old, Err(SyncError::InvalidLogin)));
         let mut c = Vault::open_in_memory().unwrap();
-        arcanum_sync::sign_in(&mut c, &url, &email, b"new password!", &sk, "C").unwrap();
+        arcanum_sync::sign_in(&mut c, &url, b"new password!", &sk, "C").unwrap();
         assert_eq!(c.items().unwrap().len(), 1);
 
         a.lock();
@@ -220,8 +209,7 @@ async fn password_change_signs_out_other_devices() {
 async fn unlink_revokes_the_session() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (mut a, _) = registered_device(&url, &email);
+        let (mut a, _) = registered_device(&url);
         let link = a.sync_link().unwrap().unwrap();
         arcanum_sync::unlink(&mut a).unwrap();
         assert!(!a.is_linked().unwrap());
@@ -239,18 +227,20 @@ async fn unlink_revokes_the_session() {
 async fn devices_can_be_listed_and_revoked() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (a, sk) = registered_device(&url, &email);
+        let (a, sk) = registered_device(&url);
         let mut b = Vault::open_in_memory().unwrap();
-        arcanum_sync::sign_in(&mut b, &url, &email, PW, &sk, "Phone").unwrap();
+        arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
 
-        let token = a.sync_link().unwrap().unwrap().token.clone();
-        let client = arcanum_sync::Client::new(&url).unwrap().with_token(token);
-        let devices = client.devices().unwrap();
+        let devices = arcanum_sync::devices(&a).unwrap();
         assert_eq!(devices.len(), 2);
-        let phone = devices.iter().find(|d| d.name == "Phone").unwrap();
+        let phone = devices
+            .iter()
+            .find(|d| d.name.as_deref() == Some("Phone"))
+            .unwrap();
         assert!(!phone.current);
-        client.revoke_device(&phone.id).unwrap();
+        let laptop = devices.iter().find(|d| d.current).unwrap();
+        assert_eq!(laptop.name.as_deref(), Some("Laptop"));
+        arcanum_sync::revoke_device(&a, &phone.id).unwrap();
 
         assert!(matches!(
             arcanum_sync::sync_now(&mut b),
@@ -265,14 +255,12 @@ async fn devices_can_be_listed_and_revoked() {
 async fn repeated_failed_logins_are_throttled() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (_, sk) = registered_device(&url, &email);
+        let (_, sk) = registered_device(&url);
         let mut throttled = false;
         for _ in 0..12 {
             let r = arcanum_sync::sign_in(
                 &mut Vault::open_in_memory().unwrap(),
                 &url,
-                &email,
                 b"guess",
                 &sk,
                 "X",
@@ -292,11 +280,10 @@ async fn repeated_failed_logins_are_throttled() {
 async fn server_stores_no_plaintext() {
     let pool = pool().await;
     let url = start_server(pool.clone()).await;
-    let email = email();
     let account_id = {
-        let (url, email) = (url.clone(), email.clone());
+        let url = url.clone();
         blocking(move || {
-            let (a, _) = registered_device(&url, &email);
+            let (a, _) = registered_device(&url);
             a.account_bundle().unwrap().account_id
         })
         .await
@@ -324,9 +311,17 @@ async fn server_stores_no_plaintext() {
         .await
         .unwrap();
     blobs.push(keys.into_bytes());
+    let names: Vec<Option<Vec<u8>>> =
+        sqlx::query_scalar("SELECT device_name FROM sessions WHERE account_id = $1")
+            .bind(account_id)
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert!(names.iter().all(Option::is_some), "device name was set");
+    blobs.extend(names.into_iter().flatten());
 
     let all: Vec<u8> = blobs.concat();
-    for needle in [&b"gh-secret-1"[..], b"GitHub", b"alice", PW] {
+    for needle in [&b"gh-secret-1"[..], b"GitHub", b"alice", b"Laptop", PW] {
         assert!(
             !all.windows(needle.len()).any(|w| w == needle),
             "plaintext {:?} found in server database",
@@ -339,10 +334,9 @@ async fn server_stores_no_plaintext() {
 async fn reconnect_after_password_change_elsewhere() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (mut a, sk) = registered_device(&url, &email);
+        let (mut a, sk) = registered_device(&url);
         let mut b = Vault::open_in_memory().unwrap();
-        arcanum_sync::sign_in(&mut b, &url, &email, PW, &sk, "Phone").unwrap();
+        arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
 
         arcanum_sync::change_password(&mut a, PW, b"new password!", &sk).unwrap();
         a.add_item(&login("After change", "x")).unwrap();
@@ -376,8 +370,7 @@ async fn reconnect_after_password_change_elsewhere() {
 async fn stolen_token_cannot_change_password() {
     let url = start_server(pool().await).await;
     blocking(move || {
-        let email = email();
-        let (a, sk) = registered_device(&url, &email);
+        let (a, sk) = registered_device(&url);
         let token = a.sync_link().unwrap().unwrap().token.clone();
         let thief = arcanum_sync::Client::new(&url).unwrap().with_token(token);
 
@@ -393,12 +386,13 @@ async fn stolen_token_cannot_change_password() {
             .auth_key
         };
         let keys = a.account_bundle().unwrap().keys;
-        let r = thief.change_password(&email, &fake(b"guess"), &fake(b"mine"), &keys);
+        let id = login_id(&sk).unwrap();
+        let r = thief.change_password(&id, &fake(b"guess"), &fake(b"mine"), &keys);
         assert!(matches!(r, Err(SyncError::InvalidLogin)), "{r:?}");
 
         // The real owner can still sign in with the original password.
         let mut b = Vault::open_in_memory().unwrap();
-        arcanum_sync::sign_in(&mut b, &url, &email, PW, &sk, "Phone").unwrap();
+        arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
     })
     .await
     .unwrap();
@@ -411,11 +405,10 @@ async fn stolen_token_cannot_change_password() {
 async fn restored_server_gets_resynced_by_devices() {
     let pool = pool().await;
     let url = start_server(pool.clone()).await;
-    let email = email();
     let (mut a, sk, account) = {
-        let (url, email) = (url.clone(), email.clone());
+        let url = url.clone();
         blocking(move || {
-            let (mut a, sk) = registered_device(&url, &email);
+            let (mut a, sk) = registered_device(&url);
             a.add_item(&login("After backup", "x")).unwrap();
             arcanum_sync::sync_now(&mut a).unwrap();
             let link = a.sync_link().unwrap().unwrap();
@@ -424,8 +417,8 @@ async fn restored_server_gets_resynced_by_devices() {
         .await
         .unwrap()
     };
-    let account_id: Uuid = sqlx::query_scalar("SELECT id FROM accounts WHERE email = $1")
-        .bind(&account.email)
+    let account_id: Uuid = sqlx::query_scalar("SELECT id FROM accounts WHERE login_id = $1")
+        .bind(login_id(&sk).unwrap())
         .fetch_one(&pool)
         .await
         .unwrap();
@@ -467,7 +460,6 @@ async fn restored_server_gets_resynced_by_devices() {
         // Same server address after a real restart; here a new port.
         a.set_sync_link(&arcanum_vault::SyncLink {
             server_url: restarted,
-            email: account.email.clone(),
             token: account.token.clone(),
         })
         .unwrap();
@@ -490,7 +482,7 @@ async fn cursor_beyond_the_server_is_reported() {
     let url = start_server(pool().await).await;
     blocking(move || {
         use arcanum_vault::SyncTransport;
-        let (a, _) = registered_device(&url, &email());
+        let (a, _) = registered_device(&url);
         let token = a.sync_link().unwrap().unwrap().token.clone();
         let mut client = arcanum_sync::Client::new(&url).unwrap().with_token(token);
         assert!(client.pull(0).is_ok());
@@ -498,6 +490,233 @@ async fn cursor_beyond_the_server_is_reported() {
             client.pull(i64::MAX / 2),
             Err(VaultError::ServerRestored)
         ));
+    })
+    .await
+    .unwrap();
+}
+
+/// A registration that goes through: fresh vault, optional invite.
+fn try_register(url: &str, invite: Option<&str>) -> Result<(Vault, SecretKey), SyncError> {
+    let mut v = Vault::open_in_memory().unwrap();
+    let sk = v.create(PW, KdfParams::DEFAULT).unwrap();
+    arcanum_sync::register(&mut v, url, PW, &sk, "Laptop", invite)?;
+    Ok((v, sk))
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn invite_only_registration() {
+    let pool = pool().await;
+    let url = start_server_with(pool.clone(), Config::default()).await;
+    let (_, code) = arcanum_server::invites::create(&pool, Some("Mario (E1234)"), 7)
+        .await
+        .unwrap();
+    let (_, expired) = arcanum_server::invites::create(&pool, None, 7)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE invites SET expires_at = 0 WHERE code_hash = $1")
+        .bind(arcanum_server::invites::hash_code(&expired))
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let (sk, code2) = blocking(move || {
+        let r = try_register(&url, None).map(drop);
+        assert!(matches!(r, Err(SyncError::InviteRequired)), "{r:?}");
+        let r = try_register(&url, Some("INV-NOPE")).map(drop);
+        assert!(matches!(r, Err(SyncError::InvalidInvite)), "{r:?}");
+        let r = try_register(&url, Some(&expired)).map(drop);
+        assert!(matches!(r, Err(SyncError::InvalidInvite)), "{r:?}");
+
+        // Typed sloppily from paper: still accepted.
+        let typed = code.to_lowercase().replace('-', " ");
+        let (_, sk) = try_register(&url, Some(&typed)).unwrap();
+        // Single use.
+        let r = try_register(&url, Some(&code)).map(drop);
+        assert!(matches!(r, Err(SyncError::InvalidInvite)), "{r:?}");
+        (sk, code)
+    })
+    .await
+    .unwrap();
+
+    let label: Option<String> =
+        sqlx::query_scalar("SELECT label FROM accounts WHERE login_id = $1")
+            .bind(login_id(&sk).unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(label.as_deref(), Some("Mario (E1234)"));
+    let used: Option<i64> = sqlx::query_scalar("SELECT used_at FROM invites WHERE code_hash = $1")
+        .bind(arcanum_server::invites::hash_code(&code2))
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert!(used.is_some());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn failed_registration_does_not_burn_the_invite() {
+    let pool = pool().await;
+    let url = start_server_with(pool.clone(), Config::default()).await;
+    let (_, first) = arcanum_server::invites::create(&pool, None, 7)
+        .await
+        .unwrap();
+    let (_, second) = arcanum_server::invites::create(&pool, None, 7)
+        .await
+        .unwrap();
+    blocking(move || {
+        let (mut a, sk) = try_register(&url, Some(&first)).unwrap();
+        // A duplicate registration fails and leaves `second` unused...
+        arcanum_sync::unlink(&mut a).unwrap();
+        let r = arcanum_sync::register(&mut a, &url, PW, &sk, "X", Some(&second));
+        assert!(matches!(r, Err(SyncError::AccountExists)), "{r:?}");
+        // ...so someone else can still use it.
+        try_register(&url, Some(&second)).unwrap();
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn closed_registration() {
+    let url = start_server_with(
+        pool().await,
+        Config {
+            registration: Registration::Closed,
+            ..Config::default()
+        },
+    )
+    .await;
+    blocking(move || {
+        let r = try_register(&url, Some("INV-ANYTHING")).map(drop);
+        assert!(matches!(r, Err(SyncError::RegistrationClosed)), "{r:?}");
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn admin_commands() {
+    let pool = pool().await;
+    let args = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    let out = arcanum_server::admin::run(&pool, &args(&["invite", "create", "--label", "Ufficio"]))
+        .await
+        .unwrap();
+    let code = out
+        .split_whitespace()
+        .find(|w| w.starts_with("INV-"))
+        .unwrap()
+        .to_owned();
+    let url = start_server_with(pool.clone(), Config::default()).await;
+    let sk = blocking(move || try_register(&url, Some(&code)).unwrap().1)
+        .await
+        .unwrap();
+    let id: Uuid = sqlx::query_scalar("SELECT id FROM accounts WHERE login_id = $1")
+        .bind(login_id(&sk).unwrap())
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    let list = arcanum_server::admin::run(&pool, &args(&["account", "list"]))
+        .await
+        .unwrap();
+    assert!(
+        list.contains(&id.to_string()) && list.contains("Ufficio"),
+        "{list}"
+    );
+    arcanum_server::admin::run(&pool, &args(&["account", "delete", &id.to_string()]))
+        .await
+        .unwrap();
+    let left: i64 = sqlx::query_scalar("SELECT count(*) FROM accounts WHERE id = $1")
+        .bind(id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(left, 0);
+    assert!(arcanum_server::admin::run(&pool, &args(&["bogus"]))
+        .await
+        .is_err());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn item_quota_is_enforced() {
+    let url = start_server_with(
+        pool().await,
+        Config {
+            registration: Registration::Open,
+            max_items_per_account: 2,
+            ..Config::default()
+        },
+    )
+    .await;
+    blocking(move || {
+        let (mut a, _) = registered_device(&url); // 1 item
+        a.add_item(&login("Second", "x")).unwrap();
+        assert_eq!(arcanum_sync::sync_now(&mut a).unwrap().pushed, 1);
+        a.add_item(&login("Third", "x")).unwrap();
+        let r = arcanum_sync::sync_now(&mut a);
+        assert!(
+            matches!(&r, Err(SyncError::Vault(VaultError::Transport(m))) if m.contains("quota")),
+            "{r:?}"
+        );
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn unauthenticated_bodies_are_small() {
+    let url = start_server(pool().await).await;
+    blocking(move || {
+        let big = format!(r#"{{"login_id":"{}"}}"#, "a".repeat(100 * 1024));
+        let r = ureq::post(&format!("{url}/v1/prelogin"))
+            .set("Content-Type", "application/json")
+            .send_string(&big);
+        assert!(matches!(r, Err(ureq::Error::Status(413, _))), "{r:?}");
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn auth_endpoints_are_rate_limited_per_ip() {
+    let url = start_server(pool().await).await;
+    blocking(move || {
+        let client = arcanum_sync::Client::new(&url).unwrap();
+        let id = login_id(&SecretKey::generate().unwrap()).unwrap();
+        let mut limited = false;
+        for _ in 0..70 {
+            match client.prelogin(&id) {
+                Ok(_) => {}
+                Err(SyncError::TooManyRequests) => {
+                    limited = true;
+                    break;
+                }
+                Err(e) => panic!("{e:?}"),
+            }
+        }
+        assert!(limited);
+        // Other endpoints of the API still answer for this client.
+        let h = ureq::get(&format!("{url}/health")).call().unwrap();
+        assert_eq!(h.into_string().unwrap(), "ok");
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn malformed_login_attempts_do_not_lock_the_account() {
+    let url = start_server(pool().await).await;
+    blocking(move || {
+        let (_, sk) = registered_device(&url);
+        let id = login_id(&sk).unwrap();
+        // Garbage OPAQUE messages are rejected without counting as attempts.
+        for _ in 0..15 {
+            let r = ureq::post(&format!("{url}/v1/login/start"))
+                .send_json(serde_json::json!({"login_id": id, "message": "AAAA"}));
+            assert!(matches!(r, Err(ureq::Error::Status(400, _))), "{r:?}");
+        }
+        let mut b = Vault::open_in_memory().unwrap();
+        arcanum_sync::sign_in(&mut b, &url, PW, &sk, "Phone").unwrap();
     })
     .await
     .unwrap();

@@ -65,6 +65,25 @@ stages:
             artifact: arcanum-server-linux-x64
             displayName: Publish arcanum-server
 
+      - job: SupplyChain
+        displayName: Dependencies (cargo audit + cargo deny)
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - template: .azure/steps/install-rust.yml
+
+          - bash: cargo install --locked cargo-deny cargo-audit
+            displayName: Install cargo-deny and cargo-audit
+
+          # Audit exceptions explained in .github/workflows/ci.yml.
+          - bash: cargo deny --locked check && cargo audit --ignore RUSTSEC-2026-0387 --ignore RUSTSEC-2023-0071
+            workingDirectory: core
+            displayName: core
+
+          - bash: cargo deny --locked check && cargo audit --ignore RUSTSEC-2026-0387 --ignore RUSTSEC-2023-0071
+            workingDirectory: server
+            displayName: server
+
       - job: Docker
         displayName: Docker image
         pool:

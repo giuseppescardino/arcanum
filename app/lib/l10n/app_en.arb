@@ -81,7 +81,7 @@
   "vaultForgetSecretKey": "Remove Secret Key from this device",
   "vaultSignOut": "Sign out of this device",
   "vaultSignOutTitle": "Sign out?",
-  "vaultSignOutBodySynced": "The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with email, master password and the Secret Key from your Emergency Kit.",
+  "vaultSignOutBodySynced": "The vault will be erased from this device, together with its Secret Key. Your data stays on the sync server: to use it again, sign in with your master password and the Secret Key from your Emergency Kit.",
   "vaultSignOutBodyLocal": "This vault is not synced to a server: signing out permanently erases all its items from this device. This cannot be undone.",
   "vaultSignOutSyncFailed": "Last sync failed, so recent changes may not be on the server and would be lost. Sign out anyway?",
   "vaultSignOutConfirm": "Sign out",
@@ -179,14 +179,6 @@
     "description": "Confirm button of the disconnect dialog"
   },
   "syncActive": "Sync is on",
-  "syncAccount": "Account: {email}",
-  "@syncAccount": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
   "syncServer": "Server: {url}",
   "@syncServer": {
     "placeholders": {
@@ -296,8 +288,8 @@
     "description": "Example URL shown as hint"
   },
   "commonSyncServerInvalid": "Full address, e.g. https://sync.example.com",
-  "commonEmail": "Email",
-  "commonInvalidEmail": "Invalid email",
+  "commonInviteCode": "Invite code",
+  "commonInviteCodeHelper": "Only if your server requires one",
   "generatorTitle": "Generate password",
   "generatorPassphrase": "Passphrase",
   "generatorRegenerate": "Regenerate",
@@ -352,8 +344,12 @@
   "errorNotInitialized": "No vault found.",
   "errorAlreadyInitialized": "The vault already exists.",
   "errorNotFound": "Item not found.",
-  "errorInvalidLogin": "Wrong email, master password or Secret Key.",
-  "errorEmailTaken": "An account with this email already exists.",
+  "errorInvalidLogin": "Wrong master password or Secret Key, or no account with this Secret Key on the server.",
+  "errorAccountExists": "This vault already has an account on the server: use \"I already have an account\" on your other devices.",
+  "errorInviteRequired": "This server only accepts new accounts with an invite code: ask its administrator.",
+  "errorInvalidInvite": "Invalid invite code: it may be mistyped, already used or expired.",
+  "errorRegistrationClosed": "This server doesn't accept new accounts.",
+  "errorQuotaExceeded": "Your account has reached the server's storage limit.",
   "errorSessionExpired": "The sync session has expired: reconnect this device.",
   "errorTooManyRequests": "Too many attempts. Try again in a few minutes.",
   "errorInvalidServerUrl": "Invalid server address: it must start with https://",

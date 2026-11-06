@@ -15,6 +15,11 @@ use crate::{CryptoError, Result, SecretKey, SymmetricKey, KEY_LEN, SECRET_KEY_LE
 pub const SALT_LEN: usize = 16;
 const MUK_INFO: &[u8] = b"pm/muk/v1";
 const AUTH_INFO: &[u8] = b"pm/auth/v1";
+const LOGIN_ID_INFO: &[u8] = b"pm/login-id/v1";
+/// Length of the decoded login identifier.
+pub const LOGIN_ID_LEN: usize = 32;
+/// Length of the login identifier as sent on the wire (base64url, no padding).
+pub const LOGIN_ID_CHARS: usize = 43;
 
 /// Argon2id cost parameters. They are stored server-side next to the
 /// wrapped account key, so clients must refuse values below the minimum to
@@ -136,6 +141,22 @@ pub fn derive_keys(
     })
 }
 
+/// The account's identifier on the sync server:
+/// `HKDF-SHA256(IKM = SecretKey, info = "pm/login-id/v1")`, base64url.
+///
+/// It replaces the email: every device already needs the Secret Key to sign
+/// in, so there is nothing extra to remember, and its 128 bits of entropy
+/// make it unguessable (no account enumeration, squatting or targeted
+/// lockouts). HKDF is one-way, so the server can't recover the Secret Key,
+/// and the label keeps it independent of the MUK and the Auth Key.
+pub fn login_id(secret_key: &SecretKey) -> Result<String> {
+    let hkdf = Hkdf::<Sha256>::new(None, secret_key.as_bytes());
+    let mut out = Zeroizing::new([0u8; LOGIN_ID_LEN]);
+    hkdf.expand(LOGIN_ID_INFO, out.as_mut_slice())
+        .map_err(|_| CryptoError::Kdf)?;
+    Ok(data_encoding::BASE64URL_NOPAD.encode(out.as_slice()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -207,6 +228,23 @@ mod tests {
         );
         let other = derive_keys(b"pw", &sk(2), &[0; SALT_LEN], &KdfParams::DEFAULT).unwrap();
         assert_ne!(keys.auth_key, other.auth_key);
+    }
+
+    #[test]
+    fn login_id_is_stable_unique_and_separate() {
+        let id = login_id(&sk(1)).unwrap();
+        assert_eq!(id.len(), LOGIN_ID_CHARS);
+        assert_eq!(id, login_id(&sk(1)).unwrap());
+        assert_ne!(id, login_id(&sk(2)).unwrap());
+        let keys = derive_keys(b"pw", &sk(1), &[0; SALT_LEN], &KdfParams::DEFAULT).unwrap();
+        let raw = data_encoding::BASE64URL_NOPAD
+            .decode(id.as_bytes())
+            .unwrap();
+        assert_ne!(raw.as_slice(), keys.auth_key.as_bytes());
+        assert_ne!(raw.as_slice(), keys.muk.as_bytes());
+        assert!(id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
     }
 
     #[test]

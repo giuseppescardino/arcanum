@@ -89,6 +89,32 @@ jobs:
           name: arcanum-server-linux-x64
           path: server/target/release/arcanum-server
 
+  supply-chain:
+    name: Dependencies (cargo audit + cargo deny)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: [core, server]
+    defaults:
+      run:
+        working-directory: ${{ matrix.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny,cargo-audit
+      - name: cargo deny (advisories, licenses, bans, sources)
+        run: cargo deny --locked check
+      # cargo deny already checks advisories on the compiled graph; cargo
+      # audit scans the whole lockfile. Exceptions:
+      # - RUSTSEC-2026-0387 (crypto-bigint): see deny.toml.
+      # - RUSTSEC-2023-0071 (rsa): only in sqlx-mysql, listed in the
+      #   lockfile but not compiled (Postgres only).
+      - name: cargo audit
+        run: cargo audit --ignore RUSTSEC-2026-0387 --ignore RUSTSEC-2023-0071
+
   docker:
     name: Docker image
     runs-on: ubuntu-latest

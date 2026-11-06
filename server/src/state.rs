@@ -6,26 +6,53 @@ use rand_core::{OsRng, RngCore};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::limiter::LoginLimiter;
+use crate::config::Config;
+use crate::limiter::{IpLimiter, LoginLimiter};
+
+/// Per-IP limits (requests per window).
+const AUTH_PER_MINUTE: u32 = 60;
+const REGISTER_PER_HOUR: u32 = 20;
+const API_PER_MINUTE: u32 = 600;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
     pub opaque: Arc<ServerSetup<OpaqueSuite>>,
-    /// Keys the fake prelogin salts returned for unknown emails.
+    /// Keys the fake prelogin salts returned for unknown login ids.
     pub prelogin_secret: Arc<[u8; 32]>,
     /// Sent with every pull. Deleting it from `server_config` (the restore
     /// procedure does) makes a new one on the next start, so clients notice
     /// the restore and resync.
     pub sync_epoch: Arc<str>,
     pub limiter: Arc<LoginLimiter>,
+    pub limits: Arc<IpLimits>,
+    pub config: Arc<Config>,
+}
+
+pub struct IpLimits {
+    /// `/v1/prelogin` and `/v1/login/*`.
+    pub auth: IpLimiter,
+    /// `/v1/register/*`: bounds account creation on open servers.
+    pub register: IpLimiter,
+    /// Every `/v1` request.
+    pub api: IpLimiter,
+}
+
+impl Default for IpLimits {
+    fn default() -> Self {
+        Self {
+            auth: IpLimiter::new(AUTH_PER_MINUTE, 60 * 1000),
+            register: IpLimiter::new(REGISTER_PER_HOUR, 60 * 60 * 1000),
+            api: IpLimiter::new(API_PER_MINUTE, 60 * 1000),
+        }
+    }
 }
 
 impl AppState {
     /// Loads the long-term server secrets, generating them on first start.
     /// They must survive restarts: losing the OPAQUE setup invalidates
     /// every registration.
-    pub async fn load(pool: PgPool) -> Result<Self, sqlx::Error> {
+    pub async fn load(pool: PgPool, config: Config) -> Result<Self, sqlx::Error> {
         let setup_bytes = get_or_init(&pool, "opaque_server_setup", || {
             ServerSetup::<OpaqueSuite>::new(&mut OsRng)
                 .serialize()
@@ -62,6 +89,8 @@ impl AppState {
             opaque: Arc::new(opaque),
             prelogin_secret: Arc::new(prelogin_secret),
             limiter: Arc::new(LoginLimiter::default()),
+            limits: Arc::new(IpLimits::default()),
+            config: Arc::new(config),
         })
     }
 }
