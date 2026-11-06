@@ -52,4 +52,11 @@ flutter test integration_test -d <device-id>
 
 ## Signing
 
-The project contains no signing identity. To install on an iOS/macOS device, set your own team in Xcode (Runner → Signing & Capabilities); the keychain access group used by quick unlock requires a valid team.
+The project contains no signing identity. To install on an iOS/macOS device you need your own Apple team: the keychain access group used by quick unlock requires a valid one. Copy `signing.local.xcconfig.example` to `signing.local.xcconfig` (ignored by git) and set `DEVELOPMENT_TEAM` to your Team ID; both the iOS and macOS projects include it, so `flutter build` and `flutter run` sign with that team.
+
+The first macOS build on a Mac that is not yet registered in the team must register it and create the profile, once:
+
+```bash
+xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner -configuration Release \
+  -derivedDataPath build/macos -allowProvisioningUpdates -allowProvisioningDeviceRegistration build
+```

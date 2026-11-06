@@ -12,3 +12,6 @@ PRODUCT_BUNDLE_IDENTIFIER = io.github.giuseppescardino.arcanum
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Arcanum contributors.
+
+// Local code signing (Team ID), see app/signing.local.xcconfig.example
+#include? "../../../signing.local.xcconfig"
