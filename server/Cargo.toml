@@ -21,7 +21,7 @@ hmac = "0.12"
 base64 = "0.22"
 data-encoding = "2"
 tower = { version = "0.5", features = ["limit"] }
-tower-http = { version = "0.6", features = ["trace", "limit", "timeout"] }
+tower-http = { version = "0.7", features = ["trace", "limit", "timeout"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2"
