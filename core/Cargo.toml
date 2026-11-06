@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 rust-version = "1.80"
 
 [workspace.dependencies]
-argon2 = { version = "0.5", default-features = false, features = ["alloc", "zeroize"] }
+argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
 chacha20poly1305 = { version = "0.10", features = ["std"] }
 hkdf = "0.12"
 sha2 = "0.10"
