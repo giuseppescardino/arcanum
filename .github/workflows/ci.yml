@@ -84,7 +84,7 @@ jobs:
       - name: cargo build --release
         run: cargo build --release --locked
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: arcanum-server-linux-x64
           path: server/target/release/arcanum-server
@@ -174,7 +174,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk \
             "$RUNNER_TEMP/android/Arcanum-android-arm64.apk"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-android
           path: ${{ runner.temp }}/android
@@ -215,7 +215,7 @@ jobs:
           cp -R build/ios/iphoneos/Runner.app "$out/Payload/"
           (cd "$out" && zip -qry Arcanum-ios-unsigned.ipa Payload && rm -rf Payload)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-ios-unsigned
           path: ${{ runner.temp }}/ios
@@ -260,7 +260,7 @@ jobs:
           ditto -c -k --keepParent build/macos-ci/Build/Products/Release/Arcanum.app \
             "$out/Arcanum-macos-universal.zip"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-macos
           path: ${{ runner.temp }}/macos
@@ -284,7 +284,7 @@ jobs:
       - name: flutter build windows
         run: flutter build windows --release
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-windows-x64
           path: app/build/windows/x64/runner/Release
