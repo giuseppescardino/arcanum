@@ -96,6 +96,131 @@
   "@aboutDescription": {
     "description": "One-line description of the app in the About dialog"
   },
+  "breachTitle": "Compromised passwords",
+  "@breachTitle": {
+    "description": "Vault menu entry and title of the breached-password check"
+  },
+  "breachExplanation": "Arcanum compares your passwords with the Have I Been Pwned archive of passwords exposed in data breaches. Only the first 5 characters of each password's SHA-1 hash leave this device, over an encrypted connection: neither the password nor its full hash is ever sent. Results stay in memory and are forgotten when the vault locks.",
+  "@breachExplanation": {
+    "description": "Privacy explanation on the breach check screen"
+  },
+  "breachAutoTitle": "Automatic check and reminder",
+  "@breachAutoTitle": {
+    "description": "Switch that opts in to the automatic breach check"
+  },
+  "breachAutoSubtitle": "Check a password when you open or edit it, and remind me every month to check the whole vault",
+  "@breachAutoSubtitle": {
+    "description": "Subtitle of the automatic breach check switch"
+  },
+  "breachNeverChecked": "The vault has never been fully checked",
+  "@breachNeverChecked": {
+    "description": "No vault-wide breach check done yet"
+  },
+  "breachLastCheck": "Last full check: {date}",
+  "@breachLastCheck": {
+    "description": "Date of the last complete vault-wide breach check",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Nov 8, 2026"
+      }
+    }
+  },
+  "breachCheckAll": "Check all passwords",
+  "@breachCheckAll": {
+    "description": "Button that checks every vault password against breaches"
+  },
+  "breachProgress": "Checked {done} of {total}",
+  "@breachProgress": {
+    "description": "Progress of the vault-wide breach check",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "breachSomeFailed": "{count, plural, =1{1 password could not be checked} other{{count} passwords could not be checked}}: {error}",
+  "@breachSomeFailed": {
+    "description": "Some passwords could not be checked (network error...)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "breachNoneFound": "None of your passwords appears in known breaches.",
+  "@breachNoneFound": {
+    "description": "Vault-wide check found nothing"
+  },
+  "breachCompromisedCount": "{count, plural, =1{1 password appears in data breaches: change it} other{{count} passwords appear in data breaches: change them}}",
+  "@breachCompromisedCount": {
+    "description": "Vault-wide check result",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "breachFound": "{count, plural, =1{Found once in data breaches} other{Found {count} times in data breaches}}",
+  "@breachFound": {
+    "description": "A password was found in breaches",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "breachNotFound": "Not found in known breaches",
+  "@breachNotFound": {
+    "description": "A password was not found in breaches"
+  },
+  "breachChecking": "Checking known breaches…",
+  "@breachChecking": {
+    "description": "A breach check is running"
+  },
+  "breachCheckFailed": "Could not check: {error}",
+  "@breachCheckFailed": {
+    "description": "A breach check failed: the password is not known to be safe",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "breachRetry": "Retry",
+  "@breachRetry": {
+    "description": "Retry a failed breach check"
+  },
+  "breachCheckThis": "Check if compromised",
+  "@breachCheckThis": {
+    "description": "One-off breach check of the password in the editor"
+  },
+  "breachReminderFirst": "Check whether any of your passwords appears in known data breaches.",
+  "@breachReminderFirst": {
+    "description": "Reminder banner before the first vault-wide check"
+  },
+  "breachReminder": "Your passwords haven't been checked against known breaches for over a month.",
+  "@breachReminder": {
+    "description": "Monthly reminder banner"
+  },
+  "breachLater": "Later",
+  "@breachLater": {
+    "description": "Dismiss the breach check reminder"
+  },
+  "breachCheckNow": "Check now",
+  "@breachCheckNow": {
+    "description": "Start the vault-wide breach check from the reminder"
+  },
+  "breachCompromisedTooltip": "Password found in a data breach",
+  "@breachCompromisedTooltip": {
+    "description": "Tooltip of the warning icon on a vault item"
+  },
   "vaultForgetSecretKey": "Remove Secret Key from this device",
   "vaultSignOut": "Sign out of this device",
   "vaultSignOutTitle": "Sign out?",

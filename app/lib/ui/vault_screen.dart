@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/android_autofill.dart';
+import '../app/breach_check.dart';
 import '../app/clipboard.dart';
 import '../app/messages.dart';
 import '../app/quick_access.dart';
@@ -9,6 +10,7 @@ import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'about.dart';
+import 'breach_check_screen.dart';
 import 'item_editor_screen.dart';
 import 'language_picker.dart';
 import 'sync_screen.dart';
@@ -29,6 +31,7 @@ enum _MenuAction {
   autofill,
   language,
   changePassword,
+  breach,
   about,
   forgetSecretKey,
   signOut,
@@ -128,6 +131,18 @@ class _VaultScreenState extends State<VaultScreen> {
     );
   }
 
+  void _openBreachCheck({bool start = false}) {
+    final checker = BreachScope.maybeOf(context);
+    if (start && checker != null) {
+      checker.checkAll(BreachCheckScreen.passwordsOf(_controller));
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BreachCheckScreen(controller: _controller),
+      ),
+    );
+  }
+
   Future<void> _renameGroup(String group) async {
     final name = await showDialog<String>(
       context: context,
@@ -178,6 +193,7 @@ class _VaultScreenState extends State<VaultScreen> {
   });
 
   Widget _buildList(List<MapEntry<String, List<VaultItem>>> sections) {
+    final breach = BreachScope.maybeOf(context);
     // Headers only help when there is something to tell apart.
     final showHeaders = _groupFilter == null && _controller.groups.isNotEmpty;
     final searching = _query.trim().isNotEmpty;
@@ -199,7 +215,13 @@ class _VaultScreenState extends State<VaultScreen> {
       }
       if (showHeaders && collapsed) continue;
       for (final item in section.value) {
-        rows.add(_ItemTile(item: item, onTap: () => _openEditor(item)));
+        rows.add(
+          _ItemTile(
+            item: item,
+            compromised: (breach?.countFor(item.fields.password) ?? 0) > 0,
+            onTap: () => _openEditor(item),
+          ),
+        );
       }
     }
     return ListView(padding: const EdgeInsets.only(bottom: 88), children: rows);
@@ -230,6 +252,8 @@ class _VaultScreenState extends State<VaultScreen> {
         await AndroidAutofill.openSettings();
       case _MenuAction.language:
         await showLanguageDialog(context);
+      case _MenuAction.breach:
+        _openBreachCheck();
       case _MenuAction.about:
         await showArcanumAbout(context);
       case _MenuAction.changePassword:
@@ -321,6 +345,7 @@ class _VaultScreenState extends State<VaultScreen> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
+        final breach = BreachScope.maybeOf(context);
         final groups = _controller.groups;
         // The filtered group may have been renamed or emptied elsewhere.
         if (_groupFilter != null &&
@@ -387,6 +412,14 @@ class _VaultScreenState extends State<VaultScreen> {
                       label: context.l10n.vaultChangeMasterPassword,
                     ),
                   ),
+                  if (breach != null)
+                    PopupMenuItem(
+                      value: _MenuAction.breach,
+                      child: _MenuEntry(
+                        icon: Icons.gpp_maybe_outlined,
+                        label: context.l10n.breachTitle,
+                      ),
+                    ),
                   PopupMenuItem(
                     value: _MenuAction.about,
                     child: _MenuEntry(
@@ -473,6 +506,25 @@ class _VaultScreenState extends State<VaultScreen> {
                       onPressed: () =>
                           showReconnectDialog(context, _controller),
                       child: Text(context.l10n.reconnect),
+                    ),
+                  ],
+                ),
+              if (breach != null && breach.checkDue)
+                MaterialBanner(
+                  leading: const Icon(Icons.gpp_maybe_outlined),
+                  content: Text(
+                    breach.lastCheck == null
+                        ? context.l10n.breachReminderFirst
+                        : context.l10n.breachReminder,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: breach.dismissReminder,
+                      child: Text(context.l10n.breachLater),
+                    ),
+                    TextButton(
+                      onPressed: () => _openBreachCheck(start: true),
+                      child: Text(context.l10n.breachCheckNow),
                     ),
                   ],
                 ),
@@ -683,10 +735,17 @@ class _RenameGroupDialogState extends State<_RenameGroupDialog> {
 }
 
 class _ItemTile extends StatelessWidget {
-  const _ItemTile({required this.item, required this.onTap});
+  const _ItemTile({
+    required this.item,
+    required this.onTap,
+    this.compromised = false,
+  });
 
   final VaultItem item;
   final VoidCallback onTap;
+
+  /// The password was found in a breach by the last check.
+  final bool compromised;
 
   @override
   Widget build(BuildContext context) {
@@ -713,6 +772,17 @@ class _ItemTile extends StatelessWidget {
           if (f.favorite) ...[
             const SizedBox(width: 6),
             const Icon(Icons.star, size: 16),
+          ],
+          if (compromised) ...[
+            const SizedBox(width: 6),
+            Tooltip(
+              message: context.l10n.breachCompromisedTooltip,
+              child: Icon(
+                Icons.gpp_bad_outlined,
+                size: 16,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
           ],
         ],
       ),

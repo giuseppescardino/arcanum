@@ -296,6 +296,138 @@ abstract class AppLocalizations {
   /// **'Zero-knowledge password manager: your data is encrypted on this device before it is synced.'**
   String get aboutDescription;
 
+  /// Vault menu entry and title of the breached-password check
+  ///
+  /// In en, this message translates to:
+  /// **'Compromised passwords'**
+  String get breachTitle;
+
+  /// Privacy explanation on the breach check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Arcanum compares your passwords with the Have I Been Pwned archive of passwords exposed in data breaches. Only the first 5 characters of each password\'s SHA-1 hash leave this device, over an encrypted connection: neither the password nor its full hash is ever sent. Results stay in memory and are forgotten when the vault locks.'**
+  String get breachExplanation;
+
+  /// Switch that opts in to the automatic breach check
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic check and reminder'**
+  String get breachAutoTitle;
+
+  /// Subtitle of the automatic breach check switch
+  ///
+  /// In en, this message translates to:
+  /// **'Check a password when you open or edit it, and remind me every month to check the whole vault'**
+  String get breachAutoSubtitle;
+
+  /// No vault-wide breach check done yet
+  ///
+  /// In en, this message translates to:
+  /// **'The vault has never been fully checked'**
+  String get breachNeverChecked;
+
+  /// Date of the last complete vault-wide breach check
+  ///
+  /// In en, this message translates to:
+  /// **'Last full check: {date}'**
+  String breachLastCheck(String date);
+
+  /// Button that checks every vault password against breaches
+  ///
+  /// In en, this message translates to:
+  /// **'Check all passwords'**
+  String get breachCheckAll;
+
+  /// Progress of the vault-wide breach check
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {done} of {total}'**
+  String breachProgress(int done, int total);
+
+  /// Some passwords could not be checked (network error...)
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 password could not be checked} other{{count} passwords could not be checked}}: {error}'**
+  String breachSomeFailed(int count, String error);
+
+  /// Vault-wide check found nothing
+  ///
+  /// In en, this message translates to:
+  /// **'None of your passwords appears in known breaches.'**
+  String get breachNoneFound;
+
+  /// Vault-wide check result
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 password appears in data breaches: change it} other{{count} passwords appear in data breaches: change them}}'**
+  String breachCompromisedCount(int count);
+
+  /// A password was found in breaches
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Found once in data breaches} other{Found {count} times in data breaches}}'**
+  String breachFound(int count);
+
+  /// A password was not found in breaches
+  ///
+  /// In en, this message translates to:
+  /// **'Not found in known breaches'**
+  String get breachNotFound;
+
+  /// A breach check is running
+  ///
+  /// In en, this message translates to:
+  /// **'Checking known breaches…'**
+  String get breachChecking;
+
+  /// A breach check failed: the password is not known to be safe
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check: {error}'**
+  String breachCheckFailed(String error);
+
+  /// Retry a failed breach check
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get breachRetry;
+
+  /// One-off breach check of the password in the editor
+  ///
+  /// In en, this message translates to:
+  /// **'Check if compromised'**
+  String get breachCheckThis;
+
+  /// Reminder banner before the first vault-wide check
+  ///
+  /// In en, this message translates to:
+  /// **'Check whether any of your passwords appears in known data breaches.'**
+  String get breachReminderFirst;
+
+  /// Monthly reminder banner
+  ///
+  /// In en, this message translates to:
+  /// **'Your passwords haven\'t been checked against known breaches for over a month.'**
+  String get breachReminder;
+
+  /// Dismiss the breach check reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get breachLater;
+
+  /// Start the vault-wide breach check from the reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get breachCheckNow;
+
+  /// Tooltip of the warning icon on a vault item
+  ///
+  /// In en, this message translates to:
+  /// **'Password found in a data breach'**
+  String get breachCompromisedTooltip;
+
   /// No description provided for @vaultForgetSecretKey.
   ///
   /// In en, this message translates to:

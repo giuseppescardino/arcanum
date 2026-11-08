@@ -6,6 +6,7 @@
 //! the Secret Key (`arcanum_crypto::kdf::login_id`): signing in needs only
 //! the server address, the master password and the Secret Key.
 
+pub mod breach;
 mod client;
 mod error;
 

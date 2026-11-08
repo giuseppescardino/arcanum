@@ -117,6 +117,7 @@ version = "0.1.0"
 dependencies = [
  "arcanum-crypto",
  "arcanum-proto",
+ "arcanum-tools",
  "arcanum-vault",
  "rand_core 0.6.4",
  "serde",

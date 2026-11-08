@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../app/breach_check.dart';
 import '../app/clipboard.dart';
 import '../app/messages.dart';
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
+import 'breach_status.dart';
 import 'generator_dialog.dart';
 import 'strength_meter.dart';
 import 'totp_view.dart';
@@ -45,6 +47,16 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
 
   bool get _isNew => widget.item == null;
 
+  /// With the automatic check on, checks the stored password when the
+  /// editor opens and a new one when the field loses focus — never while
+  /// typing, so partial passwords don't reach the network.
+  void _autoCheckBreach() {
+    final checker = BreachScope.maybeOf(context);
+    if (checker == null || !checker.enabled) return;
+    if (_kind != VaultItemKind.login) return;
+    checker.check(_password.text);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +70,9 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     _totp = TextEditingController(text: f?.totp);
     _notes = TextEditingController(text: f?.notes);
     _group = TextEditingController(text: f?.group ?? widget.initialGroup ?? '');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _autoCheckBreach();
+    });
   }
 
   @override
@@ -240,34 +255,46 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  PasswordField(
-                    controller: _password,
-                    label: context.l10n.password,
-                    textInputAction: TextInputAction.next,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: context.l10n.editorGenerate,
-                          icon: const Icon(Icons.casino_outlined),
-                          onPressed: _generate,
-                        ),
-                        IconButton(
-                          tooltip: context.l10n.copy,
-                          icon: const Icon(Icons.copy),
-                          onPressed: () => copySecret(
-                            context,
-                            _password.text,
-                            label: context.l10n.password,
+                  Focus(
+                    canRequestFocus: false,
+                    skipTraversal: true,
+                    onFocusChange: (focused) {
+                      if (!focused) _autoCheckBreach();
+                    },
+                    child: PasswordField(
+                      controller: _password,
+                      label: context.l10n.password,
+                      textInputAction: TextInputAction.next,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: context.l10n.editorGenerate,
+                            icon: const Icon(Icons.casino_outlined),
+                            onPressed: _generate,
                           ),
-                        ),
-                      ],
+                          IconButton(
+                            tooltip: context.l10n.copy,
+                            icon: const Icon(Icons.copy),
+                            onPressed: () => copySecret(
+                              context,
+                              _password.text,
+                              label: context.l10n.password,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   ValueListenableBuilder(
                     valueListenable: _password,
-                    builder: (_, value, _) =>
+                    builder: (_, value, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                         StrengthMeter(password: value.text),
+                        BreachStatus(password: value.text),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

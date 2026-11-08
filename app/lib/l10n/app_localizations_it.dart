@@ -122,6 +122,109 @@ class AppLocalizationsIt extends AppLocalizations {
       'Password manager zero-knowledge: i dati vengono cifrati su questo dispositivo prima della sincronizzazione.';
 
   @override
+  String get breachTitle => 'Password compromesse';
+
+  @override
+  String get breachExplanation =>
+      'Arcanum confronta le tue password con l\'archivio di Have I Been Pwned delle password esposte in violazioni di dati. Da questo dispositivo escono solo i primi 5 caratteri dell\'hash SHA-1 di ogni password, su una connessione cifrata: né la password né il suo hash completo vengono mai inviati. I risultati restano in memoria e vengono dimenticati quando il vault si blocca.';
+
+  @override
+  String get breachAutoTitle => 'Controllo automatico e promemoria';
+
+  @override
+  String get breachAutoSubtitle =>
+      'Controlla una password quando la apri o la modifichi e ricordami ogni mese di controllare tutto il vault';
+
+  @override
+  String get breachNeverChecked =>
+      'Il vault non è mai stato controllato per intero';
+
+  @override
+  String breachLastCheck(String date) {
+    return 'Ultimo controllo completo: $date';
+  }
+
+  @override
+  String get breachCheckAll => 'Controlla tutte le password';
+
+  @override
+  String breachProgress(int done, int total) {
+    return 'Controllate $done di $total';
+  }
+
+  @override
+  String breachSomeFailed(int count, String error) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Non è stato possibile controllare $count password',
+      one: 'Non è stato possibile controllare 1 password',
+    );
+    return '$_temp0: $error';
+  }
+
+  @override
+  String get breachNoneFound =>
+      'Nessuna delle tue password compare nelle violazioni note.';
+
+  @override
+  String breachCompromisedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count password compaiono in violazioni di dati: cambiale',
+      one: '1 password compare in violazioni di dati: cambiala',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String breachFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Trovata $count volte in violazioni di dati',
+      one: 'Trovata una volta in violazioni di dati',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get breachNotFound => 'Non trovata nelle violazioni note';
+
+  @override
+  String get breachChecking => 'Controllo nelle violazioni note…';
+
+  @override
+  String breachCheckFailed(String error) {
+    return 'Impossibile controllare: $error';
+  }
+
+  @override
+  String get breachRetry => 'Riprova';
+
+  @override
+  String get breachCheckThis => 'Controlla se è compromessa';
+
+  @override
+  String get breachReminderFirst =>
+      'Controlla se qualcuna delle tue password compare in violazioni di dati note.';
+
+  @override
+  String get breachReminder =>
+      'Le tue password non vengono controllate nelle violazioni note da più di un mese.';
+
+  @override
+  String get breachLater => 'Più tardi';
+
+  @override
+  String get breachCheckNow => 'Controlla ora';
+
+  @override
+  String get breachCompromisedTooltip =>
+      'Password trovata in una violazione di dati';
+
+  @override
   String get vaultForgetSecretKey => 'Rimuovi Secret Key da questo dispositivo';
 
   @override

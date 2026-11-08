@@ -33,6 +33,13 @@ TotpCode totpCode({
 bool isValidTotp({required String secret}) =>
     RustLib.instance.api.crateApiToolsIsValidTotp(secret: secret);
 
+/// Times `password` appears in known breaches (Have I Been Pwned, only a
+/// five-digit SHA-1 prefix is sent); 0 if never seen. Saturates at
+/// `u32::MAX`. Fails with `Network`/`TooManyRequests`/`Internal` when the
+/// check could not be done: that never means "safe".
+Future<int> pwnedPasswordCount({required String password}) =>
+    RustLib.instance.api.crateApiToolsPwnedPasswordCount(password: password);
+
 class PassphraseGeneratorOptions {
   final int words;
   final String separator;
