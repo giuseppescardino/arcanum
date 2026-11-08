@@ -278,6 +278,24 @@ abstract class AppLocalizations {
   /// **'Change master password'**
   String get vaultChangeMasterPassword;
 
+  /// Vault menu entry that opens the About dialog
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get vaultAbout;
+
+  /// Version line in the About dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String aboutVersion(String version);
+
+  /// One-line description of the app in the About dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-knowledge password manager: your data is encrypted on this device before it is synced.'**
+  String get aboutDescription;
+
   /// No description provided for @vaultForgetSecretKey.
   ///
   /// In en, this message translates to:

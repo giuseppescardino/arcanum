@@ -110,6 +110,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get vaultChangeMasterPassword => 'Cambia master password';
 
   @override
+  String get vaultAbout => 'Informazioni';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Versione $version';
+  }
+
+  @override
+  String get aboutDescription =>
+      'Password manager zero-knowledge: i dati vengono cifrati su questo dispositivo prima della sincronizzazione.';
+
+  @override
   String get vaultForgetSecretKey => 'Rimuovi Secret Key da questo dispositivo';
 
   @override

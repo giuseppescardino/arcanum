@@ -8,6 +8,7 @@ import '../app/tools.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
+import 'about.dart';
 import 'item_editor_screen.dart';
 import 'language_picker.dart';
 import 'sync_screen.dart';
@@ -28,6 +29,7 @@ enum _MenuAction {
   autofill,
   language,
   changePassword,
+  about,
   forgetSecretKey,
   signOut,
 }
@@ -228,6 +230,8 @@ class _VaultScreenState extends State<VaultScreen> {
         await AndroidAutofill.openSettings();
       case _MenuAction.language:
         await showLanguageDialog(context);
+      case _MenuAction.about:
+        await showArcanumAbout(context);
       case _MenuAction.changePassword:
         await showDialog<void>(
           context: context,
@@ -381,6 +385,13 @@ class _VaultScreenState extends State<VaultScreen> {
                     child: _MenuEntry(
                       icon: Icons.key,
                       label: context.l10n.vaultChangeMasterPassword,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _MenuAction.about,
+                    child: _MenuEntry(
+                      icon: Icons.info_outline,
+                      label: context.l10n.vaultAbout,
                     ),
                   ),
                   const PopupMenuDivider(),
