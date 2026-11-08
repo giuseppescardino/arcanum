@@ -78,6 +78,24 @@
   },
   "vaultEnableAutofill": "Enable autofill",
   "vaultChangeMasterPassword": "Change master password",
+  "vaultAbout": "About",
+  "@vaultAbout": {
+    "description": "Vault menu entry that opens the About dialog"
+  },
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "description": "Version line in the About dialog",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.1.0 (1)"
+      }
+    }
+  },
+  "aboutDescription": "Zero-knowledge password manager: your data is encrypted on this device before it is synced.",
+  "@aboutDescription": {
+    "description": "One-line description of the app in the About dialog"
+  },
   "vaultForgetSecretKey": "Remove Secret Key from this device",
   "vaultSignOut": "Sign out of this device",
   "vaultSignOutTitle": "Sign out?",
