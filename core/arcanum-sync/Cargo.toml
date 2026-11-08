@@ -10,6 +10,7 @@ rust-version.workspace = true
 arcanum-crypto.workspace = true
 arcanum-proto.workspace = true
 arcanum-vault.workspace = true
+arcanum-tools.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 rand_core.workspace = true

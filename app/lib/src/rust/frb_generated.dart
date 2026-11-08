@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 151657717;
+  int get rustContentHash => 1350537578;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -206,6 +206,8 @@ abstract class RustLibApi extends BaseApi {
   bool crateApiToolsIsValidTotp({required String secret});
 
   PasswordStrength crateApiToolsPasswordStrength({required String password});
+
+  Future<int> crateApiToolsPwnedPasswordCount({required String password});
 
   TotpCode crateApiToolsTotpCode({
     required String secret,
@@ -1285,6 +1287,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<int> crateApiToolsPwnedPasswordCount({required String password}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(password, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 31,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: sse_decode_vault_failure,
+        ),
+        constMeta: kCrateApiToolsPwnedPasswordCountConstMeta,
+        argValues: [password],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiToolsPwnedPasswordCountConstMeta =>
+      const TaskConstMeta(
+        debugName: "pwned_password_count",
+        argNames: ["password"],
+      );
+
+  @override
   TotpCode crateApiToolsTotpCode({
     required String secret,
     required PlatformInt64 unixSeconds,
@@ -1295,7 +1328,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(secret, serializer);
           sse_encode_i_64(unixSeconds, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_totp_code,

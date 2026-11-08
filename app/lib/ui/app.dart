@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app/breach_check.dart';
 import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
@@ -12,11 +13,17 @@ import 'unlock_screen.dart';
 import 'vault_screen.dart';
 
 class ArcanumApp extends StatefulWidget {
-  ArcanumApp({super.key, required this.controller, LanguageSettings? language})
-    : language = language ?? LanguageSettings();
+  ArcanumApp({
+    super.key,
+    required this.controller,
+    LanguageSettings? language,
+    BreachChecker? breach,
+  }) : language = language ?? LanguageSettings(),
+       breach = breach ?? BreachChecker();
 
   final VaultController controller;
   final LanguageSettings language;
+  final BreachChecker breach;
 
   @override
   State<ArcanumApp> createState() => _ArcanumAppState();
@@ -66,6 +73,8 @@ class _ArcanumAppState extends State<ArcanumApp> {
     if (_controller.stage != _lastStage) {
       _lastStage = _controller.stage;
       _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      // Breach results name vault passwords: forget them when locked.
+      if (_lastStage != VaultStage.unlocked) widget.breach.clear();
     }
   }
 
@@ -73,34 +82,37 @@ class _ArcanumAppState extends State<ArcanumApp> {
   Widget build(BuildContext context) {
     return LanguageScope(
       settings: widget.language,
-      child: ListenableBuilder(
-        listenable: Listenable.merge([_controller, widget.language]),
-        builder: (context, _) => MaterialApp(
-          title: 'Arcanum',
-          navigatorKey: _navigatorKey,
-          debugShowCheckedModeBanner: false,
-          theme: appTheme(Brightness.light),
-          darkTheme: appTheme(Brightness.dark),
-          locale: widget.language.locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          builder: (context, child) {
-            trackLocale(context);
-            return Listener(
-              onPointerDown: (_) => _controller.touch(),
-              child: child,
-            );
-          },
-          home: KeyedSubtree(
-            key: ValueKey(_controller.stage),
-            child: switch (_controller.stage) {
-              VaultStage.setup => SetupScreen(controller: _controller),
-              VaultStage.emergencyKit => EmergencyKitScreen(
-                controller: _controller,
-              ),
-              VaultStage.locked => UnlockScreen(controller: _controller),
-              VaultStage.unlocked => VaultScreen(controller: _controller),
+      child: BreachScope(
+        checker: widget.breach,
+        child: ListenableBuilder(
+          listenable: Listenable.merge([_controller, widget.language]),
+          builder: (context, _) => MaterialApp(
+            title: 'Arcanum',
+            navigatorKey: _navigatorKey,
+            debugShowCheckedModeBanner: false,
+            theme: appTheme(Brightness.light),
+            darkTheme: appTheme(Brightness.dark),
+            locale: widget.language.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            builder: (context, child) {
+              trackLocale(context);
+              return Listener(
+                onPointerDown: (_) => _controller.touch(),
+                child: child,
+              );
             },
+            home: KeyedSubtree(
+              key: ValueKey(_controller.stage),
+              child: switch (_controller.stage) {
+                VaultStage.setup => SetupScreen(controller: _controller),
+                VaultStage.emergencyKit => EmergencyKitScreen(
+                  controller: _controller,
+                ),
+                VaultStage.locked => UnlockScreen(controller: _controller),
+                VaultStage.unlocked => VaultScreen(controller: _controller),
+              },
+            ),
           ),
         ),
       ),

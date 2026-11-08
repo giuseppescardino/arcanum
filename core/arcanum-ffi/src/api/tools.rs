@@ -1,5 +1,6 @@
 //! Generator, strength meter and TOTP for the UI. All synchronous: they
-//! are fast and called while the user types or every second.
+//! are fast and called while the user types or every second. The
+//! breached-password check is the exception: it goes to the network.
 
 use arcanum_tools::{PassphraseOptions, PasswordOptions, StrengthLevel, TotpConfig};
 use flutter_rust_bridge::frb;
@@ -105,6 +106,16 @@ pub fn totp_code(secret: String, unix_seconds: i64) -> Result<TotpCode, VaultFai
 #[frb(sync)]
 pub fn is_valid_totp(secret: String) -> bool {
     TotpConfig::parse(&zeroize::Zeroizing::new(secret)).is_ok()
+}
+
+/// Times `password` appears in known breaches (Have I Been Pwned, only a
+/// five-digit SHA-1 prefix is sent); 0 if never seen. Saturates at
+/// `u32::MAX`. Fails with `Network`/`TooManyRequests`/`Internal` when the
+/// check could not be done: that never means "safe".
+pub fn pwned_password_count(password: String) -> Result<u32, VaultFailure> {
+    let password = zeroize::Zeroizing::new(password);
+    let count = arcanum_sync::breach::pwned_count(&password)?;
+    Ok(u32::try_from(count).unwrap_or(u32::MAX))
 }
 
 fn invalid_input(e: impl std::fmt::Display) -> VaultFailure {

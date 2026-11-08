@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app/android_language.dart';
+import 'app/breach_check.dart';
 import 'app/language_settings.dart';
 import 'app/quick_access.dart';
 import 'app/secret_key_store.dart';
@@ -19,6 +20,15 @@ Future<LanguageSettings> _loadLanguage() async {
   );
   await settings.load();
   return settings;
+}
+
+Future<BreachChecker> _loadBreachChecker() async {
+  final dir = await getApplicationSupportDirectory();
+  final checker = BreachChecker(
+    store: FileBreachPrefsStore('${dir.path}/breach_check.json'),
+  );
+  await checker.load();
+  return checker;
 }
 
 Future<VaultController> _openVault() async {
@@ -40,8 +50,11 @@ Future<void> main() async {
   language.addListener(
     () => AndroidLanguage.apply(language.locale?.languageCode),
   );
+  final breach = await _loadBreachChecker();
   await QuickAccess.init();
-  runApp(ArcanumApp(controller: controller, language: language));
+  runApp(
+    ArcanumApp(controller: controller, language: language, breach: breach),
+  );
 }
 
 /// Entry point used by Android's AutofillActivity.

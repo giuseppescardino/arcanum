@@ -122,6 +122,107 @@ class AppLocalizationsEn extends AppLocalizations {
       'Zero-knowledge password manager: your data is encrypted on this device before it is synced.';
 
   @override
+  String get breachTitle => 'Compromised passwords';
+
+  @override
+  String get breachExplanation =>
+      'Arcanum compares your passwords with the Have I Been Pwned archive of passwords exposed in data breaches. Only the first 5 characters of each password\'s SHA-1 hash leave this device, over an encrypted connection: neither the password nor its full hash is ever sent. Results stay in memory and are forgotten when the vault locks.';
+
+  @override
+  String get breachAutoTitle => 'Automatic check and reminder';
+
+  @override
+  String get breachAutoSubtitle =>
+      'Check a password when you open or edit it, and remind me every month to check the whole vault';
+
+  @override
+  String get breachNeverChecked => 'The vault has never been fully checked';
+
+  @override
+  String breachLastCheck(String date) {
+    return 'Last full check: $date';
+  }
+
+  @override
+  String get breachCheckAll => 'Check all passwords';
+
+  @override
+  String breachProgress(int done, int total) {
+    return 'Checked $done of $total';
+  }
+
+  @override
+  String breachSomeFailed(int count, String error) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count passwords could not be checked',
+      one: '1 password could not be checked',
+    );
+    return '$_temp0: $error';
+  }
+
+  @override
+  String get breachNoneFound =>
+      'None of your passwords appears in known breaches.';
+
+  @override
+  String breachCompromisedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count passwords appear in data breaches: change them',
+      one: '1 password appears in data breaches: change it',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String breachFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count times in data breaches',
+      one: 'Found once in data breaches',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get breachNotFound => 'Not found in known breaches';
+
+  @override
+  String get breachChecking => 'Checking known breaches…';
+
+  @override
+  String breachCheckFailed(String error) {
+    return 'Could not check: $error';
+  }
+
+  @override
+  String get breachRetry => 'Retry';
+
+  @override
+  String get breachCheckThis => 'Check if compromised';
+
+  @override
+  String get breachReminderFirst =>
+      'Check whether any of your passwords appears in known data breaches.';
+
+  @override
+  String get breachReminder =>
+      'Your passwords haven\'t been checked against known breaches for over a month.';
+
+  @override
+  String get breachLater => 'Later';
+
+  @override
+  String get breachCheckNow => 'Check now';
+
+  @override
+  String get breachCompromisedTooltip => 'Password found in a data breach';
+
+  @override
   String get vaultForgetSecretKey => 'Remove Secret Key from this device';
 
   @override
