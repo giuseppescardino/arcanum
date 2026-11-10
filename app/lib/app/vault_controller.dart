@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
+import 'groups.dart';
 import 'messages.dart';
 import 'quick_unlock_store.dart';
 import 'secret_key_store.dart';
@@ -259,22 +260,73 @@ class VaultController extends ChangeNotifier {
     _scheduleSync();
   }
 
-  /// Names of the groups in use, sorted case-insensitively.
-  List<String> get groups {
-    final names = {
-      for (final i in items)
-        if (i.fields.group.isNotEmpty) i.fields.group,
-    }.toList();
-    names.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    return names;
-  }
+  /// Paths of the groups in use, parents included, in tree order: each
+  /// group is followed by its subgroups.
+  List<String> get groups =>
+      groupTree(items.map((i) => normalizeGroup(i.fields.group)));
 
-  /// Moves every item of [from] to [to]; an empty [to] ungroups them.
+  /// First-level groups only.
+  List<String> get rootGroups => [
+    for (final g in groups)
+      if (groupDepth(g) == 0) g,
+  ];
+
+  /// Moves group [from], subgroups included, to [to]; an empty [to]
+  /// ungroups their items.
   Future<void> renameGroup(String from, String to) async {
     final moved = await handle.renameGroup(from: from, to: to);
     if (moved == 0) return;
     await _reload();
     _scheduleSync();
+  }
+
+  // ---- Import ----
+
+  /// [incoming] without the items the vault already holds and without
+  /// repeats inside [incoming] itself.
+  List<ItemFields> newItemsAmong(List<ItemFields> incoming) {
+    final seen = {for (final i in items) _identity(i.fields)};
+    return [
+      for (final f in incoming)
+        if (seen.add(_identity(f))) f,
+    ];
+  }
+
+  static String _identity(ItemFields f) => [
+    f.kind.name,
+    f.title,
+    f.username,
+    f.password,
+    f.urls.join(' '),
+    if (f.kind == VaultItemKind.secureNote) f.notes,
+  ].join('\u0000');
+
+  /// Adds [fields] in one go; returns how many items were added.
+  Future<int> importItems(List<ItemFields> fields) async {
+    if (fields.isEmpty) return 0;
+    final added = await handle.addItems(items: fields);
+    await _reload();
+    _scheduleSync();
+    return added;
+  }
+
+  // ---- Lock on pause ----
+
+  int _pauseLockHolds = 0;
+
+  /// False while a system dialog (file picker) has the app in background
+  /// on the user's behalf.
+  bool get locksOnPause => _pauseLockHolds == 0;
+
+  /// Runs [action] without locking when the app is paused: opening a
+  /// system file dialog on mobile sends the app to the background.
+  Future<T> keepUnlocked<T>(Future<T> Function() action) async {
+    _pauseLockHolds++;
+    try {
+      return await action();
+    } finally {
+      _pauseLockHolds--;
+    }
   }
 
   // ---- Sync ----

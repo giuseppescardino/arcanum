@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app/breach_check.dart';
+import '../app/favicons.dart';
 import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
@@ -18,12 +19,15 @@ class ArcanumApp extends StatefulWidget {
     required this.controller,
     LanguageSettings? language,
     BreachChecker? breach,
+    FaviconCache? favicons,
   }) : language = language ?? LanguageSettings(),
-       breach = breach ?? BreachChecker();
+       breach = breach ?? BreachChecker(),
+       favicons = favicons ?? FaviconCache.disabled();
 
   final VaultController controller;
   final LanguageSettings language;
   final BreachChecker breach;
+  final FaviconCache favicons;
 
   @override
   State<ArcanumApp> createState() => _ArcanumAppState();
@@ -49,7 +53,7 @@ class _ArcanumAppState extends State<ArcanumApp> {
     _lifecycle = AppLifecycleListener(
       // On mobile, leaving the app locks the vault immediately.
       onPause: () {
-        if (_isMobile) _controller.lock();
+        if (_isMobile && _controller.locksOnPause) _controller.lock();
       },
     );
   }
@@ -74,7 +78,11 @@ class _ArcanumAppState extends State<ArcanumApp> {
       _lastStage = _controller.stage;
       _navigatorKey.currentState?.popUntil((route) => route.isFirst);
       // Breach results name vault passwords: forget them when locked.
-      if (_lastStage != VaultStage.unlocked) widget.breach.clear();
+      if (_lastStage != VaultStage.unlocked) {
+        widget.breach.clear();
+        // Icons tell which sites are in the vault.
+        widget.favicons.clear();
+      }
     }
   }
 
@@ -84,34 +92,37 @@ class _ArcanumAppState extends State<ArcanumApp> {
       settings: widget.language,
       child: BreachScope(
         checker: widget.breach,
-        child: ListenableBuilder(
-          listenable: Listenable.merge([_controller, widget.language]),
-          builder: (context, _) => MaterialApp(
-            title: 'Arcanum',
-            navigatorKey: _navigatorKey,
-            debugShowCheckedModeBanner: false,
-            theme: appTheme(Brightness.light),
-            darkTheme: appTheme(Brightness.dark),
-            locale: widget.language.locale,
-            supportedLocales: AppLocalizations.supportedLocales,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            builder: (context, child) {
-              trackLocale(context);
-              return Listener(
-                onPointerDown: (_) => _controller.touch(),
-                child: child,
-              );
-            },
-            home: KeyedSubtree(
-              key: ValueKey(_controller.stage),
-              child: switch (_controller.stage) {
-                VaultStage.setup => SetupScreen(controller: _controller),
-                VaultStage.emergencyKit => EmergencyKitScreen(
-                  controller: _controller,
-                ),
-                VaultStage.locked => UnlockScreen(controller: _controller),
-                VaultStage.unlocked => VaultScreen(controller: _controller),
+        child: FaviconScope(
+          cache: widget.favicons,
+          child: ListenableBuilder(
+            listenable: Listenable.merge([_controller, widget.language]),
+            builder: (context, _) => MaterialApp(
+              title: 'Arcanum',
+              navigatorKey: _navigatorKey,
+              debugShowCheckedModeBanner: false,
+              theme: appTheme(Brightness.light),
+              darkTheme: appTheme(Brightness.dark),
+              locale: widget.language.locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              builder: (context, child) {
+                trackLocale(context);
+                return Listener(
+                  onPointerDown: (_) => _controller.touch(),
+                  child: child,
+                );
               },
+              home: KeyedSubtree(
+                key: ValueKey(_controller.stage),
+                child: switch (_controller.stage) {
+                  VaultStage.setup => SetupScreen(controller: _controller),
+                  VaultStage.emergencyKit => EmergencyKitScreen(
+                    controller: _controller,
+                  ),
+                  VaultStage.locked => UnlockScreen(controller: _controller),
+                  VaultStage.unlocked => VaultScreen(controller: _controller),
+                },
+              ),
             ),
           ),
         ),

@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:arcanum/app/file_dialogs.dart';
+import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
 import 'package:arcanum/app/secret_key_store.dart';
+import 'package:arcanum/app/transfer.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 
 const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
@@ -236,15 +240,29 @@ class FakeVaultHandle implements VaultHandle {
   }
 
   @override
+  Future<int> addItems({required List<ItemFields> items}) async {
+    _requireUnlocked();
+    for (final fields in items) {
+      await addItem(fields: fields);
+    }
+    return items.length;
+  }
+
+  @override
   Future<int> renameGroup({required String from, required String to}) async {
     _requireUnlocked();
+    from = normalizeGroup(from);
+    to = normalizeGroup(to);
+    if (from.isEmpty || from == to) return 0;
     var moved = 0;
     for (final item in _items.values.toList()) {
-      if (from.trim().isEmpty || item.fields.group != from.trim()) continue;
+      final group = normalizeGroup(item.fields.group);
+      if (!groupContains(from, group)) continue;
+      final rest = group.substring(from.length);
       _items[item.id] = VaultItem(
         id: item.id,
         updatedAt: 1,
-        fields: _withGroup(item.fields, to.trim()),
+        fields: _withGroup(item.fields, to.isEmpty ? '' : '$to$rest'),
       );
       moved++;
     }
@@ -315,13 +333,95 @@ ItemFields login(
   String password = 'pw',
   bool favorite = false,
   String group = '',
+  List<String> urls = const [],
 }) => ItemFields(
   kind: VaultItemKind.login,
   title: title,
   username: 'alice',
   password: password,
-  urls: const [],
+  urls: urls,
   notes: '',
   favorite: favorite,
   group: group,
 );
+
+/// Stand-in for the Rust formats: one `title|password|group` line per
+/// item; a backup is the same text behind a `BACKUP:<password>` line.
+class FakeTransfer implements Transfer {
+  @override
+  Future<String> exportCsv(List<ItemFields> items) async =>
+      [for (final f in items) '${f.title}|${f.password}|${f.group}'].join('\n');
+
+  @override
+  Future<Uint8List> exportBackup(
+    List<ItemFields> items,
+    String password,
+  ) async => utf8.encode('BACKUP:$password\n${await exportCsv(items)}');
+
+  @override
+  Future<ImportData> parse(Uint8List data, {String? password}) async {
+    var lines = utf8.decode(data).split('\n');
+    var format = ImportFormat.csv;
+    if (lines.first.startsWith('BACKUP:')) {
+      if (password == null) {
+        throw const VaultFailure(
+          code: VaultFailureCode.backupPasswordRequired,
+          message: '',
+        );
+      }
+      if (lines.first != 'BACKUP:$password') {
+        throw const VaultFailure(
+          code: VaultFailureCode.wrongCredentials,
+          message: '',
+        );
+      }
+      format = ImportFormat.arcanumBackup;
+      lines = lines.sublist(1);
+    }
+    final rows = [
+      for (final line in lines)
+        if (line.isNotEmpty) line.split('|'),
+    ];
+    if (rows.any((r) => r.length != 3)) {
+      throw const VaultFailure(
+        code: VaultFailureCode.unsupportedFormat,
+        message: '',
+      );
+    }
+    return ImportData(
+      format: format,
+      items: [for (final r in rows) login(r[0], password: r[1], group: r[2])],
+      skipped: 0,
+    );
+  }
+}
+
+/// Scripted open and save dialogs.
+class FakeFileDialogs implements FileDialogs {
+  /// What the next [pickFile] returns; null simulates a cancel.
+  Uint8List? toPick;
+
+  /// Makes the next [saveFile] report a cancel.
+  bool cancelSave = false;
+
+  String? savedName;
+  Uint8List? savedBytes;
+
+  @override
+  bool get canSave => true;
+
+  @override
+  Future<Uint8List?> pickFile() async => toPick;
+
+  @override
+  Future<bool> saveFile({
+    required String name,
+    required String mimeType,
+    required Uint8List bytes,
+  }) async {
+    if (cancelSave) return false;
+    savedName = name;
+    savedBytes = bytes;
+    return true;
+  }
+}

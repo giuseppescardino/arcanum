@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 
@@ -23,9 +25,13 @@ String failureMessage(Object error) {
       VaultFailureCode.notLinked => l10n.errorNotLinked,
       VaultFailureCode.invalidInput => l10n.errorInvalidInput(error.message),
       VaultFailureCode.passwordRequired => l10n.errorPasswordRequired,
+      VaultFailureCode.unsupportedFormat => l10n.errorUnsupportedFormat,
+      VaultFailureCode.backupPasswordRequired =>
+        l10n.errorBackupPasswordRequired,
       VaultFailureCode.internal => l10n.errorInternal(error.message),
     };
   }
   if (error is StateError) return error.message;
+  if (error is FileSystemException) return l10n.errorFile(error.message);
   return l10n.errorUnexpected('$error');
 }

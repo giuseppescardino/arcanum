@@ -147,6 +147,7 @@ version = "0.1.0"
 dependencies = [
  "arcanum-crypto",
  "arcanum-proto",
+ "data-encoding",
  "rand_core 0.6.4",
  "rusqlite",
  "serde",

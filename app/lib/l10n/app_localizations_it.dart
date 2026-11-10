@@ -72,7 +72,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get vaultDeleteGroupBody =>
-      'Gli elementi non vengono eliminati: passano in \"Senza gruppo\".';
+      'Gli elementi non vengono eliminati: quelli del gruppo e dei suoi sottogruppi passano in \"Senza gruppo\".';
 
   @override
   String get vaultDeleteGroup => 'Elimina gruppo';
@@ -391,7 +391,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get editorGroup => 'Gruppo';
 
   @override
-  String get editorGroupHelper => 'Scegline uno esistente o scrivine uno nuovo';
+  String get editorGroupHelper =>
+      'Scegline uno esistente o scrivine uno nuovo. Usa / per i sottogruppi, es. Lavoro/Clienti';
 
   @override
   String get totpCopyCode => 'Copia codice';
@@ -759,5 +760,144 @@ class AppLocalizationsIt extends AppLocalizations {
       other: '$seconds secondi',
     );
     return '$label copiato. Verrà cancellato tra $_temp0.';
+  }
+
+  @override
+  String get vaultImport => 'Importa…';
+
+  @override
+  String get vaultExport => 'Esporta…';
+
+  @override
+  String get vaultShowSiteIcons => 'Mostra icone dei siti';
+
+  @override
+  String get vaultHideSiteIcons => 'Nascondi icone dei siti';
+
+  @override
+  String get vaultGroupPathHint =>
+      'Usa / per i sottogruppi, es. Lavoro/Clienti';
+
+  @override
+  String get exportTitle => 'Esporta elementi';
+
+  @override
+  String get exportFormatBackup => 'Backup cifrato';
+
+  @override
+  String get exportFormatCsv => 'CSV in chiaro';
+
+  @override
+  String get exportBackupHint =>
+      'Il file viene cifrato con questa password: servirà per importare il backup. Contiene tutti gli elementi, note comprese.';
+
+  @override
+  String get exportCsvWarning =>
+      'Il file CSV non è cifrato: chiunque lo apra legge tutte le password. Eliminalo appena non ti serve più.';
+
+  @override
+  String get exportPassword => 'Password del backup';
+
+  @override
+  String get exportRepeatPassword => 'Ripeti la password';
+
+  @override
+  String get exportAction => 'Esporta';
+
+  @override
+  String get exportEmpty => 'Non c\'è nulla da esportare.';
+
+  @override
+  String exportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementi esportati',
+      one: '1 elemento esportato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importTitle => 'Importa elementi';
+
+  @override
+  String importFormat(String format) {
+    return 'Formato riconosciuto: $format';
+  }
+
+  @override
+  String get importFormatBackup => 'Backup Arcanum';
+
+  @override
+  String importNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementi da importare',
+      one: '1 elemento da importare',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importDuplicates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sono già nel vault e verranno saltati',
+      one: '1 è già nel vault e verrà saltato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count non sono importabili (carte, identità o righe vuote)',
+      one: '1 non è importabile (carta, identità o riga vuota)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNothing => 'Non c\'è nulla di nuovo da importare.';
+
+  @override
+  String get importAction => 'Importa';
+
+  @override
+  String get importOpen => 'Apri';
+
+  @override
+  String importDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementi importati',
+      one: '1 elemento importato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importBackupPasswordBody =>
+      'Inserisci la password scelta quando hai esportato questo backup.';
+
+  @override
+  String get importWrongPassword => 'Password del backup errata';
+
+  @override
+  String get errorUnsupportedFormat =>
+      'Il file non è in un formato che Arcanum sa importare.';
+
+  @override
+  String get errorBackupPasswordRequired => 'Serve la password del backup.';
+
+  @override
+  String errorFile(String details) {
+    return 'Impossibile leggere o scrivere il file: $details';
   }
 }

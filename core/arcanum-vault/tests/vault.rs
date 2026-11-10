@@ -210,6 +210,63 @@ fn groups_are_stored_and_renamed() {
 }
 
 #[test]
+fn renaming_a_group_moves_its_subgroups() {
+    let mut v = Vault::open_in_memory().unwrap();
+    v.create(PW, KdfParams::DEFAULT).unwrap();
+    for (title, group) in [
+        ("A", "Work"),
+        ("B", "Work/Clients"),
+        ("C", "Work / Clients /Acme"),
+        ("D", "Workshop"),
+        ("E", ""),
+    ] {
+        let mut d = login(title, "p");
+        d.group = group.into();
+        v.add_item(&d).unwrap();
+    }
+    let groups = |v: &Vault| -> Vec<String> {
+        v.items()
+            .unwrap()
+            .into_iter()
+            .map(|i| i.data.group.clone())
+            .collect()
+    };
+
+    // Prefix match is per level: "Workshop" is not inside "Work".
+    assert_eq!(v.rename_group("Work", "Office/Main").unwrap(), 3);
+    assert_eq!(
+        groups(&v),
+        [
+            "Office/Main",
+            "Office/Main/Clients",
+            "Office/Main/Clients/Acme",
+            "Workshop",
+            ""
+        ]
+    );
+
+    // A subgroup can be moved on its own, and removed with its children.
+    assert_eq!(v.rename_group("Office/Main/Clients", "Clients").unwrap(), 2);
+    assert_eq!(v.rename_group("Clients", "").unwrap(), 2);
+    assert_eq!(groups(&v), ["Office/Main", "", "", "Workshop", ""]);
+}
+
+#[test]
+fn add_items_inserts_all_at_once() {
+    let mut v = Vault::open_in_memory().unwrap();
+    v.create(PW, KdfParams::DEFAULT).unwrap();
+    let batch = [login("One", "1"), login("Two", "2")];
+    assert_eq!(v.add_items(&batch).unwrap(), 2);
+    let items = v.items().unwrap();
+    assert_eq!(items.len(), 2);
+    assert!(items.iter().all(|i| i.revision == 1));
+    assert_ne!(items[0].id, items[1].id);
+
+    v.lock();
+    assert!(matches!(v.add_items(&batch), Err(VaultError::Locked)));
+}
+
+#[test]
 fn items_without_group_field_still_load() {
     let old: ItemData = serde_json::from_str(r#"{"title":"Old","password":"p"}"#).unwrap();
     assert_eq!(old.group, "");

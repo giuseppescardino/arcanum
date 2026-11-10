@@ -215,7 +215,7 @@ abstract class AppLocalizations {
   /// No description provided for @vaultDeleteGroupBody.
   ///
   /// In en, this message translates to:
-  /// **'Items are not deleted: they move to \"No group\".'**
+  /// **'Items are not deleted: those of the group and of its subgroups move to \"No group\".'**
   String get vaultDeleteGroupBody;
 
   /// No description provided for @vaultDeleteGroup.
@@ -731,7 +731,7 @@ abstract class AppLocalizations {
   /// No description provided for @editorGroupHelper.
   ///
   /// In en, this message translates to:
-  /// **'Pick an existing one or type a new one'**
+  /// **'Pick an existing one or type a new one. Use / for subgroups, e.g. Work/Clients'**
   String get editorGroupHelper;
 
   /// No description provided for @totpCopyCode.
@@ -1356,6 +1356,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label} copied. It will be cleared in {seconds, plural, =1{1 second} other{{seconds} seconds}}.'**
   String clipboardCopied(String label, int seconds);
+
+  /// No description provided for @vaultImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import…'**
+  String get vaultImport;
+
+  /// No description provided for @vaultExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export…'**
+  String get vaultExport;
+
+  /// No description provided for @vaultShowSiteIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Show site icons'**
+  String get vaultShowSiteIcons;
+
+  /// No description provided for @vaultHideSiteIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide site icons'**
+  String get vaultHideSiteIcons;
+
+  /// No description provided for @vaultGroupPathHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use / for subgroups, e.g. Work/Clients'**
+  String get vaultGroupPathHint;
+
+  /// No description provided for @exportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export items'**
+  String get exportTitle;
+
+  /// No description provided for @exportFormatBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted backup'**
+  String get exportFormatBackup;
+
+  /// No description provided for @exportFormatCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain CSV'**
+  String get exportFormatCsv;
+
+  /// No description provided for @exportBackupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The file is encrypted with this password: you will need it to import the backup. It holds every item, notes included.'**
+  String get exportBackupHint;
+
+  /// No description provided for @exportCsvWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The CSV file is not encrypted: anyone who opens it reads every password. Delete it as soon as you no longer need it.'**
+  String get exportCsvWarning;
+
+  /// No description provided for @exportPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup password'**
+  String get exportPassword;
+
+  /// No description provided for @exportRepeatPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the password'**
+  String get exportRepeatPassword;
+
+  /// No description provided for @exportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get exportAction;
+
+  /// No description provided for @exportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing to export.'**
+  String get exportEmpty;
+
+  /// No description provided for @exportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item exported} other{{count} items exported}}'**
+  String exportDone(int count);
+
+  /// No description provided for @importTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import items'**
+  String get importTitle;
+
+  /// No description provided for @importFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized format: {format}'**
+  String importFormat(String format);
+
+  /// No description provided for @importFormatBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Arcanum backup'**
+  String get importFormatBackup;
+
+  /// No description provided for @importNew.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item to import} other{{count} items to import}}'**
+  String importNew(int count);
+
+  /// No description provided for @importDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 is already in the vault and will be skipped} other{{count} are already in the vault and will be skipped}}'**
+  String importDuplicates(int count);
+
+  /// No description provided for @importSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 cannot be imported (card, identity or empty row)} other{{count} cannot be imported (cards, identities or empty rows)}}'**
+  String importSkipped(int count);
+
+  /// No description provided for @importNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing new to import.'**
+  String get importNothing;
+
+  /// No description provided for @importAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importAction;
+
+  /// No description provided for @importOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get importOpen;
+
+  /// No description provided for @importDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item imported} other{{count} items imported}}'**
+  String importDone(int count);
+
+  /// No description provided for @importBackupPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the password you chose when you exported this backup.'**
+  String get importBackupPasswordBody;
+
+  /// No description provided for @importWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong backup password'**
+  String get importWrongPassword;
+
+  /// No description provided for @errorUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'The file is not in a format Arcanum can import.'**
+  String get errorUnsupportedFormat;
+
+  /// No description provided for @errorBackupPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup password is required.'**
+  String get errorBackupPasswordRequired;
+
+  /// No description provided for @errorFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read or write the file: {details}'**
+  String errorFile(String details);
 }
 
 class _AppLocalizationsDelegate

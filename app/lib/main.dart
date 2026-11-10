@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app/android_language.dart';
 import 'app/breach_check.dart';
+import 'app/favicons.dart';
 import 'app/language_settings.dart';
 import 'app/quick_access.dart';
 import 'app/secret_key_store.dart';
@@ -31,6 +32,13 @@ Future<BreachChecker> _loadBreachChecker() async {
   return checker;
 }
 
+Future<FaviconCache> _loadFavicons() async {
+  final dir = await getApplicationSupportDirectory();
+  final cache = FaviconCache(prefsPath: '${dir.path}/site_icons_off');
+  await cache.load();
+  return cache;
+}
+
 Future<VaultController> _openVault() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
@@ -51,9 +59,15 @@ Future<void> main() async {
     () => AndroidLanguage.apply(language.locale?.languageCode),
   );
   final breach = await _loadBreachChecker();
+  final favicons = await _loadFavicons();
   await QuickAccess.init();
   runApp(
-    ArcanumApp(controller: controller, language: language, breach: breach),
+    ArcanumApp(
+      controller: controller,
+      language: language,
+      breach: breach,
+      favicons: favicons,
+    ),
   );
 }
 

@@ -31,9 +31,22 @@ pub struct ItemData {
     pub totp: Option<String>,
     #[serde(default)]
     pub favorite: bool,
-    /// Name of the group the item is filed under; empty for none.
+    /// Group the item is filed under, as a `/`-separated path
+    /// (`Work/Clients`); empty for none.
     #[serde(default)]
     pub group: String,
+}
+
+/// Separates the levels of a group path.
+pub const GROUP_SEPARATOR: char = '/';
+
+/// Canonical form of a group path: levels trimmed, empty ones dropped.
+pub fn normalize_group(path: &str) -> String {
+    path.split(GROUP_SEPARATOR)
+        .map(str::trim)
+        .filter(|level| !level.is_empty())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

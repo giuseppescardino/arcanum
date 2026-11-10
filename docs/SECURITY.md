@@ -122,6 +122,23 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
   - Verified on the emulator (Android 16, Chrome) with a login page: unlock, choice of the suggested credential, filling of email and password.
 - **Windows** (there is no system autofill API): `Ctrl+Alt+P` brings the vault to the front with search active; Enter copies the password of the first result, which is cleared from the clipboard after 30 seconds, and minimizes the window.
 - **iOS/macOS:** the AutoFill Credential Provider extension is not implemented yet, because it needs a Mac with Xcode.
+- **Browser extensions:** not implemented. An extension that talks to the running desktop app (native messaging) has no counterpart on mobile, where filling goes through the system autofill service instead.
+
+## Import and export
+
+- **Encrypted backup:** a JSON file holding one XChaCha20-Poly1305 envelope. Its key is `HKDF-SHA256(salt, Argon2id(password, salt), info = "pm/backup/v1")`, with a random 16-byte salt and the same Argon2id parameters as the account (64 MiB, t=3), stored in the file.
+  - The key depends on the backup password **only**, not on the Secret Key: the file has to be restorable into any account. Its password is therefore the only thing protecting it, and it is chosen at export time (at least 10 characters).
+  - On import, KDF parameters outside the accepted range are refused, so a crafted file can neither downgrade the derivation nor exhaust memory. The envelope's associated data binds the format version and the salt.
+- **Plain CSV:** readable by browsers and other password managers, and by anyone who gets the file. The app says so before saving it. Nothing is written until the user picks a destination in the system's save dialog.
+- **Import:** files exported by Arcanum, Chrome/Edge/Opera, Bitwarden (JSON, CSV), 1Password (CSV) and KeePass (CSV, KeePass 2 XML) are parsed in the Rust core, in memory. The app shows how many items are new before adding anything; items already in the vault are skipped. Imported items are encrypted and synced like any other.
+- **Android/iOS:** the vault normally locks as soon as the app goes to the background. While the system's file dialog is open on the user's request it stays unlocked, otherwise the import or export could not complete; the inactivity timer still applies.
+
+## Site icons
+
+- **Source:** for a login with a URL, the app asks the site itself for `https://<host>/favicon.ico`. No third-party icon service is involved, so nobody else learns the list of sites; each site sees one request from the device's IP address, the same it sees when the user visits it.
+- **Limits:** HTTPS only; redirects are followed only within the same site; at most 256 KiB; the body must start like an image (ICO, PNG, JPEG, GIF, BMP, WebP). IP addresses and single-label hosts (`localhost`, intranet names) are never asked.
+- **No disk cache:** icons live in memory and are dropped when the vault locks. A cache on disk would tell anyone who can read the disk which sites are in the vault, which the encrypted database does not.
+- **Opt-out:** "Nascondi icone dei siti" (Hide site icons) in the app menu stops every request.
 
 ## Generator and TOTP
 

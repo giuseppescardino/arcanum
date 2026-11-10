@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
+use crate::model::normalize_group;
 use crate::store::{ItemRow, Store};
 use crate::{Item, ItemData, Result, VaultError};
 
@@ -372,23 +373,69 @@ impl Vault {
         Ok(())
     }
 
-    /// Moves every item of group `from` to group `to` (empty `to` leaves
-    /// them ungrouped) in one transaction. Returns how many were moved.
+    /// Adds many items in one transaction (imports). Returns how many.
+    pub fn add_items(&mut self, items: &[ItemData]) -> Result<u32> {
+        let session = self.session.as_ref().ok_or(VaultError::Locked)?;
+        let mut rows = Vec::with_capacity(items.len());
+        for data in items {
+            let id = Uuid::new_v4().to_string();
+            let item_key = SymmetricKey::generate()?;
+            let wrapped_key = hierarchy::wrap_item_key(
+                &session.vault_key,
+                session.vault_id.as_bytes(),
+                id.as_bytes(),
+                &item_key,
+            )?;
+            rows.push(encrypt_row(
+                session,
+                id,
+                1,
+                wrapped_key,
+                &item_key,
+                Some(data),
+                now_ms(),
+            )?);
+        }
+        self.store.transaction(|s| {
+            for row in &rows {
+                s.upsert_local(row)?;
+            }
+            Ok(())
+        })?;
+        Ok(u32::try_from(rows.len()).unwrap_or(u32::MAX))
+    }
+
+    /// Moves group `from`, with all its subgroups, to `to` in one
+    /// transaction: `Work` -> `Office` also turns `Work/Clients` into
+    /// `Office/Clients`. An empty `to` leaves every item of the subtree
+    /// ungrouped. Returns how many items were moved.
     pub fn rename_group(&mut self, from: &str, to: &str) -> Result<u32> {
         let session = self.session.as_ref().ok_or(VaultError::Locked)?;
-        let (from, to) = (from.trim(), to.trim());
+        let (from, to) = (normalize_group(from), normalize_group(to));
         if from.is_empty() || from == to {
             return Ok(0);
         }
+        let prefix = format!("{from}/");
         let mut rows = Vec::new();
         for row in self.store.live_items(&session.vault_id)? {
             let Some(mut data) = decrypt_data(session, &row)? else {
                 continue;
             };
-            if data.group != from {
+            let group = normalize_group(&data.group);
+            let rest = if group == from {
+                ""
+            } else if let Some(rest) = group.strip_prefix(&prefix) {
+                rest
+            } else {
                 continue;
-            }
-            data.group = to.to_owned();
+            };
+            data.group = if to.is_empty() {
+                String::new()
+            } else if rest.is_empty() {
+                to.clone()
+            } else {
+                format!("{to}/{rest}")
+            };
             let item_key = unwrap_item_key(session, &row)?;
             rows.push(encrypt_row(
                 session,

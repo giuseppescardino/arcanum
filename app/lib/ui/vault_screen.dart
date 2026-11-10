@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../app/android_autofill.dart';
 import '../app/breach_check.dart';
 import '../app/clipboard.dart';
+import '../app/favicons.dart';
+import '../app/file_dialogs.dart';
+import '../app/groups.dart';
 import '../app/messages.dart';
 import '../app/quick_access.dart';
 import '../app/tools.dart';
@@ -13,7 +16,9 @@ import 'about.dart';
 import 'breach_check_screen.dart';
 import 'item_editor_screen.dart';
 import 'language_picker.dart';
+import 'site_icon.dart';
 import 'sync_screen.dart';
+import 'transfer_dialogs.dart';
 import 'widgets.dart';
 
 class VaultScreen extends StatefulWidget {
@@ -32,6 +37,9 @@ enum _MenuAction {
   language,
   changePassword,
   breach,
+  import,
+  export,
+  siteIcons,
   about,
   forgetSecretKey,
   signOut,
@@ -42,9 +50,19 @@ class _VaultScreenState extends State<VaultScreen> {
   final _searchFocus = FocusNode();
   String _query = '';
 
-  /// Group shown alone: null for all, '' for ungrouped items.
+  /// Root group shown alone, subgroups included: null for all, '' for
+  /// ungrouped items.
   String? _groupFilter;
-  final Set<String> _collapsed = {};
+
+  /// Sections the user opened or closed by hand, by group path; the
+  /// others follow [_collapsedByDefault].
+  final Map<String, bool> _toggled = {};
+
+  /// With several groups the list opens as a compact index of closed
+  /// sections; a single group has nothing to tell apart and stays open.
+  bool get _collapsedByDefault => _controller.groups.length > 1;
+
+  bool _isCollapsed(String group) => _toggled[group] ?? _collapsedByDefault;
 
   VaultController get _controller => widget.controller;
 
@@ -85,39 +103,51 @@ class _VaultScreenState extends State<VaultScreen> {
     await QuickAccess.hide();
   }
 
-  /// Visible items split by group: named groups alphabetically, then the
-  /// ungrouped ones (key ''). Favorites lead each group, otherwise the
-  /// title order from Rust is kept.
-  List<MapEntry<String, List<VaultItem>>> get _sections {
+  /// Visible items as a tree of groups, each followed by its subgroups;
+  /// the ungrouped ones (path '') come last. Favorites lead each group,
+  /// otherwise the title order from Rust is kept.
+  List<_Section> get _sections {
     final q = _query.trim().toLowerCase();
     final filter = _groupFilter;
-    final matches = _controller.items.where((i) {
+    final byGroup = <String, List<VaultItem>>{};
+    for (final i in _controller.items) {
       final f = i.fields;
-      if (filter != null && f.group != filter) return false;
-      return q.isEmpty ||
+      final group = normalizeGroup(f.group);
+      if (filter != null &&
+          (filter.isEmpty ? group.isNotEmpty : !groupContains(filter, group))) {
+        continue;
+      }
+      final matches =
+          q.isEmpty ||
           f.title.toLowerCase().contains(q) ||
           f.username.toLowerCase().contains(q) ||
-          f.group.toLowerCase().contains(q) ||
+          group.toLowerCase().contains(q) ||
           f.urls.any((u) => u.toLowerCase().contains(q));
-    });
-    final byGroup = <String, List<VaultItem>>{};
-    for (final i in matches) {
-      (byGroup[i.fields.group] ??= []).add(i);
+      if (matches) (byGroup[group] ??= []).add(i);
     }
-    final names = [
-      ..._controller.groups.where(byGroup.containsKey),
-      if (byGroup.containsKey('')) '',
-    ];
+    List<VaultItem> ordered(String group) {
+      final items = byGroup[group] ?? const <VaultItem>[];
+      return [
+        ...items.where((i) => i.fields.favorite),
+        ...items.where((i) => !i.fields.favorite),
+      ];
+    }
+
     return [
-      for (final g in names)
-        MapEntry(g, [
-          ...byGroup[g]!.where((i) => i.fields.favorite),
-          ...byGroup[g]!.where((i) => !i.fields.favorite),
-        ]),
+      for (final g in groupTree(byGroup.keys))
+        _Section(
+          path: g,
+          items: ordered(g),
+          total: byGroup.entries
+              .where((e) => e.key.isNotEmpty && groupContains(g, e.key))
+              .fold(0, (sum, e) => sum + e.value.length),
+        ),
+      if (byGroup.containsKey(''))
+        _Section(path: '', items: ordered(''), total: byGroup['']!.length),
     ];
   }
 
-  List<VaultItem> get _visibleItems => [for (final s in _sections) ...s.value];
+  List<VaultItem> get _visibleItems => [for (final s in _sections) ...s.items];
 
   void _openEditor([VaultItem? item]) {
     Navigator.of(context).push(
@@ -151,7 +181,8 @@ class _VaultScreenState extends State<VaultScreen> {
     );
     if (name == null || name == group) return;
     await _runGroupAction(() => _controller.renameGroup(group, name));
-    if (_groupFilter == group) setState(() => _groupFilter = name);
+    // The filter bar only knows root groups.
+    if (_groupFilter == group) setState(() => _groupFilter = groupRoot(name));
   }
 
   Future<void> _deleteGroup(String group) async {
@@ -188,36 +219,48 @@ class _VaultScreenState extends State<VaultScreen> {
     }
   }
 
-  void _toggleSection(String group) => setState(() {
-    if (!_collapsed.remove(group)) _collapsed.add(group);
-  });
+  void _toggleSection(String group) =>
+      setState(() => _toggled[group] = !_isCollapsed(group));
 
-  Widget _buildList(List<MapEntry<String, List<VaultItem>>> sections) {
+  Widget _buildList(List<_Section> sections) {
     final breach = BreachScope.maybeOf(context);
-    // Headers only help when there is something to tell apart.
-    final showHeaders = _groupFilter == null && _controller.groups.isNotEmpty;
+    final filter = _groupFilter;
+    // Headers only help when there is something to tell apart. Inside a
+    // root group they show its subgroups; the root's own is left out.
+    final showHeaders = _controller.groups.isNotEmpty && filter != '';
+    final rootDepth = filter == null ? 0 : 1;
+    // A search shows every match, whatever is collapsed.
     final searching = _query.trim().isNotEmpty;
+    bool collapsed(String group) =>
+        !searching && group != filter && _isCollapsed(group);
+
     final rows = <Widget>[];
     for (final section in sections) {
-      final group = section.key;
-      final collapsed = !searching && _collapsed.contains(group);
+      final group = section.path;
+      var depth = 0;
       if (showHeaders) {
-        rows.add(
-          _GroupHeader(
-            name: group,
-            count: section.value.length,
-            collapsed: collapsed,
-            onToggle: () => _toggleSection(group),
-            onRename: group.isEmpty ? null : () => _renameGroup(group),
-            onDelete: group.isEmpty ? null : () => _deleteGroup(group),
-          ),
-        );
+        if (groupAncestors(group).any(collapsed)) continue;
+        if (group != filter) {
+          depth = group.isEmpty ? 0 : groupDepth(group) - rootDepth;
+          rows.add(
+            _GroupHeader(
+              name: groupLeaf(group),
+              depth: depth,
+              count: section.total,
+              collapsed: collapsed(group),
+              onToggle: () => _toggleSection(group),
+              onRename: group.isEmpty ? null : () => _renameGroup(group),
+              onDelete: group.isEmpty ? null : () => _deleteGroup(group),
+            ),
+          );
+          if (collapsed(group)) continue;
+        }
       }
-      if (showHeaders && collapsed) continue;
-      for (final item in section.value) {
+      for (final item in section.items) {
         rows.add(
           _ItemTile(
             item: item,
+            depth: depth,
             compromised: (breach?.countFor(item.fields.password) ?? 0) > 0,
             onTap: () => _openEditor(item),
           ),
@@ -254,6 +297,13 @@ class _VaultScreenState extends State<VaultScreen> {
         await showLanguageDialog(context);
       case _MenuAction.breach:
         _openBreachCheck();
+      case _MenuAction.import:
+        await importFromFile(context, _controller);
+      case _MenuAction.export:
+        await exportToFile(context, _controller);
+      case _MenuAction.siteIcons:
+        final icons = FaviconScope.maybeOf(context);
+        await icons?.setEnabled(!icons.enabled);
       case _MenuAction.about:
         await showArcanumAbout(context);
       case _MenuAction.changePassword:
@@ -346,7 +396,8 @@ class _VaultScreenState extends State<VaultScreen> {
       listenable: _controller,
       builder: (context, _) {
         final breach = BreachScope.maybeOf(context);
-        final groups = _controller.groups;
+        final siteIcons = FaviconScope.maybeOf(context);
+        final groups = _controller.rootGroups;
         // The filtered group may have been renamed or emptied elsewhere.
         if (_groupFilter != null &&
             _groupFilter!.isNotEmpty &&
@@ -418,6 +469,33 @@ class _VaultScreenState extends State<VaultScreen> {
                       child: _MenuEntry(
                         icon: Icons.gpp_maybe_outlined,
                         label: context.l10n.breachTitle,
+                      ),
+                    ),
+                  PopupMenuItem(
+                    value: _MenuAction.import,
+                    child: _MenuEntry(
+                      icon: Icons.file_download_outlined,
+                      label: context.l10n.vaultImport,
+                    ),
+                  ),
+                  if (fileDialogs.canSave)
+                    PopupMenuItem(
+                      value: _MenuAction.export,
+                      child: _MenuEntry(
+                        icon: Icons.file_upload_outlined,
+                        label: context.l10n.vaultExport,
+                      ),
+                    ),
+                  if (siteIcons != null)
+                    PopupMenuItem(
+                      value: _MenuAction.siteIcons,
+                      child: _MenuEntry(
+                        icon: siteIcons.enabled
+                            ? Icons.hide_image_outlined
+                            : Icons.image_outlined,
+                        label: siteIcons.enabled
+                            ? context.l10n.vaultHideSiteIcons
+                            : context.l10n.vaultShowSiteIcons,
                       ),
                     ),
                   PopupMenuItem(
@@ -574,7 +652,24 @@ class _SyncButton extends StatelessWidget {
   }
 }
 
-/// Horizontal chips: all items, one per group, and the ungrouped ones.
+/// A group of the list with the items filed directly under it.
+class _Section {
+  const _Section({
+    required this.path,
+    required this.items,
+    required this.total,
+  });
+
+  /// Group path; '' for the ungrouped items.
+  final String path;
+  final List<VaultItem> items;
+
+  /// Items in this group and in all its subgroups.
+  final int total;
+}
+
+/// Horizontal chips: all items, one per root group, and the ungrouped
+/// ones. Subgroups are reached from the list, under their root.
 class _GroupFilterBar extends StatelessWidget {
   const _GroupFilterBar({
     required this.groups,
@@ -615,11 +710,16 @@ class _GroupFilterBar extends StatelessWidget {
   }
 }
 
+/// Each level of nesting moves a row this much further in.
+EdgeInsetsGeometry _indent(int depth) =>
+    EdgeInsetsDirectional.only(start: 16 + 20.0 * depth, end: 24);
+
 enum _GroupAction { rename, delete }
 
 class _GroupHeader extends StatelessWidget {
   const _GroupHeader({
     required this.name,
+    required this.depth,
     required this.count,
     required this.collapsed,
     required this.onToggle,
@@ -628,6 +728,11 @@ class _GroupHeader extends StatelessWidget {
   });
 
   final String name;
+
+  /// Levels of nesting below the outermost header shown.
+  final int depth;
+
+  /// Items in the group, subgroups included.
   final int count;
   final bool collapsed;
   final VoidCallback onToggle;
@@ -639,6 +744,7 @@ class _GroupHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return ListTile(
       dense: true,
+      contentPadding: _indent(depth),
       onTap: onToggle,
       leading: Icon(collapsed ? Icons.chevron_right : Icons.expand_more),
       title: Text(
@@ -697,13 +803,13 @@ class _RenameGroupDialogState extends State<_RenameGroupDialog> {
   }
 
   void _submit() {
-    final name = _name.text.trim();
+    final name = normalizeGroup(_name.text);
     if (name.isNotEmpty) Navigator.pop(context, name);
   }
 
   @override
   Widget build(BuildContext context) {
-    final name = _name.text.trim();
+    final name = normalizeGroup(_name.text);
     final merges = name != widget.initial && widget.existing.contains(name);
     return AlertDialog(
       title: Text(context.l10n.vaultRenameGroup),
@@ -716,7 +822,9 @@ class _RenameGroupDialogState extends State<_RenameGroupDialog> {
           onSubmitted: (_) => _submit(),
           decoration: InputDecoration(
             labelText: context.l10n.vaultGroupName,
-            helperText: merges ? context.l10n.vaultGroupMergeHint : null,
+            helperText: merges
+                ? context.l10n.vaultGroupMergeHint
+                : context.l10n.vaultGroupPathHint,
           ),
         ),
       ),
@@ -738,10 +846,14 @@ class _ItemTile extends StatelessWidget {
   const _ItemTile({
     required this.item,
     required this.onTap,
+    this.depth = 0,
     this.compromised = false,
   });
 
   final VaultItem item;
+
+  /// Nesting of the group header the item sits under.
+  final int depth;
   final VoidCallback onTap;
 
   /// The password was found in a breach by the last check.
@@ -758,9 +870,10 @@ class _ItemTile extends StatelessWidget {
         : f.notes.split('\n').first;
 
     return ListTile(
-      leading: CircleAvatar(
-        child: Icon(isLogin ? Icons.key : Icons.sticky_note_2_outlined),
-      ),
+      contentPadding: _indent(depth),
+      leading: isLogin
+          ? SiteIcon(url: f.urls.firstOrNull, fallback: Icons.key)
+          : const CircleAvatar(child: Icon(Icons.sticky_note_2_outlined)),
       title: Row(
         children: [
           Flexible(

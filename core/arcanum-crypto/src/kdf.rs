@@ -16,6 +16,7 @@ pub const SALT_LEN: usize = 16;
 const MUK_INFO: &[u8] = b"pm/muk/v1";
 const AUTH_INFO: &[u8] = b"pm/auth/v1";
 const LOGIN_ID_INFO: &[u8] = b"pm/login-id/v1";
+const BACKUP_INFO: &[u8] = b"pm/backup/v1";
 /// Length of the decoded login identifier.
 pub const LOGIN_ID_LEN: usize = 32;
 /// Length of the login identifier as sent on the wire (base64url, no padding).
@@ -141,6 +142,39 @@ pub fn derive_keys(
     })
 }
 
+/// Key of a password-protected backup file:
+/// `HKDF-SHA256(salt, Argon2id(password, salt), info = "pm/backup/v1")`.
+///
+/// Unlike the MUK it does not mix in the Secret Key: a backup must be
+/// restorable on its own, so its password is the only secret.
+pub fn derive_backup_key(
+    password: &[u8],
+    salt: &[u8; SALT_LEN],
+    params: &KdfParams,
+) -> Result<SymmetricKey> {
+    params.validate()?;
+
+    let argon_params = Params::new(
+        params.memory_kib,
+        params.iterations,
+        params.parallelism,
+        Some(KEY_LEN),
+    )
+    .map_err(|_| CryptoError::Kdf)?;
+    let argon = Argon2::new(Algorithm::Argon2id, Version::V0x13, argon_params);
+
+    let mut ikm = Zeroizing::new([0u8; KEY_LEN]);
+    argon
+        .hash_password_into(password, salt, ikm.as_mut_slice())
+        .map_err(|_| CryptoError::Kdf)?;
+
+    let hkdf = Hkdf::<Sha256>::new(Some(salt), ikm.as_slice());
+    let mut key = [0u8; KEY_LEN];
+    hkdf.expand(BACKUP_INFO, &mut key)
+        .map_err(|_| CryptoError::Kdf)?;
+    Ok(SymmetricKey::from_bytes(&mut key))
+}
+
 /// The account's identifier on the sync server:
 /// `HKDF-SHA256(IKM = SecretKey, info = "pm/login-id/v1")`, base64url.
 ///
@@ -228,6 +262,21 @@ mod tests {
         );
         let other = derive_keys(b"pw", &sk(2), &[0; SALT_LEN], &KdfParams::DEFAULT).unwrap();
         assert_ne!(keys.auth_key, other.auth_key);
+    }
+
+    #[test]
+    fn backup_key_depends_on_password_and_salt_only() {
+        let p = KdfParams::DEFAULT;
+        let salt = [7u8; SALT_LEN];
+        let key = derive_backup_key(b"backup pw", &salt, &p).unwrap();
+        assert_eq!(key, derive_backup_key(b"backup pw", &salt, &p).unwrap());
+        assert_ne!(key, derive_backup_key(b"backup px", &salt, &p).unwrap());
+        assert_ne!(
+            key,
+            derive_backup_key(b"backup pw", &[8u8; SALT_LEN], &p).unwrap()
+        );
+        // Domain-separated from the MUK of the same password and salt.
+        assert_ne!(key, derive_muk(b"backup pw", &sk(0), &salt, &p).unwrap());
     }
 
     #[test]
