@@ -88,7 +88,7 @@ void main() {
     await expectLater(
       c.signIn(
         serverUrl: server,
-          password: utf8.encode('wrong'),
+        password: utf8.encode('wrong'),
         secretKey: sk,
         deviceName: 'IT device C',
       ),
@@ -106,7 +106,7 @@ void main() {
     await expectLater(
       d.signIn(
         serverUrl: 'http://localhost@example.com',
-          password: pw,
+        password: pw,
         secretKey: sk,
         deviceName: 'IT device D',
       ),

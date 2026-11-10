@@ -8,7 +8,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `internal`, `new`, `parse_secret_key`, `vault`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Lets the UI validate a typed Secret Key before attempting an unlock.
 bool isValidSecretKey({required String secretKey}) =>
@@ -17,6 +17,9 @@ bool isValidSecretKey({required String secretKey}) =>
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VaultHandle>>
 abstract class VaultHandle implements RustOpaqueInterface {
   Future<VaultItem> addItem({required ItemFields fields});
+
+  /// Adds many items at once (imports); returns how many.
+  Future<int> addItems({required List<ItemFields> items});
 
   Future<void> changePassword({
     required List<int> current,
@@ -73,8 +76,8 @@ abstract class VaultHandle implements RustOpaqueInterface {
     required String invite,
   });
 
-  /// Moves all items of group `from` to `to` (empty `to` ungroups them);
-  /// returns how many were moved.
+  /// Moves group `from` and its subgroups to `to` (empty `to` ungroups
+  /// their items); returns how many items were moved.
   Future<int> renameGroup({required String from, required String to});
 
   /// Sets up this empty database from an existing server account and
@@ -117,7 +120,7 @@ class ItemFields {
   final String? totp;
   final bool favorite;
 
-  /// Group name; empty for none.
+  /// Group path, levels separated by `/`; empty for none.
   final String group;
 
   const ItemFields({
@@ -259,6 +262,12 @@ enum VaultFailureCode {
 
   /// Quick unlock refused: type the master password.
   passwordRequired,
+
+  /// The file to import is not in a format the app reads.
+  unsupportedFormat,
+
+  /// The file is an encrypted backup: its password is needed.
+  backupPasswordRequired,
   internal,
 }
 

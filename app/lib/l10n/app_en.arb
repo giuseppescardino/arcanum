@@ -49,7 +49,7 @@
       }
     }
   },
-  "vaultDeleteGroupBody": "Items are not deleted: they move to \"No group\".",
+  "vaultDeleteGroupBody": "Items are not deleted: those of the group and of its subgroups move to \"No group\".",
   "vaultDeleteGroup": "Delete group",
   "vaultForgetSecretKeyTitle": "Remove the Secret Key?",
   "vaultForgetSecretKeyBody": "Next time you unlock on this device you will need the Secret Key from your Emergency Kit. Make sure you have it.",
@@ -292,7 +292,7 @@
   "editorTotpInvalid": "Invalid 2FA key",
   "editorNotes": "Notes",
   "editorGroup": "Group",
-  "editorGroupHelper": "Pick an existing one or type a new one",
+  "editorGroupHelper": "Pick an existing one or type a new one. Use / for subgroups, e.g. Work/Clients",
   "totpCopyCode": "Copy code",
   "totpCode": "2FA code",
   "@totpCode": {
@@ -543,6 +543,85 @@
       },
       "seconds": {
         "type": "int"
+      }
+    }
+  },
+  "vaultImport": "Import…",
+  "vaultExport": "Export…",
+  "vaultShowSiteIcons": "Show site icons",
+  "vaultHideSiteIcons": "Hide site icons",
+  "vaultGroupPathHint": "Use / for subgroups, e.g. Work/Clients",
+  "exportTitle": "Export items",
+  "exportFormatBackup": "Encrypted backup",
+  "exportFormatCsv": "Plain CSV",
+  "exportBackupHint": "The file is encrypted with this password: you will need it to import the backup. It holds every item, notes included.",
+  "exportCsvWarning": "The CSV file is not encrypted: anyone who opens it reads every password. Delete it as soon as you no longer need it.",
+  "exportPassword": "Backup password",
+  "exportRepeatPassword": "Repeat the password",
+  "exportAction": "Export",
+  "exportEmpty": "There is nothing to export.",
+  "exportDone": "{count, plural, =1{1 item exported} other{{count} items exported}}",
+  "@exportDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importTitle": "Import items",
+  "importFormat": "Recognized format: {format}",
+  "@importFormat": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
+  "importFormatBackup": "Arcanum backup",
+  "importNew": "{count, plural, =1{1 item to import} other{{count} items to import}}",
+  "@importNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importDuplicates": "{count, plural, =1{1 is already in the vault and will be skipped} other{{count} are already in the vault and will be skipped}}",
+  "@importDuplicates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSkipped": "{count, plural, =1{1 cannot be imported (card, identity or empty row)} other{{count} cannot be imported (cards, identities or empty rows)}}",
+  "@importSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNothing": "There is nothing new to import.",
+  "importAction": "Import",
+  "importOpen": "Open",
+  "importDone": "{count, plural, =1{1 item imported} other{{count} items imported}}",
+  "@importDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importBackupPasswordBody": "Enter the password you chose when you exported this backup.",
+  "importWrongPassword": "Wrong backup password",
+  "errorUnsupportedFormat": "The file is not in a format Arcanum can import.",
+  "errorBackupPasswordRequired": "The backup password is required.",
+  "errorFile": "Could not read or write the file: {details}",
+  "@errorFile": {
+    "placeholders": {
+      "details": {
+        "type": "String"
       }
     }
   }

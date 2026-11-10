@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:arcanum/src/rust/api/transfer.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/src/rust/frb_generated.dart';
 
@@ -64,5 +65,96 @@ void main() {
 
     expect(await reopened.renameGroup(from: 'Lavoro', to: 'Ufficio'), 1);
     expect((await reopened.listItems()).single.fields.group, 'Ufficio');
+  });
+
+  testWidgets('export, import and nested groups through the native library', (
+    tester,
+  ) async {
+    final v = await VaultHandle.open(path: '${tmp.path}/transfer.db');
+    await v.create(password: utf8.encode('correct horse battery staple'));
+    ItemFields item(String title, String group) => ItemFields(
+      kind: VaultItemKind.login,
+      title: title,
+      username: 'alice',
+      password: 'p,"w',
+      urls: const ['https://example.com'],
+      notes: 'line1\nline2',
+      favorite: true,
+      group: group,
+    );
+    // Generated classes compare list fields by identity: compare by value.
+    String describe(ItemFields f) => [
+      f.kind.name,
+      f.title,
+      f.username,
+      f.password,
+      f.urls.join(' '),
+      f.notes,
+      '${f.totp}',
+      '${f.favorite}',
+      f.group,
+    ].join('|');
+    expect(
+      await v.addItems(
+        items: [item('Slack', ' Lavoro / Chat '), item('Jira', 'Lavoro')],
+      ),
+      2,
+    );
+    final stored = [for (final i in await v.listItems()) i.fields];
+    // Sorted by title; group paths are normalized on the way in.
+    expect(stored.map((f) => f.group), ['Lavoro', 'Lavoro/Chat']);
+
+    // Renaming a group carries its subgroups along.
+    expect(await v.renameGroup(from: 'Lavoro', to: 'Ufficio'), 2);
+    final renamed = [for (final i in await v.listItems()) i.fields];
+    expect(renamed.map((f) => f.group), ['Ufficio', 'Ufficio/Chat']);
+
+    final csv = await exportCsv(items: renamed);
+    final fromCsv = await parseImport(data: utf8.encode(csv));
+    expect(fromCsv.format, ImportFormat.csv);
+    expect(fromCsv.items.map(describe), renamed.map(describe));
+
+    final backup = await exportBackup(
+      items: renamed,
+      password: utf8.encode('backup password'),
+    );
+    expect(utf8.decode(backup), isNot(contains('Slack')));
+    await expectLater(
+      parseImport(data: backup),
+      throwsA(
+        isA<VaultFailure>().having(
+          (e) => e.code,
+          'code',
+          VaultFailureCode.backupPasswordRequired,
+        ),
+      ),
+    );
+    await expectLater(
+      parseImport(data: backup, password: utf8.encode('wrong')),
+      throwsA(
+        isA<VaultFailure>().having(
+          (e) => e.code,
+          'code',
+          VaultFailureCode.wrongCredentials,
+        ),
+      ),
+    );
+    final fromBackup = await parseImport(
+      data: backup,
+      password: utf8.encode('backup password'),
+    );
+    expect(fromBackup.format, ImportFormat.arcanumBackup);
+    expect(fromBackup.items.map(describe), renamed.map(describe));
+
+    await expectLater(
+      parseImport(data: utf8.encode('hello')),
+      throwsA(
+        isA<VaultFailure>().having(
+          (e) => e.code,
+          'code',
+          VaultFailureCode.unsupportedFormat,
+        ),
+      ),
+    );
   });
 }

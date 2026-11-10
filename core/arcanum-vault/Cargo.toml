@@ -16,9 +16,11 @@ uuid.workspace = true
 rand_core.workspace = true
 zeroize.workspace = true
 thiserror.workspace = true
+data-encoding.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+serde_json.workspace = true
 rusqlite.workspace = true
 
 [lints]

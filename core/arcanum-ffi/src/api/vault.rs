@@ -5,7 +5,9 @@
 use std::sync::{Mutex, MutexGuard};
 
 use arcanum_sync::SyncError;
-use arcanum_vault::{ItemData, ItemKind, KdfParams, SecretKey, SyncReport, Vault, VaultError};
+use arcanum_vault::{
+    normalize_group, ItemData, ItemKind, KdfParams, SecretKey, SyncReport, Vault, VaultError,
+};
 use data_encoding::BASE64;
 use flutter_rust_bridge::frb;
 use zeroize::Zeroizing;
@@ -27,7 +29,7 @@ pub struct ItemFields {
     pub notes: String,
     pub totp: Option<String>,
     pub favorite: bool,
-    /// Group name; empty for none.
+    /// Group path, levels separated by `/`; empty for none.
     pub group: String,
 }
 
@@ -69,6 +71,10 @@ pub enum VaultFailureCode {
     InvalidInput,
     /// Quick unlock refused: type the master password.
     PasswordRequired,
+    /// The file to import is not in a format the app reads.
+    UnsupportedFormat,
+    /// The file is an encrypted backup: its password is needed.
+    BackupPasswordRequired,
     Internal,
 }
 
@@ -301,8 +307,14 @@ impl VaultHandle {
         Ok(self.vault()?.delete_item(&id)?)
     }
 
-    /// Moves all items of group `from` to `to` (empty `to` ungroups them);
-    /// returns how many were moved.
+    /// Adds many items at once (imports); returns how many.
+    pub fn add_items(&self, items: Vec<ItemFields>) -> Result<u32, VaultFailure> {
+        let items: Vec<ItemData> = items.into_iter().map(ItemData::from).collect();
+        Ok(self.vault()?.add_items(&items)?)
+    }
+
+    /// Moves group `from` and its subgroups to `to` (empty `to` ungroups
+    /// their items); returns how many items were moved.
     pub fn rename_group(&self, from: String, to: String) -> Result<u32, VaultFailure> {
         Ok(self.vault()?.rename_group(&from, &to)?)
     }
@@ -398,31 +410,36 @@ impl From<ItemFields> for ItemData {
         d.notes = f.notes;
         d.totp = f.totp;
         d.favorite = f.favorite;
-        d.group = f.group.trim().to_owned();
+        d.group = normalize_group(&f.group);
         d
     }
 }
 
 impl From<arcanum_vault::Item> for VaultItem {
     fn from(item: arcanum_vault::Item) -> Self {
-        let d = &item.data;
         VaultItem {
             id: item.id.clone(),
             updated_at: item.updated_at,
-            fields: ItemFields {
-                kind: match d.kind {
-                    ItemKind::Login => VaultItemKind::Login,
-                    ItemKind::SecureNote => VaultItemKind::SecureNote,
-                },
-                title: d.title.clone(),
-                username: d.username.clone(),
-                password: d.password.clone(),
-                urls: d.urls.clone(),
-                notes: d.notes.clone(),
-                totp: d.totp.clone(),
-                favorite: d.favorite,
-                group: d.group.clone(),
+            fields: ItemFields::from(&item.data),
+        }
+    }
+}
+
+impl From<&ItemData> for ItemFields {
+    fn from(d: &ItemData) -> Self {
+        ItemFields {
+            kind: match d.kind {
+                ItemKind::Login => VaultItemKind::Login,
+                ItemKind::SecureNote => VaultItemKind::SecureNote,
             },
+            title: d.title.clone(),
+            username: d.username.clone(),
+            password: d.password.clone(),
+            urls: d.urls.clone(),
+            notes: d.notes.clone(),
+            totp: d.totp.clone(),
+            favorite: d.favorite,
+            group: d.group.clone(),
         }
     }
 }

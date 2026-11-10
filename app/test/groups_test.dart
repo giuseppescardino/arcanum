@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/tools.dart';
 import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/ui/app.dart';
@@ -24,6 +25,35 @@ void main() {
     return controller;
   }
 
+  void desktop(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+  }
+
+  Finder header(String name) => find.widgetWithText(ListTile, name);
+  Finder chip(String name) => find.widgetWithText(ChoiceChip, name);
+
+  test('group paths are normalized and ordered as a tree', () {
+    expect(normalizeGroup(' Lavoro / Clienti //Acme/ '), 'Lavoro/Clienti/Acme');
+    expect(groupRoot('Lavoro/Clienti'), 'Lavoro');
+    expect(groupLeaf('Lavoro/Clienti'), 'Clienti');
+    expect(groupDepth('Lavoro/Clienti/Acme'), 2);
+    expect(groupContains('Lavoro', 'Lavoro/Clienti'), isTrue);
+    expect(groupContains('Lavoro', 'Lavoro'), isTrue);
+    // Per level, not per character.
+    expect(groupContains('Lavoro', 'Lavorone'), isFalse);
+    expect(groupAncestors('A/B/C'), ['A', 'A/B']);
+    // Parents are implied; subgroups follow their parent.
+    expect(groupTree(['svago', 'Lavoro/Clienti/Acme', 'Banche', '']), [
+      'Banche',
+      'Lavoro',
+      'Lavoro/Clienti',
+      'Lavoro/Clienti/Acme',
+      'svago',
+    ]);
+  });
+
   test('groups are unique, sorted and renamable', () async {
     final c = await unlockedWith([
       ('Jira', 'lavoro'),
@@ -45,12 +75,36 @@ void main() {
     c.dispose();
   });
 
-  testWidgets('list is split by group, collapsible and filterable', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  test('renaming a group moves its subgroups', () async {
+    final c = await unlockedWith([
+      ('Slack', 'Lavoro'),
+      ('Jira', 'Lavoro/Clienti/Acme'),
+      ('Netflix', 'Svago'),
+    ]);
+    expect(c.groups, [
+      'Lavoro',
+      'Lavoro/Clienti',
+      'Lavoro/Clienti/Acme',
+      'Svago',
+    ]);
+    expect(c.rootGroups, ['Lavoro', 'Svago']);
+
+    await c.renameGroup('Lavoro', 'Ufficio');
+    expect(c.groups, [
+      'Svago',
+      'Ufficio',
+      'Ufficio/Clienti',
+      'Ufficio/Clienti/Acme',
+    ]);
+
+    // Deleting a group ungroups its whole subtree.
+    await c.renameGroup('Ufficio/Clienti', '');
+    expect(c.groups, ['Svago', 'Ufficio']);
+    c.dispose();
+  });
+
+  testWidgets('several groups start collapsed and open on tap', (tester) async {
+    desktop(tester);
     final c = await unlockedWith([
       ('Jira', 'Lavoro'),
       ('Netflix', 'Svago'),
@@ -59,22 +113,36 @@ void main() {
     await tester.pumpWidget(ArcanumApp(controller: c));
 
     // Section headers ('Senza gruppo' also appears as a filter chip).
-    expect(find.widgetWithText(ListTile, 'Lavoro'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Senza gruppo'), findsOneWidget);
-    expect(find.text('Jira'), findsOneWidget);
+    expect(header('Lavoro'), findsOneWidget);
+    expect(header('Senza gruppo'), findsOneWidget);
+    // Every section is closed: no item shows.
+    expect(find.text('Jira'), findsNothing);
+    expect(find.text('Netflix'), findsNothing);
+    expect(find.text('Bank'), findsNothing);
 
-    // Collapse a section.
-    await tester.tap(find.widgetWithText(ListTile, 'Lavoro'));
+    // Open one section, then close it again.
+    await tester.tap(header('Lavoro'));
+    await tester.pump();
+    expect(find.text('Jira'), findsOneWidget);
+    expect(find.text('Netflix'), findsNothing);
+    await tester.tap(header('Lavoro'));
     await tester.pump();
     expect(find.text('Jira'), findsNothing);
+
+    // A search shows its matches whatever is collapsed.
+    await tester.enterText(find.byType(TextField), 'netf');
+    await tester.pump();
     expect(find.text('Netflix'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+    expect(find.text('Netflix'), findsNothing);
 
     // Filter by a group: only its items, no headers.
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Svago'));
+    await tester.tap(chip('Svago'));
     await tester.pump();
     expect(find.text('Netflix'), findsOneWidget);
     expect(find.text('Bank'), findsNothing);
-    expect(find.widgetWithText(ListTile, 'Svago'), findsNothing);
+    expect(header('Svago'), findsNothing);
 
     // A new item starts in the group being browsed.
     await tester.tap(find.text('Nuovo'));
@@ -84,10 +152,82 @@ void main() {
     c.dispose();
   });
 
+  testWidgets('a single group stays open', (tester) async {
+    desktop(tester);
+    final c = await unlockedWith([('Jira', 'Lavoro'), ('Bank', '')]);
+    await tester.pumpWidget(ArcanumApp(controller: c));
+
+    expect(header('Lavoro'), findsOneWidget);
+    expect(find.text('Jira'), findsOneWidget);
+    expect(find.text('Bank'), findsOneWidget);
+
+    await tester.tap(header('Lavoro'));
+    await tester.pump();
+    expect(find.text('Jira'), findsNothing);
+    expect(find.text('Bank'), findsOneWidget);
+    c.dispose();
+  });
+
+  testWidgets('subgroups nest in the list; the bar shows only root groups', (
+    tester,
+  ) async {
+    desktop(tester);
+    final c = await unlockedWith([
+      ('Slack', 'Lavoro'),
+      ('Jira', 'Lavoro/Clienti/Acme'),
+      ('Netflix', 'Svago'),
+    ]);
+    await tester.pumpWidget(ArcanumApp(controller: c));
+
+    // Chips: "all" plus one per root group.
+    expect(find.byType(ChoiceChip), findsNWidgets(3));
+    expect(chip('Lavoro'), findsOneWidget);
+    expect(chip('Svago'), findsOneWidget);
+    expect(chip('Clienti'), findsNothing);
+    expect(find.textContaining('/'), findsNothing);
+
+    // Closed root: its subgroups are hidden with it. The count covers
+    // the whole subtree.
+    expect(header('Clienti'), findsNothing);
+    expect(
+      find.descendant(of: header('Lavoro'), matching: find.text('2')),
+      findsOneWidget,
+    );
+
+    // Open level by level.
+    await tester.tap(header('Lavoro'));
+    await tester.pump();
+    expect(find.text('Slack'), findsOneWidget);
+    expect(header('Clienti'), findsOneWidget);
+    expect(header('Acme'), findsNothing);
+    expect(find.text('Jira'), findsNothing);
+
+    await tester.tap(header('Clienti'));
+    await tester.pump();
+    await tester.tap(header('Acme'));
+    await tester.pump();
+    expect(find.text('Jira'), findsOneWidget);
+
+    // Closing the root hides everything below it again.
+    await tester.tap(header('Lavoro'));
+    await tester.pump();
+    expect(find.text('Jira'), findsNothing);
+    expect(header('Acme'), findsNothing);
+
+    // Filtering by the root shows its items and its subgroups' headers,
+    // not its own.
+    await tester.tap(chip('Lavoro'));
+    await tester.pump();
+    expect(header('Lavoro'), findsNothing);
+    expect(find.text('Slack'), findsOneWidget);
+    expect(header('Clienti'), findsOneWidget);
+    expect(find.text('Netflix'), findsNothing);
+
+    c.dispose();
+  });
+
   testWidgets('deleting a group keeps its items', (tester) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    desktop(tester);
     final c = await unlockedWith([('Jira', 'Lavoro'), ('Bank', '')]);
     await tester.pumpWidget(ArcanumApp(controller: c));
 
