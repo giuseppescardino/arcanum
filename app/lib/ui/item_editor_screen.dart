@@ -9,6 +9,7 @@ import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'breach_status.dart';
 import 'generator_dialog.dart';
+import 'markdown_notes.dart';
 import 'strength_meter.dart';
 import 'totp_view.dart';
 import 'widgets.dart';
@@ -110,6 +111,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       totp: isLogin && totp.isNotEmpty ? totp : null,
       favorite: _favorite,
       group: _group.text.trim(),
+      color: null,
     );
   }
 
@@ -339,15 +341,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                TextFormField(
+                MarkdownNotesField(
                   controller: _notes,
-                  keyboardType: TextInputType.multiline,
+                  label: context.l10n.editorNotes,
                   minLines: isLogin ? 3 : 10,
-                  maxLines: null,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.editorNotes,
-                    alignLabelWithHint: true,
-                  ),
+                  startInPreview: !_isNew,
                 ),
               ],
             ),

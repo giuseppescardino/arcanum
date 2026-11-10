@@ -1536,6 +1536,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not read or write the file: {details}'**
   String errorFile(String details);
+
+  /// No description provided for @vaultGroupColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get vaultGroupColor;
+
+  /// No description provided for @vaultGroupColorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Color of \"{group}\"'**
+  String vaultGroupColorTitle(String group);
+
+  /// No description provided for @vaultGroupColorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No color'**
+  String get vaultGroupColorNone;
+
+  /// No description provided for @vaultGroupColorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Subgroups without a color of their own use this one.'**
+  String get vaultGroupColorHint;
+
+  /// No description provided for @notesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get notesEdit;
+
+  /// No description provided for @notesPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get notesPreview;
+
+  /// No description provided for @notesBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get notesBold;
+
+  /// No description provided for @notesItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get notesItalic;
+
+  /// No description provided for @notesStrike.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get notesStrike;
+
+  /// No description provided for @notesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get notesHeading;
+
+  /// No description provided for @notesBulletList.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulleted list'**
+  String get notesBulletList;
+
+  /// No description provided for @notesNumberedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get notesNumberedList;
+
+  /// No description provided for @notesChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get notesChecklist;
+
+  /// No description provided for @notesQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get notesQuote;
+
+  /// No description provided for @notesCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get notesCode;
+
+  /// No description provided for @notesLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get notesLink;
+
+  /// No description provided for @notesDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'Divider'**
+  String get notesDivider;
+
+  /// No description provided for @notesEmptyPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to show.'**
+  String get notesEmptyPreview;
+
+  /// No description provided for @notesOpenLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link?'**
+  String get notesOpenLinkTitle;
+
+  /// No description provided for @notesOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get notesOpen;
 }
 
 class _AppLocalizationsDelegate

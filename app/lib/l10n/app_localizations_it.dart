@@ -900,4 +900,67 @@ class AppLocalizationsIt extends AppLocalizations {
   String errorFile(String details) {
     return 'Impossibile leggere o scrivere il file: $details';
   }
+
+  @override
+  String get vaultGroupColor => 'Colore';
+
+  @override
+  String vaultGroupColorTitle(String group) {
+    return 'Colore di \"$group\"';
+  }
+
+  @override
+  String get vaultGroupColorNone => 'Nessun colore';
+
+  @override
+  String get vaultGroupColorHint =>
+      'I sottogruppi senza un colore proprio usano questo.';
+
+  @override
+  String get notesEdit => 'Modifica';
+
+  @override
+  String get notesPreview => 'Anteprima';
+
+  @override
+  String get notesBold => 'Grassetto';
+
+  @override
+  String get notesItalic => 'Corsivo';
+
+  @override
+  String get notesStrike => 'Barrato';
+
+  @override
+  String get notesHeading => 'Titolo';
+
+  @override
+  String get notesBulletList => 'Elenco puntato';
+
+  @override
+  String get notesNumberedList => 'Elenco numerato';
+
+  @override
+  String get notesChecklist => 'Lista di controllo';
+
+  @override
+  String get notesQuote => 'Citazione';
+
+  @override
+  String get notesCode => 'Codice';
+
+  @override
+  String get notesLink => 'Link';
+
+  @override
+  String get notesDivider => 'Separatore';
+
+  @override
+  String get notesEmptyPreview => 'Niente da mostrare.';
+
+  @override
+  String get notesOpenLinkTitle => 'Aprire il link?';
+
+  @override
+  String get notesOpen => 'Apri';
 }

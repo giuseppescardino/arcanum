@@ -264,9 +264,36 @@ class FakeVaultHandle implements VaultHandle {
         updatedAt: 1,
         fields: _withGroup(item.fields, to.isEmpty ? '' : '$to$rest'),
       );
-      moved++;
+      if (item.fields.kind == VaultItemKind.group) {
+        if (to.isEmpty) _items.remove(item.id);
+      } else {
+        moved++;
+      }
     }
     return moved;
+  }
+
+  @override
+  Future<void> setGroupColor({required String path, int? color}) async {
+    _requireUnlocked();
+    path = normalizeGroup(path);
+    _items.removeWhere(
+      (_, i) => i.fields.kind == VaultItemKind.group && i.fields.group == path,
+    );
+    if (color == null || path.isEmpty) return;
+    await addItem(
+      fields: ItemFields(
+        kind: VaultItemKind.group,
+        title: '',
+        username: '',
+        password: '',
+        urls: const [],
+        notes: '',
+        favorite: false,
+        group: path,
+        color: color,
+      ),
+    );
   }
 
   static ItemFields _withGroup(ItemFields f, String group) => ItemFields(
@@ -279,6 +306,7 @@ class FakeVaultHandle implements VaultHandle {
     totp: f.totp,
     favorite: f.favorite,
     group: group,
+    color: f.color,
   );
 
   // RustOpaqueInterface members are irrelevant for the fake.
@@ -343,6 +371,7 @@ ItemFields login(
   notes: '',
   favorite: favorite,
   group: group,
+  color: null,
 );
 
 /// Stand-in for the Rust formats: one `title|password|group` line per

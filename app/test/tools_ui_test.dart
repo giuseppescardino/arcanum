@@ -91,6 +91,7 @@ void main() {
         notes: '',
         favorite: false,
         group: '',
+        color: null,
       ).totp,
       isNull,
     );

@@ -16,6 +16,8 @@ use zeroize::Zeroizing;
 pub enum VaultItemKind {
     Login,
     SecureNote,
+    /// Settings of the group in `group` (its color); not shown as an item.
+    Group,
 }
 
 /// Editable fields of an item.
@@ -31,6 +33,8 @@ pub struct ItemFields {
     pub favorite: bool,
     /// Group path, levels separated by `/`; empty for none.
     pub group: String,
+    /// Color of a `Group` record as 0xAARRGGBB.
+    pub color: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -319,6 +323,11 @@ impl VaultHandle {
         Ok(self.vault()?.rename_group(&from, &to)?)
     }
 
+    /// Sets the color (0xAARRGGBB) of group `path`; `None` clears it.
+    pub fn set_group_color(&self, path: String, color: Option<u32>) -> Result<(), VaultFailure> {
+        Ok(self.vault()?.set_group_color(&path, color)?)
+    }
+
     fn vault(&self) -> Result<MutexGuard<'_, Vault>, VaultFailure> {
         self.inner
             .lock()
@@ -402,6 +411,7 @@ impl From<ItemFields> for ItemData {
         d.kind = match f.kind {
             VaultItemKind::Login => ItemKind::Login,
             VaultItemKind::SecureNote => ItemKind::SecureNote,
+            VaultItemKind::Group => ItemKind::Group,
         };
         d.title = f.title;
         d.username = f.username;
@@ -411,6 +421,7 @@ impl From<ItemFields> for ItemData {
         d.totp = f.totp;
         d.favorite = f.favorite;
         d.group = normalize_group(&f.group);
+        d.color = f.color;
         d
     }
 }
@@ -431,6 +442,7 @@ impl From<&ItemData> for ItemFields {
             kind: match d.kind {
                 ItemKind::Login => VaultItemKind::Login,
                 ItemKind::SecureNote => VaultItemKind::SecureNote,
+                ItemKind::Group => VaultItemKind::Group,
             },
             title: d.title.clone(),
             username: d.username.clone(),
@@ -440,6 +452,7 @@ impl From<&ItemData> for ItemFields {
             totp: d.totp.clone(),
             favorite: d.favorite,
             group: d.group.clone(),
+            color: d.color,
         }
     }
 }
