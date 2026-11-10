@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/android_autofill.dart';
 import '../app/breach_check.dart';
+import '../app/cards.dart';
 import '../app/clipboard.dart';
 import '../app/favicons.dart';
 import '../app/file_dialogs.dart';
@@ -15,6 +16,7 @@ import '../src/rust/api/vault.dart';
 import 'about.dart';
 import 'breach_check_screen.dart';
 import 'item_editor_screen.dart';
+import 'item_kind_sections.dart';
 import 'language_picker.dart';
 import 'site_icon.dart';
 import 'sync_screen.dart';
@@ -121,6 +123,8 @@ class _VaultScreenState extends State<VaultScreen> {
           q.isEmpty ||
           f.title.toLowerCase().contains(q) ||
           f.username.toLowerCase().contains(q) ||
+          (f.wifi?.ssid.toLowerCase().contains(q) ?? false) ||
+          (f.card?.holder.toLowerCase().contains(q) ?? false) ||
           group.toLowerCase().contains(q) ||
           f.urls.any((u) => u.toLowerCase().contains(q));
       if (matches) (byGroup[group] ??= []).add(i);
@@ -1014,17 +1018,37 @@ class _ItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = item.fields;
     final isLogin = f.kind == VaultItemKind.login;
-    final subtitle = isLogin
-        ? (f.username.isNotEmpty
-              ? f.username
-              : (f.urls.isNotEmpty ? f.urls.first : ''))
-        : f.notes.split('\n').first;
+    final card = f.card;
+    final wifi = f.wifi;
+    final subtitle = switch (f.kind) {
+      VaultItemKind.login =>
+        f.username.isNotEmpty
+            ? f.username
+            : (f.urls.isNotEmpty ? f.urls.first : ''),
+      VaultItemKind.wifi => wifi?.ssid ?? '',
+      VaultItemKind.card => [
+        if (card != null && cardBrand(card.number) != CardBrand.unknown)
+          cardBrand(card.number).label,
+        if (card != null && card.number.isNotEmpty) maskCardNumber(card.number),
+        if (card != null && card.expiry.isNotEmpty)
+          context.l10n.vaultExpiresOn(card.expiry),
+      ].join(' · '),
+      _ => f.notes.split('\n').first,
+    };
 
     return ListTile(
       contentPadding: _indent(depth),
-      leading: isLogin
-          ? SiteIcon(url: f.urls.firstOrNull, fallback: Icons.key)
-          : const CircleAvatar(child: Icon(Icons.sticky_note_2_outlined)),
+      leading: switch (f.kind) {
+        VaultItemKind.login => SiteIcon(
+          url: f.urls.firstOrNull,
+          fallback: Icons.key,
+        ),
+        VaultItemKind.wifi => const CircleAvatar(child: Icon(Icons.wifi)),
+        VaultItemKind.card => const CircleAvatar(
+          child: Icon(Icons.credit_card),
+        ),
+        _ => const CircleAvatar(child: Icon(Icons.sticky_note_2_outlined)),
+      },
       title: Row(
         children: [
           Flexible(
@@ -1094,6 +1118,28 @@ class _ItemTile extends StatelessWidget {
                     ),
                   ),
               ],
+            )
+          : wifi != null && wifi.ssid.isNotEmpty
+          ? IconButton(
+              tooltip: context.l10n.vaultShowWifiQr,
+              icon: const Icon(Icons.qr_code_2),
+              onPressed: () => showWifiQr(
+                context,
+                ssid: wifi.ssid,
+                security: wifi.security,
+                password: f.password,
+                hidden: wifi.hidden,
+              ),
+            )
+          : card != null && card.number.isNotEmpty
+          ? IconButton(
+              tooltip: context.l10n.vaultCopyCardNumber,
+              icon: const Icon(Icons.copy),
+              onPressed: () => copySecret(
+                context,
+                card.number,
+                label: context.l10n.cardNumber,
+              ),
             )
           : null,
     );

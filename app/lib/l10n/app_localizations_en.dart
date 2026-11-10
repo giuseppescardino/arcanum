@@ -967,4 +967,100 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesOpen => 'Open';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get editorKindWifi => 'Wi-Fi';
+
+  @override
+  String get editorKindCard => 'Card';
+
+  @override
+  String get wifiSsid => 'Network name (SSID)';
+
+  @override
+  String get wifiSsidRequired => 'Enter the network name.';
+
+  @override
+  String get wifiSecurity => 'Security';
+
+  @override
+  String get wifiSecurityWpa => 'WPA/WPA2/WPA3';
+
+  @override
+  String get wifiSecurityWep => 'WEP';
+
+  @override
+  String get wifiSecurityNone => 'None (open network)';
+
+  @override
+  String get wifiHidden => 'Hidden network';
+
+  @override
+  String get wifiShowQr => 'Show QR code';
+
+  @override
+  String get wifiQrHint =>
+      'Scan it with the other phone\'s camera to join the network.';
+
+  @override
+  String wifiQrSemantics(String ssid) {
+    return 'QR code to join $ssid';
+  }
+
+  @override
+  String get cardHolder => 'Cardholder';
+
+  @override
+  String get cardNumber => 'Card number';
+
+  @override
+  String cardNumberValid(String brand) {
+    return '$brand · valid number';
+  }
+
+  @override
+  String get cardNumberTooShort => 'The number is too short.';
+
+  @override
+  String cardNumberWrongLength(String brand) {
+    return 'Wrong number of digits for $brand.';
+  }
+
+  @override
+  String get cardBrandUnknown => 'this card';
+
+  @override
+  String get cardNumberChecksum => 'Invalid number: check the digits.';
+
+  @override
+  String get cardExpiry => 'Expiry';
+
+  @override
+  String get cardExpiryHint => 'MM/YY';
+
+  @override
+  String get cardExpiryInvalid => 'Use the MM/YY format.';
+
+  @override
+  String get cardExpired => 'Card expired';
+
+  @override
+  String get cardCvv => 'CVV';
+
+  @override
+  String get cardPin => 'PIN';
+
+  @override
+  String get vaultCopyCardNumber => 'Copy card number';
+
+  @override
+  String get vaultShowWifiQr => 'Show Wi-Fi QR code';
+
+  @override
+  String vaultExpiresOn(String expiry) {
+    return 'exp. $expiry';
+  }
 }

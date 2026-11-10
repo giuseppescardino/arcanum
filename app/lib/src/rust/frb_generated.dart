@@ -1594,6 +1594,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CardFields dco_decode_box_autoadd_card_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_card_fields(raw);
+  }
+
+  @protected
   ItemFields dco_decode_box_autoadd_item_fields(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_item_fields(raw);
@@ -1624,6 +1630,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int dco_decode_box_autoadd_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  WifiFields dco_decode_box_autoadd_wifi_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wifi_fields(raw);
+  }
+
+  @protected
+  CardFields dco_decode_card_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return CardFields(
+      holder: dco_decode_String(arr[0]),
+      number: dco_decode_String(arr[1]),
+      expiry: dco_decode_String(arr[2]),
+      cvv: dco_decode_String(arr[3]),
+      pin: dco_decode_String(arr[4]),
+    );
   }
 
   @protected
@@ -1661,8 +1688,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ItemFields dco_decode_item_fields(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 10)
-      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    if (arr.length != 12)
+      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
     return ItemFields(
       kind: dco_decode_vault_item_kind(arr[0]),
       title: dco_decode_String(arr[1]),
@@ -1674,6 +1701,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       favorite: dco_decode_bool(arr[7]),
       group: dco_decode_String(arr[8]),
       color: dco_decode_opt_box_autoadd_u_32(arr[9]),
+      wifi: dco_decode_opt_box_autoadd_wifi_fields(arr[10]),
+      card: dco_decode_opt_box_autoadd_card_fields(arr[11]),
     );
   }
 
@@ -1714,6 +1743,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CardFields? dco_decode_opt_box_autoadd_card_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_card_fields(raw);
+  }
+
+  @protected
   SyncInfo? dco_decode_opt_box_autoadd_sync_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_sync_info(raw);
@@ -1723,6 +1758,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_u_32(raw);
+  }
+
+  @protected
+  WifiFields? dco_decode_opt_box_autoadd_wifi_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_wifi_fields(raw);
   }
 
   @protected
@@ -1878,6 +1919,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  WifiFields dco_decode_wifi_fields(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return WifiFields(
+      ssid: dco_decode_String(arr[0]),
+      security: dco_decode_wifi_security_kind(arr[1]),
+      hidden: dco_decode_bool(arr[2]),
+    );
+  }
+
+  @protected
+  WifiSecurityKind dco_decode_wifi_security_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WifiSecurityKind.values[raw as int];
+  }
+
+  @protected
   VaultHandle
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVaultHandle(
     SseDeserializer deserializer,
@@ -1927,6 +1987,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CardFields sse_decode_box_autoadd_card_fields(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_card_fields(deserializer));
+  }
+
+  @protected
   ItemFields sse_decode_box_autoadd_item_fields(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_item_fields(deserializer));
@@ -1959,6 +2025,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_u_32(deserializer));
+  }
+
+  @protected
+  WifiFields sse_decode_box_autoadd_wifi_fields(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wifi_fields(deserializer));
+  }
+
+  @protected
+  CardFields sse_decode_card_fields(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_holder = sse_decode_String(deserializer);
+    var var_number = sse_decode_String(deserializer);
+    var var_expiry = sse_decode_String(deserializer);
+    var var_cvv = sse_decode_String(deserializer);
+    var var_pin = sse_decode_String(deserializer);
+    return CardFields(
+      holder: var_holder,
+      number: var_number,
+      expiry: var_expiry,
+      cvv: var_cvv,
+      pin: var_pin,
+    );
   }
 
   @protected
@@ -2006,6 +2095,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_favorite = sse_decode_bool(deserializer);
     var var_group = sse_decode_String(deserializer);
     var var_color = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_wifi = sse_decode_opt_box_autoadd_wifi_fields(deserializer);
+    var var_card = sse_decode_opt_box_autoadd_card_fields(deserializer);
     return ItemFields(
       kind: var_kind,
       title: var_title,
@@ -2017,6 +2108,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       favorite: var_favorite,
       group: var_group,
       color: var_color,
+      wifi: var_wifi,
+      card: var_card,
     );
   }
 
@@ -2082,6 +2175,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CardFields? sse_decode_opt_box_autoadd_card_fields(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_card_fields(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   SyncInfo? sse_decode_opt_box_autoadd_sync_info(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -2098,6 +2204,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_u_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  WifiFields? sse_decode_opt_box_autoadd_wifi_fields(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_wifi_fields(deserializer));
     } else {
       return null;
     }
@@ -2257,6 +2376,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  WifiFields sse_decode_wifi_fields(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_ssid = sse_decode_String(deserializer);
+    var var_security = sse_decode_wifi_security_kind(deserializer);
+    var var_hidden = sse_decode_bool(deserializer);
+    return WifiFields(
+      ssid: var_ssid,
+      security: var_security,
+      hidden: var_hidden,
+    );
+  }
+
+  @protected
+  WifiSecurityKind sse_decode_wifi_security_kind(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return WifiSecurityKind.values[inner];
+  }
+
+  @protected
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVaultHandle(
     VaultHandle self,
@@ -2308,6 +2447,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_card_fields(
+    CardFields self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_card_fields(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_item_fields(
     ItemFields self,
     SseSerializer serializer,
@@ -2350,6 +2498,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_wifi_fields(
+    WifiFields self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wifi_fields(self, serializer);
+  }
+
+  @protected
+  void sse_encode_card_fields(CardFields self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.holder, serializer);
+    sse_encode_String(self.number, serializer);
+    sse_encode_String(self.expiry, serializer);
+    sse_encode_String(self.cvv, serializer);
+    sse_encode_String(self.pin, serializer);
+  }
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
@@ -2388,6 +2555,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.favorite, serializer);
     sse_encode_String(self.group, serializer);
     sse_encode_opt_box_autoadd_u_32(self.color, serializer);
+    sse_encode_opt_box_autoadd_wifi_fields(self.wifi, serializer);
+    sse_encode_opt_box_autoadd_card_fields(self.card, serializer);
   }
 
   @protected
@@ -2456,6 +2625,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_card_fields(
+    CardFields? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_card_fields(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_sync_info(
     SyncInfo? self,
     SseSerializer serializer,
@@ -2475,6 +2657,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_u_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_wifi_fields(
+    WifiFields? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_wifi_fields(self, serializer);
     }
   }
 
@@ -2608,6 +2803,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_vault_item_kind(
     VaultItemKind self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_wifi_fields(WifiFields self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.ssid, serializer);
+    sse_encode_wifi_security_kind(self.security, serializer);
+    sse_encode_bool(self.hidden, serializer);
+  }
+
+  @protected
+  void sse_encode_wifi_security_kind(
+    WifiSecurityKind self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs

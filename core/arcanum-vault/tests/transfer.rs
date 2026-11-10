@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use arcanum_vault::transfer::{export_backup, export_csv, import, ImportFormat, TransferError};
-use arcanum_vault::{ItemData, ItemKind};
+use arcanum_vault::{CardData, ItemData, ItemKind, WifiData, WifiSecurity};
 
 fn login(title: &str) -> ItemData {
     let mut d = ItemData::default();
@@ -24,9 +24,36 @@ fn note(title: &str) -> ItemData {
     d
 }
 
+fn wifi(title: &str) -> ItemData {
+    let mut d = ItemData::default();
+    d.kind = ItemKind::Wifi;
+    d.title = title.into();
+    d.password = "s3cret;pw".into();
+    d.wifi = Some(WifiData {
+        ssid: "Casa, 5GHz".into(),
+        security: WifiSecurity::Wep,
+        hidden: true,
+    });
+    d
+}
+
+fn card(title: &str) -> ItemData {
+    let mut d = ItemData::default();
+    d.kind = ItemKind::Card;
+    d.title = title.into();
+    d.card = Some(CardData {
+        holder: "Mario Rossi".into(),
+        number: "4111111111111111".into(),
+        expiry: "08/29".into(),
+        cvv: "123".into(),
+        pin: "0042".into(),
+    });
+    d
+}
+
 #[test]
 fn csv_round_trips_every_field() {
-    let items = vec![login("GitHub"), note("Wi-Fi")];
+    let items = vec![login("GitHub"), note("Wi-Fi"), wifi("Casa"), card("Visa")];
     let csv = export_csv(&items);
     assert!(csv.starts_with("name,url,username,password,note,"));
 
@@ -87,7 +114,7 @@ fn backup_with_weak_kdf_is_refused() {
 }
 
 #[test]
-fn bitwarden_json_maps_folders_and_skips_cards() {
+fn bitwarden_json_maps_folders_cards_and_skips_identities() {
     let json = r#"{
       "encrypted": false,
       "folders": [{"id": "f1", "name": "Social/Chat"}],
@@ -96,13 +123,21 @@ fn bitwarden_json_maps_folders_and_skips_cards() {
          "login": {"username": "me", "password": "pw", "totp": "JBSW",
                    "uris": [{"uri": "https://slack.com"}, {"uri": "https://app.slack.com"}]}},
         {"type": 2, "name": "Recovery", "notes": "codes", "favorite": false, "folderId": null},
-        {"type": 3, "name": "Visa", "card": {"number": "4111"}}
+        {"type": 3, "name": "Visa", "card": {"cardholderName": "Mario Rossi",
+         "number": "4111 1111 1111 1111", "expMonth": "8", "expYear": "2029", "code": "123"}},
+        {"type": 4, "name": "Me", "identity": {}}
       ]
     }"#;
     let got = import(json.as_bytes(), None).unwrap();
     assert_eq!(got.format, ImportFormat::Bitwarden);
     assert_eq!(got.skipped, 1);
-    assert_eq!(got.items.len(), 2);
+    assert_eq!(got.items.len(), 3);
+    let visa = got.items[2].card.as_ref().unwrap();
+    assert_eq!(got.items[2].kind, ItemKind::Card);
+    assert_eq!(visa.number, "4111111111111111");
+    assert_eq!(visa.expiry, "08/29");
+    assert_eq!(visa.holder, "Mario Rossi");
+    assert_eq!(visa.cvv, "123");
     let slack = &got.items[0];
     assert_eq!(slack.group, "Social/Chat");
     assert!(slack.favorite);
