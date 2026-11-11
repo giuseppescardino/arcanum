@@ -4,7 +4,7 @@
 //
 // Loaded both as a classic content script (before content/ui.js) and as an
 // ES module by the tests, so it has no import/export: it sets
-// globalThis.ArcanumForms. This keeps every extension file out of
+// globalThis.Arcanum. This keeps every extension file out of
 // web_accessible_resources, where pages could probe for them.
 
 (() => {
@@ -57,5 +57,6 @@ function isNewPassword(fields, passwords, form) {
   return NEW_HINT.test(`${form.id || ''} ${form.name || ''} ${form.action || ''}`);
 }
 
-globalThis.ArcanumForms = { classifyFields };
+globalThis.Arcanum ??= {};
+globalThis.Arcanum.classifyFields = classifyFields;
 })();

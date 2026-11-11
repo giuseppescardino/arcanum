@@ -1,4 +1,5 @@
-import { ext } from '../lib/browser.js';
+(() => {
+const { ext } = globalThis.Arcanum;
 
 const main = document.getElementById('main');
 const send = (msg) => ext.runtime.sendMessage(msg);
@@ -125,3 +126,4 @@ async function renderReady() {
 }
 
 render();
+})();

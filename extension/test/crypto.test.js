@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { derive, generateKeyPair, importKey, keyPairFromScalar, open, seal, fromHex } from '../lib/crypto.js';
+import Arcanum from './load.js';
+
+const { derive, generateKeyPair, importKey, keyPairFromScalar, open, seal, fromHex } = Arcanum;
 
 const v = JSON.parse(readFileSync(new URL('./vectors.json', import.meta.url)));
 

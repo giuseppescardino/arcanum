@@ -1,16 +1,20 @@
 // Background message routing, free of browser APIs so it can be tested.
 // The page URL always comes from the browser (sender.tab or resolveTab),
 // never from the message.
+// Classic script (no import/export) so it loads in every browser's
+// background (importScripts), popup and tests; sets globalThis.Arcanum.
 
-import { httpHost } from './url.js';
+(() => {
+globalThis.Arcanum ??= {};
+const { httpHost } = globalThis.Arcanum;
 
-export const PENDING_TTL_MS = 120_000;
+const PENDING_TTL_MS = 120_000;
 
 /**
  * client: BridgeClient; session: async {get,set,remove} (memory only);
  * resolveTab(tabId) -> {id, url} for messages from the popup.
  */
-export function createRouter({ client, session, now = Date.now, resolveTab, browserName = 'Browser' }) {
+function createRouter({ client, session, now = Date.now, resolveTab, browserName = 'Browser' }) {
   let pairing = null; // { code, status: 'waiting'|'done'|<error code> }
 
   const pendingKey = (tabId) => `pending:${tabId}`;
@@ -151,3 +155,6 @@ export function createRouter({ client, session, now = Date.now, resolveTab, brow
     }
   };
 }
+
+Object.assign(globalThis.Arcanum, { PENDING_TTL_MS, createRouter });
+})();

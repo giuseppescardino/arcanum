@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { httpHost } from '../lib/url.js';
+import Arcanum from './load.js';
+
+const { httpHost } = Arcanum;
 
 test('drops www and port', () => {
   assert.equal(httpHost('https://www.example.com/login?x=1'), 'example.com');

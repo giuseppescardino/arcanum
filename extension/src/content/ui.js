@@ -4,7 +4,7 @@
 // nor read it. Page URLs are never sent: the background reads the tab URL.
 
 (() => {
-const { classifyFields } = globalThis.ArcanumForms;
+const { classifyFields } = globalThis.Arcanum;
 const ext = globalThis.browser ?? globalThis.chrome;
 
 // icons/icon-32.png, inlined so no extension file has to be web-accessible.

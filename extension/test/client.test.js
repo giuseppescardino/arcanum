@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BridgeClient, PORTS } from '../lib/client.js';
-import { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } from '../lib/crypto.js';
+import Arcanum from './load.js';
+
+const { BridgeClient, PORTS } = Arcanum;
+const { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = Arcanum;
 
 class MemoryStorage {
   constructor(init = {}) { this.data = { ...init }; }

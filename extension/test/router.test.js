@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRouter, PENDING_TTL_MS } from '../lib/router.js';
-import { BridgeError } from '../lib/client.js';
+import Arcanum from './load.js';
+
+const { createRouter, PENDING_TTL_MS } = Arcanum;
+const { BridgeError } = Arcanum;
 
 class MemoryStorage {
   constructor() { this.data = {}; }

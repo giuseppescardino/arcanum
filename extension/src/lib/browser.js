@@ -1,8 +1,13 @@
 // The WebExtension API object: `browser` on Safari, `chrome` elsewhere.
-export const ext = globalThis.browser ?? globalThis.chrome;
+// Classic script (no import/export) so it loads in every browser's
+// background (importScripts), popup and tests; sets globalThis.Arcanum.
+
+(() => {
+globalThis.Arcanum ??= {};
+const ext = globalThis.browser ?? globalThis.chrome;
 
 /** chrome.storage area as the async {get,set,remove} used by the client. */
-export function storageArea(area) {
+function storageArea(area) {
   if (!area) {
     const mem = new Map();
     return {
@@ -18,10 +23,13 @@ export function storageArea(area) {
   };
 }
 
-export function browserName(ua = globalThis.navigator?.userAgent ?? '') {
+function browserName(ua = globalThis.navigator?.userAgent ?? '') {
   if (/OPR\/|Opera/.test(ua)) return 'Opera';
   if (/Edg\//.test(ua)) return 'Edge';
   if (/Chrome\//.test(ua)) return 'Chrome';
   if (/Safari\//.test(ua)) return 'Safari';
   return 'Browser';
 }
+
+Object.assign(globalThis.Arcanum, { ext, storageArea, browserName });
+})();

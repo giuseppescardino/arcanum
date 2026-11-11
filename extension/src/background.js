@@ -1,7 +1,8 @@
 // Service worker: the only part of the extension that talks to the app.
-import { ext, storageArea, browserName } from './lib/browser.js';
-import { BridgeClient } from './lib/client.js';
-import { createRouter } from './lib/router.js';
+// A classic worker (Safari does not run module service workers).
+importScripts('lib/url.js', 'lib/crypto.js', 'lib/client.js', 'lib/router.js', 'lib/browser.js');
+
+const { ext, storageArea, browserName, BridgeClient, createRouter } = globalThis.Arcanum;
 
 const client = new BridgeClient({ storage: storageArea(ext.storage.local) });
 

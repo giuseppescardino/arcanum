@@ -1,13 +1,17 @@
 // Talks to the Arcanum desktop app on 127.0.0.1 (see
 // docs/superpowers/specs/2026-11-11-browser-extension-design.md).
+// Classic script (no import/export) so it loads in every browser's
+// background (importScripts), popup and tests; sets globalThis.Arcanum.
 
-import { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } from './crypto.js';
+(() => {
+globalThis.Arcanum ??= {};
+const { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = globalThis.Arcanum;
 
-export const PORTS = [47613, 47614, 47615];
+const PORTS = [47613, 47614, 47615];
 const PAIRING_TIMEOUT_MS = 130_000;
 const POLL_MS = 1000;
 
-export class BridgeError extends Error {
+class BridgeError extends Error {
   constructor(code) {
     super(code);
     this.code = code;
@@ -23,7 +27,7 @@ const randomId = () => {
  * storage: async key/value { get(k), set(k, v), remove(k) } holding
  * `port` and `pairing` ({ client, key: base64 }).
  */
-export class BridgeClient {
+class BridgeClient {
   constructor({ fetch = globalThis.fetch.bind(globalThis), storage, now = Date.now, sleep, randomId: rid = randomId }) {
     this.fetch = fetch;
     this.storage = storage;
@@ -145,3 +149,6 @@ export class BridgeClient {
     return reply.body;
   }
 }
+
+Object.assign(globalThis.Arcanum, { PORTS, BridgeError, BridgeClient });
+})();

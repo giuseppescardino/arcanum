@@ -1,6 +1,10 @@
 // Pairing and envelope crypto, mirroring core/arcanum-bridge with WebCrypto:
 // X25519 + HKDF-SHA256 for pairing, AES-256-GCM for messages.
+// Classic script (no import/export) so it loads in every browser's
+// background (importScripts), popup and tests; sets globalThis.Arcanum.
 
+(() => {
+globalThis.Arcanum ??= {};
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const subtle = globalThis.crypto.subtle;
@@ -23,9 +27,9 @@ const concat = (...parts) => {
   return out;
 };
 
-export const fromHex = (hex) => Uint8Array.from(hex.match(/../g) ?? [], (b) => parseInt(b, 16));
-export const toB64 = (bytes) => btoa(String.fromCharCode(...bytes));
-export const fromB64 = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const fromHex = (hex) => Uint8Array.from(hex.match(/../g) ?? [], (b) => parseInt(b, 16));
+const toB64 = (bytes) => btoa(String.fromCharCode(...bytes));
+const fromB64 = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
 async function withPublic(privateKey) {
   const jwk = await subtle.exportKey('jwk', privateKey);
@@ -34,13 +38,13 @@ async function withPublic(privateKey) {
 }
 
 /** Fresh ephemeral X25519 key pair: { privateKey, publicRaw (32 bytes) }. */
-export async function generateKeyPair() {
+async function generateKeyPair() {
   const kp = await subtle.generateKey({ name: 'X25519' }, true, ['deriveBits']);
   return { privateKey: kp.privateKey, publicRaw: new Uint8Array(await subtle.exportKey('raw', kp.publicKey)) };
 }
 
 /** Key pair from a fixed scalar, for test vectors only. */
-export async function keyPairFromScalar(scalar) {
+async function keyPairFromScalar(scalar) {
   const key = await subtle.importKey('pkcs8', concat(PKCS8_X25519, scalar), { name: 'X25519' }, true, ['deriveBits']);
   return withPublic(key);
 }
@@ -49,7 +53,7 @@ export async function keyPairFromScalar(scalar) {
  * Derives the message key and the 6-digit code. `extPub`/`appPub` fix the
  * transcript order; `peer` is the other side's public key.
  */
-export async function derive(privateKey, extPub, appPub, peer) {
+async function derive(privateKey, extPub, appPub, peer) {
   const peerKey = await subtle.importKey('raw', peer, { name: 'X25519' }, false, []);
   const shared = await subtle.deriveBits({ name: 'X25519', public: peerKey }, privateKey, 256);
   const th = new Uint8Array(await subtle.digest('SHA-256', concat(PAIR_LABEL, extPub, appPub)));
@@ -60,21 +64,24 @@ export async function derive(privateKey, extPub, appPub, peer) {
   return { keyRaw, key: await importKey(keyRaw), code: String(codeNum).padStart(6, '0') };
 }
 
-export function importKey(raw) {
+function importKey(raw) {
   return subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 
 const aad = (client, dir) => enc.encode(AAD_LABEL[dir] + client);
 
 /** base64(nonce ‖ ciphertext ‖ tag). `nonce` only for test vectors. */
-export async function seal(key, client, dir, plaintext, nonce = crypto.getRandomValues(new Uint8Array(12))) {
+async function seal(key, client, dir, plaintext, nonce = crypto.getRandomValues(new Uint8Array(12))) {
   const ct = await subtle.encrypt({ name: 'AES-GCM', iv: nonce, additionalData: aad(client, dir) }, key, enc.encode(plaintext));
   return toB64(concat(nonce, new Uint8Array(ct)));
 }
 
-export async function open(key, client, dir, b64) {
+async function open(key, client, dir, b64) {
   const raw = fromB64(b64);
   if (raw.length < 28) throw new Error('bad ciphertext');
   const pt = await subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), additionalData: aad(client, dir) }, key, raw.slice(12));
   return dec.decode(pt);
 }
+
+Object.assign(globalThis.Arcanum, { fromHex, toB64, fromB64, generateKeyPair, keyPairFromScalar, derive, importKey, seal, open });
+})();
