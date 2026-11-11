@@ -17,7 +17,7 @@ rand_core.workspace = true
 thiserror.workspace = true
 # Blocking client: calls already run on a worker thread (flutter_rust_bridge).
 # rustls + ring cross-compiles to Android/iOS without system OpenSSL.
-ureq = { version = "3", features = ["json"] }
+ureq = { version = "2", features = ["json"] }
 url = "2"
 
 [lints]
