@@ -1,7 +1,6 @@
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
 import '../autofill/matching.dart';
-import '../src/rust/api/tools.dart' show PasswordGeneratorOptions;
 import '../src/rust/api/vault.dart';
 
 /// Password suggested to the browser for new accounts.
