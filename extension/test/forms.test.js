@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyFields } from '../lib/forms.js';
+import '../lib/forms.js';
+
+const { classifyFields } = globalThis.ArcanumForms;
 
 const f = (type, extra = {}) => ({ type, name: '', id: '', autocomplete: '', placeholder: '', visible: true, ...extra });
 
