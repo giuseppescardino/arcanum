@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
+
 import 'package:arcanum/app/file_dialogs.dart';
 import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
@@ -324,6 +326,9 @@ class FakeQuickUnlockStore implements QuickUnlockStore {
   bool cancel = false;
   int prompts = 0;
 
+  /// Like iOS: the prompt fails unless the app is in the foreground.
+  bool foregroundOnly = false;
+
   @override
   String get methodName => 'Test Biometrics';
 
@@ -335,6 +340,8 @@ class FakeQuickUnlockStore implements QuickUnlockStore {
 
   @override
   Future<String?> read() async {
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (foregroundOnly && state != AppLifecycleState.resumed) return null;
     prompts++;
     return cancel ? null : stored;
   }

@@ -105,6 +105,77 @@ void main() {
     controller.lock(); // stop the auto-lock timer
   });
 
+  Future<void> moveTo(
+    WidgetTester tester,
+    List<AppLifecycleState> states,
+  ) async {
+    for (final s in states) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+  }
+
+  const toBackground = [
+    AppLifecycleState.inactive,
+    AppLifecycleState.hidden,
+    AppLifecycleState.paused,
+  ];
+  const toForeground = [
+    AppLifecycleState.hidden,
+    AppLifecycleState.inactive,
+    AppLifecycleState.resumed,
+  ];
+
+  testWidgets(
+    'returning to the app prompts for biometrics again',
+    (tester) async {
+      store.foregroundOnly = true;
+      await createUnlocked();
+      await controller.enableQuickUnlock();
+      await tester.pumpWidget(ArcanumApp(controller: controller));
+      expect(controller.stage, VaultStage.unlocked);
+
+      // Leaving locks the vault; the system can't prompt in background.
+      await moveTo(tester, toBackground);
+      expect(controller.stage, VaultStage.locked);
+      expect(store.prompts, 0);
+
+      await moveTo(tester, toForeground);
+      expect(store.prompts, 1);
+      expect(controller.stage, VaultStage.unlocked);
+
+      await tester.pumpWidget(const SizedBox());
+      controller.lock();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+  );
+
+  testWidgets('a cancelled prompt is not repeated by its own dismissal', (
+    tester,
+  ) async {
+    await createUnlocked();
+    await controller.enableQuickUnlock();
+    controller.lock();
+    store.cancel = true;
+    await tester.pumpWidget(ArcanumApp(controller: controller));
+    await tester.pumpAndSettle();
+    expect(store.prompts, 1);
+
+    // The Face ID sheet only makes the app inactive.
+    await moveTo(tester, [
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]);
+    expect(store.prompts, 1);
+
+    // A real trip to the background asks again.
+    await moveTo(tester, [...toBackground, ...toForeground]);
+    expect(store.prompts, 2);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('menu toggles quick unlock', (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
