@@ -20,6 +20,7 @@ dependencies:
   local_auth: ^3.0.2
   package_info_plus: 10.2.2
   path_provider: ^2.1.6
+  qr_flutter: ^4.1.0
   rust_lib_arcanum:
     path: rust_builder
   url_launcher: ^6.3.3

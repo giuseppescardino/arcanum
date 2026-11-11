@@ -9,6 +9,7 @@ import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'breach_status.dart';
 import 'generator_dialog.dart';
+import 'item_kind_sections.dart';
 import 'markdown_notes.dart';
 import 'strength_meter.dart';
 import 'totp_view.dart';
@@ -44,6 +45,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
   late final TextEditingController _totp;
   late final TextEditingController _notes;
   late final TextEditingController _group;
+  late final WifiDraft _wifi;
+  late final CardDraft _card;
   bool _busy = false;
 
   bool get _isNew => widget.item == null;
@@ -71,6 +74,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     _totp = TextEditingController(text: f?.totp);
     _notes = TextEditingController(text: f?.notes);
     _group = TextEditingController(text: f?.group ?? widget.initialGroup ?? '');
+    _wifi = WifiDraft(f?.wifi);
+    _card = CardDraft(f?.card);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _autoCheckBreach();
     });
@@ -89,17 +94,23 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     ]) {
       c.dispose();
     }
+    _wifi.dispose();
+    _card.dispose();
     super.dispose();
   }
 
   ItemFields _fields() {
     final isLogin = _kind == VaultItemKind.login;
+    final isWifi = _kind == VaultItemKind.wifi;
+    final wifi = _wifi.toFields();
     final totp = _totp.text.trim();
     return ItemFields(
       kind: _kind,
       title: _title.text.trim(),
       username: isLogin ? _username.text.trim() : '',
-      password: isLogin ? _password.text : '',
+      password: isLogin || (isWifi && wifi.security != WifiSecurityKind.none)
+          ? _password.text
+          : '',
       urls: isLogin
           ? _urls.text
                 .split('\n')
@@ -112,6 +123,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       favorite: _favorite,
       group: _group.text.trim(),
       color: null,
+      wifi: isWifi ? wifi : null,
+      card: _kind == VaultItemKind.card ? _card.toFields() : null,
     );
   }
 
@@ -203,21 +216,40 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 if (_isNew) ...[
-                  SegmentedButton<VaultItemKind>(
-                    segments: [
-                      ButtonSegment(
-                        value: VaultItemKind.login,
-                        icon: const Icon(Icons.key),
-                        label: Text(context.l10n.editorKindLogin),
-                      ),
-                      ButtonSegment(
-                        value: VaultItemKind.secureNote,
-                        icon: const Icon(Icons.sticky_note_2_outlined),
-                        label: Text(context.l10n.editorKindSecureNote),
-                      ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final (kind, icon, label) in [
+                        (
+                          VaultItemKind.login,
+                          Icons.key,
+                          context.l10n.editorKindLogin,
+                        ),
+                        (
+                          VaultItemKind.secureNote,
+                          Icons.sticky_note_2_outlined,
+                          context.l10n.editorKindSecureNote,
+                        ),
+                        (
+                          VaultItemKind.wifi,
+                          Icons.wifi,
+                          context.l10n.editorKindWifi,
+                        ),
+                        (
+                          VaultItemKind.card,
+                          Icons.credit_card,
+                          context.l10n.editorKindCard,
+                        ),
+                      ])
+                        ChoiceChip(
+                          avatar: Icon(icon, size: 18),
+                          showCheckmark: false,
+                          label: Text(label),
+                          selected: _kind == kind,
+                          onSelected: (_) => setState(() => _kind = kind),
+                        ),
                     ],
-                    selected: {_kind},
-                    onSelectionChanged: (s) => setState(() => _kind = s.first),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -340,11 +372,19 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                     },
                   ),
                 ],
+                if (_kind == VaultItemKind.wifi) ...[
+                  const SizedBox(height: 16),
+                  WifiSection(draft: _wifi, password: _password),
+                ],
+                if (_kind == VaultItemKind.card) ...[
+                  const SizedBox(height: 16),
+                  CardSection(draft: _card),
+                ],
                 const SizedBox(height: 16),
                 MarkdownNotesField(
                   controller: _notes,
                   label: context.l10n.editorNotes,
-                  minLines: isLogin ? 3 : 10,
+                  minLines: _kind == VaultItemKind.secureNote ? 10 : 3,
                   startInPreview: !_isNew,
                 ),
               ],

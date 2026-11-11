@@ -963,4 +963,100 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get notesOpen => 'Apri';
+
+  @override
+  String get close => 'Chiudi';
+
+  @override
+  String get editorKindWifi => 'Wi-Fi';
+
+  @override
+  String get editorKindCard => 'Carta';
+
+  @override
+  String get wifiSsid => 'Nome rete (SSID)';
+
+  @override
+  String get wifiSsidRequired => 'Inserisci il nome della rete.';
+
+  @override
+  String get wifiSecurity => 'Sicurezza';
+
+  @override
+  String get wifiSecurityWpa => 'WPA/WPA2/WPA3';
+
+  @override
+  String get wifiSecurityWep => 'WEP';
+
+  @override
+  String get wifiSecurityNone => 'Nessuna (rete aperta)';
+
+  @override
+  String get wifiHidden => 'Rete nascosta';
+
+  @override
+  String get wifiShowQr => 'Mostra codice QR';
+
+  @override
+  String get wifiQrHint =>
+      'Inquadralo con la fotocamera dell\'altro telefono per connetterti alla rete.';
+
+  @override
+  String wifiQrSemantics(String ssid) {
+    return 'Codice QR per connettersi a $ssid';
+  }
+
+  @override
+  String get cardHolder => 'Intestatario';
+
+  @override
+  String get cardNumber => 'Numero carta';
+
+  @override
+  String cardNumberValid(String brand) {
+    return '$brand · numero valido';
+  }
+
+  @override
+  String get cardNumberTooShort => 'Il numero è troppo corto.';
+
+  @override
+  String cardNumberWrongLength(String brand) {
+    return 'Numero di cifre errato per $brand.';
+  }
+
+  @override
+  String get cardBrandUnknown => 'questa carta';
+
+  @override
+  String get cardNumberChecksum => 'Numero non valido: controlla le cifre.';
+
+  @override
+  String get cardExpiry => 'Scadenza';
+
+  @override
+  String get cardExpiryHint => 'MM/AA';
+
+  @override
+  String get cardExpiryInvalid => 'Usa il formato MM/AA.';
+
+  @override
+  String get cardExpired => 'Carta scaduta';
+
+  @override
+  String get cardCvv => 'CVV';
+
+  @override
+  String get cardPin => 'PIN';
+
+  @override
+  String get vaultCopyCardNumber => 'Copia numero carta';
+
+  @override
+  String get vaultShowWifiQr => 'Mostra QR Wi-Fi';
+
+  @override
+  String vaultExpiresOn(String expiry) {
+    return 'scad. $expiry';
+  }
 }

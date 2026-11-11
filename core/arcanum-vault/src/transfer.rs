@@ -18,7 +18,7 @@ use serde_json::Value;
 use zeroize::Zeroizing;
 
 use crate::model::normalize_group;
-use crate::{ItemData, ItemKind};
+use crate::{CardData, ItemData, ItemKind, WifiData, WifiSecurity};
 
 const BACKUP_FORMAT: &str = "arcanum-backup";
 const BACKUP_VERSION: u32 = 1;
@@ -26,7 +26,7 @@ const BACKUP_LABEL: &str = "pm/backup/v1";
 
 /// Columns of the CSV export. The first five are the ones Chrome, Edge
 /// and Opera use; the rest carry what those browsers have no column for.
-const CSV_HEADER: [&str; 10] = [
+const CSV_HEADER: [&str; 18] = [
     "name",
     "url",
     "username",
@@ -37,6 +37,14 @@ const CSV_HEADER: [&str; 10] = [
     "favorite",
     "type",
     "extra_urls",
+    "wifi_ssid",
+    "wifi_security",
+    "wifi_hidden",
+    "card_holder",
+    "card_number",
+    "card_expiry",
+    "card_cvv",
+    "card_pin",
 ];
 
 #[derive(Debug, thiserror::Error)]
@@ -80,6 +88,8 @@ pub fn export_csv(items: &[ItemData]) -> String {
     push_csv_row(&mut out, CSV_HEADER.iter().copied());
     for d in items.iter().filter(|d| d.kind != ItemKind::Group) {
         let extra = d.urls.iter().skip(1).cloned().collect::<Vec<_>>().join(" ");
+        let wifi = d.wifi.clone().unwrap_or_default();
+        let card = d.card.clone().unwrap_or_default();
         let row = [
             d.title.as_str(),
             d.urls.first().map_or("", String::as_str),
@@ -92,8 +102,23 @@ pub fn export_csv(items: &[ItemData]) -> String {
             match d.kind {
                 ItemKind::Login => "login",
                 ItemKind::SecureNote | ItemKind::Group => "note",
+                ItemKind::Wifi => "wifi",
+                ItemKind::Card => "card",
             },
             extra.as_str(),
+            wifi.ssid.as_str(),
+            match (d.wifi.is_some(), wifi.security) {
+                (false, _) => "",
+                (true, WifiSecurity::Wpa) => "WPA",
+                (true, WifiSecurity::Wep) => "WEP",
+                (true, WifiSecurity::None) => "nopass",
+            },
+            if wifi.hidden { "1" } else { "" },
+            card.holder.as_str(),
+            card.number.as_str(),
+            card.expiry.as_str(),
+            card.cvv.as_str(),
+            card.pin.as_str(),
         ];
         push_csv_row(&mut out, row.into_iter());
     }
@@ -298,7 +323,8 @@ fn import_bitwarden_json(root: &Value) -> Result<Imported> {
         let kind = match entry.get("type").and_then(Value::as_u64) {
             Some(1) => ItemKind::Login,
             Some(2) => ItemKind::SecureNote,
-            // Cards and identities have no counterpart here.
+            Some(3) => ItemKind::Card,
+            // Identities have no counterpart here.
             _ => {
                 skipped = skipped.saturating_add(1);
                 continue;
@@ -315,6 +341,22 @@ fn import_bitwarden_json(root: &Value) -> Result<Imported> {
             .and_then(|id| folders.get(id))
             .cloned()
             .unwrap_or_default();
+        if let Some(card) = entry.get("card").filter(|_| kind == ItemKind::Card) {
+            let month = text(card, "expMonth");
+            let year = text(card, "expYear");
+            let year = year.get(year.len().saturating_sub(2)..).unwrap_or_default();
+            d.card = Some(CardData {
+                holder: text(card, "cardholderName"),
+                number: digits(&text(card, "number")),
+                expiry: if month.is_empty() || year.is_empty() {
+                    String::new()
+                } else {
+                    format!("{month:0>2}/{year}")
+                },
+                cvv: text(card, "code"),
+                pin: String::new(),
+            });
+        }
         if let Some(login) = entry.get("login") {
             d.username = text(login, "username");
             d.password = text(login, "password");
@@ -334,6 +376,10 @@ fn import_bitwarden_json(root: &Value) -> Result<Imported> {
         items,
         skipped,
     })
+}
+
+fn digits(s: &str) -> String {
+    s.chars().filter(char::is_ascii_digit).collect()
 }
 
 // ---- CSV
@@ -405,6 +451,14 @@ fn import_csv(text: &str) -> Result<Imported> {
     let favorite = column(&["favorite", "favourite"]);
     let kind = column(&["type"]);
     let extra_urls = column(&["extra_urls"]);
+    let wifi_ssid = column(&["wifi_ssid"]);
+    let wifi_security = column(&["wifi_security"]);
+    let wifi_hidden = column(&["wifi_hidden"]);
+    let card_holder = column(&["card_holder"]);
+    let card_number = column(&["card_number"]);
+    let card_expiry = column(&["card_expiry"]);
+    let card_cvv = column(&["card_cvv"]);
+    let card_pin = column(&["card_pin"]);
 
     // Without these it is some other table, not a credential export.
     if password.is_none() || (title.is_none() && url.is_none()) {
@@ -435,6 +489,8 @@ fn import_csv(text: &str) -> Result<Imported> {
         d.kind = match type_name.as_str() {
             "" | "login" | "1" => ItemKind::Login,
             "note" | "securenote" | "secure_note" | "secure note" | "2" => ItemKind::SecureNote,
+            "wifi" => ItemKind::Wifi,
+            "card" => ItemKind::Card,
             _ => {
                 skipped = skipped.saturating_add(1);
                 continue;
@@ -446,6 +502,26 @@ fn import_csv(text: &str) -> Result<Imported> {
         d.notes = cell(notes).to_owned();
         d.totp = non_empty(cell(totp));
         d.favorite = is_truthy(cell(favorite));
+        if d.kind == ItemKind::Wifi {
+            d.wifi = Some(WifiData {
+                ssid: cell(wifi_ssid).to_owned(),
+                security: match cell(wifi_security).trim().to_ascii_lowercase().as_str() {
+                    "wep" => WifiSecurity::Wep,
+                    "nopass" | "none" | "" if cell(password).is_empty() => WifiSecurity::None,
+                    _ => WifiSecurity::Wpa,
+                },
+                hidden: is_truthy(cell(wifi_hidden)),
+            });
+        }
+        if d.kind == ItemKind::Card {
+            d.card = Some(CardData {
+                holder: cell(card_holder).to_owned(),
+                number: digits(cell(card_number)),
+                expiry: cell(card_expiry).trim().to_owned(),
+                cvv: cell(card_cvv).to_owned(),
+                pin: cell(card_pin).to_owned(),
+            });
+        }
         d.group = match format {
             // Tags are a list: file the item under the first one.
             ImportFormat::OnePassword => cell(group)

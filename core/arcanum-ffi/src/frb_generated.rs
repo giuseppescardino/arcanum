@@ -1776,6 +1776,24 @@ impl SseDecode for bool {
     }
 }
 
+impl SseDecode for crate::api::vault::CardFields {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_holder = <String>::sse_decode(deserializer);
+        let mut var_number = <String>::sse_decode(deserializer);
+        let mut var_expiry = <String>::sse_decode(deserializer);
+        let mut var_cvv = <String>::sse_decode(deserializer);
+        let mut var_pin = <String>::sse_decode(deserializer);
+        return crate::api::vault::CardFields {
+            holder: var_holder,
+            number: var_number,
+            expiry: var_expiry,
+            cvv: var_cvv,
+            pin: var_pin,
+        };
+    }
+}
+
 impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1832,6 +1850,8 @@ impl SseDecode for crate::api::vault::ItemFields {
         let mut var_favorite = <bool>::sse_decode(deserializer);
         let mut var_group = <String>::sse_decode(deserializer);
         let mut var_color = <Option<u32>>::sse_decode(deserializer);
+        let mut var_wifi = <Option<crate::api::vault::WifiFields>>::sse_decode(deserializer);
+        let mut var_card = <Option<crate::api::vault::CardFields>>::sse_decode(deserializer);
         return crate::api::vault::ItemFields {
             kind: var_kind,
             title: var_title,
@@ -1843,6 +1863,8 @@ impl SseDecode for crate::api::vault::ItemFields {
             favorite: var_favorite,
             group: var_group,
             color: var_color,
+            wifi: var_wifi,
+            card: var_card,
         };
     }
 }
@@ -1906,6 +1928,17 @@ impl SseDecode for Option<String> {
     }
 }
 
+impl SseDecode for Option<crate::api::vault::CardFields> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::vault::CardFields>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<crate::api::vault::SyncInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1922,6 +1955,17 @@ impl SseDecode for Option<u32> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<u32>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::vault::WifiFields> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::vault::WifiFields>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2131,8 +2175,37 @@ impl SseDecode for crate::api::vault::VaultItemKind {
         return match inner {
             0 => crate::api::vault::VaultItemKind::Login,
             1 => crate::api::vault::VaultItemKind::SecureNote,
-            2 => crate::api::vault::VaultItemKind::Group,
+            2 => crate::api::vault::VaultItemKind::Wifi,
+            3 => crate::api::vault::VaultItemKind::Card,
+            4 => crate::api::vault::VaultItemKind::Group,
             _ => unreachable!("Invalid variant for VaultItemKind: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::vault::WifiFields {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_ssid = <String>::sse_decode(deserializer);
+        let mut var_security = <crate::api::vault::WifiSecurityKind>::sse_decode(deserializer);
+        let mut var_hidden = <bool>::sse_decode(deserializer);
+        return crate::api::vault::WifiFields {
+            ssid: var_ssid,
+            security: var_security,
+            hidden: var_hidden,
+        };
+    }
+}
+
+impl SseDecode for crate::api::vault::WifiSecurityKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::vault::WifiSecurityKind::Wpa,
+            1 => crate::api::vault::WifiSecurityKind::Wep,
+            2 => crate::api::vault::WifiSecurityKind::None,
+            _ => unreachable!("Invalid variant for WifiSecurityKind: {}", inner),
         };
     }
 }
@@ -2279,6 +2352,27 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<VaultHandle>> for VaultHandle 
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::vault::CardFields {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.holder.into_into_dart().into_dart(),
+            self.number.into_into_dart().into_dart(),
+            self.expiry.into_into_dart().into_dart(),
+            self.cvv.into_into_dart().into_dart(),
+            self.pin.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::vault::CardFields {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::vault::CardFields>
+    for crate::api::vault::CardFields
+{
+    fn into_into_dart(self) -> crate::api::vault::CardFields {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::transfer::ImportData {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -2338,6 +2432,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::ItemFields {
             self.favorite.into_into_dart().into_dart(),
             self.group.into_into_dart().into_dart(),
             self.color.into_into_dart().into_dart(),
+            self.wifi.into_into_dart().into_dart(),
+            self.card.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2585,7 +2681,9 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::VaultItemKind {
         match self {
             Self::Login => 0.into_dart(),
             Self::SecureNote => 1.into_dart(),
-            Self::Group => 2.into_dart(),
+            Self::Wifi => 2.into_dart(),
+            Self::Card => 3.into_dart(),
+            Self::Group => 4.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2598,6 +2696,47 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::vault::VaultItemKind>
     for crate::api::vault::VaultItemKind
 {
     fn into_into_dart(self) -> crate::api::vault::VaultItemKind {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::vault::WifiFields {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.ssid.into_into_dart().into_dart(),
+            self.security.into_into_dart().into_dart(),
+            self.hidden.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::vault::WifiFields {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::vault::WifiFields>
+    for crate::api::vault::WifiFields
+{
+    fn into_into_dart(self) -> crate::api::vault::WifiFields {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::vault::WifiSecurityKind {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Wpa => 0.into_dart(),
+            Self::Wep => 1.into_dart(),
+            Self::None => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::vault::WifiSecurityKind
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::vault::WifiSecurityKind>
+    for crate::api::vault::WifiSecurityKind
+{
+    fn into_into_dart(self) -> crate::api::vault::WifiSecurityKind {
         self
     }
 }
@@ -2631,6 +2770,17 @@ impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u8(self as _).unwrap();
+    }
+}
+
+impl SseEncode for crate::api::vault::CardFields {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.holder, serializer);
+        <String>::sse_encode(self.number, serializer);
+        <String>::sse_encode(self.expiry, serializer);
+        <String>::sse_encode(self.cvv, serializer);
+        <String>::sse_encode(self.pin, serializer);
     }
 }
 
@@ -2689,6 +2839,8 @@ impl SseEncode for crate::api::vault::ItemFields {
         <bool>::sse_encode(self.favorite, serializer);
         <String>::sse_encode(self.group, serializer);
         <Option<u32>>::sse_encode(self.color, serializer);
+        <Option<crate::api::vault::WifiFields>>::sse_encode(self.wifi, serializer);
+        <Option<crate::api::vault::CardFields>>::sse_encode(self.card, serializer);
     }
 }
 
@@ -2742,6 +2894,16 @@ impl SseEncode for Option<String> {
     }
 }
 
+impl SseEncode for Option<crate::api::vault::CardFields> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::vault::CardFields>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<crate::api::vault::SyncInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2758,6 +2920,16 @@ impl SseEncode for Option<u32> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <u32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::vault::WifiFields> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::vault::WifiFields>::sse_encode(value, serializer);
         }
     }
 }
@@ -2935,7 +3107,35 @@ impl SseEncode for crate::api::vault::VaultItemKind {
             match self {
                 crate::api::vault::VaultItemKind::Login => 0,
                 crate::api::vault::VaultItemKind::SecureNote => 1,
-                crate::api::vault::VaultItemKind::Group => 2,
+                crate::api::vault::VaultItemKind::Wifi => 2,
+                crate::api::vault::VaultItemKind::Card => 3,
+                crate::api::vault::VaultItemKind::Group => 4,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::vault::WifiFields {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.ssid, serializer);
+        <crate::api::vault::WifiSecurityKind>::sse_encode(self.security, serializer);
+        <bool>::sse_encode(self.hidden, serializer);
+    }
+}
+
+impl SseEncode for crate::api::vault::WifiSecurityKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::vault::WifiSecurityKind::Wpa => 0,
+                crate::api::vault::WifiSecurityKind::Wep => 1,
+                crate::api::vault::WifiSecurityKind::None => 2,
                 _ => {
                     unimplemented!("");
                 }

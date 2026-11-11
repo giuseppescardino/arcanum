@@ -1656,6 +1656,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get notesOpen;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @editorKindWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi'**
+  String get editorKindWifi;
+
+  /// No description provided for @editorKindCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get editorKindCard;
+
+  /// No description provided for @wifiSsid.
+  ///
+  /// In en, this message translates to:
+  /// **'Network name (SSID)'**
+  String get wifiSsid;
+
+  /// No description provided for @wifiSsidRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the network name.'**
+  String get wifiSsidRequired;
+
+  /// No description provided for @wifiSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get wifiSecurity;
+
+  /// No description provided for @wifiSecurityWpa.
+  ///
+  /// In en, this message translates to:
+  /// **'WPA/WPA2/WPA3'**
+  String get wifiSecurityWpa;
+
+  /// No description provided for @wifiSecurityWep.
+  ///
+  /// In en, this message translates to:
+  /// **'WEP'**
+  String get wifiSecurityWep;
+
+  /// No description provided for @wifiSecurityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None (open network)'**
+  String get wifiSecurityNone;
+
+  /// No description provided for @wifiHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden network'**
+  String get wifiHidden;
+
+  /// No description provided for @wifiShowQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Show QR code'**
+  String get wifiShowQr;
+
+  /// No description provided for @wifiQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan it with the other phone\'s camera to join the network.'**
+  String get wifiQrHint;
+
+  /// No description provided for @wifiQrSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code to join {ssid}'**
+  String wifiQrSemantics(String ssid);
+
+  /// No description provided for @cardHolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardholder'**
+  String get cardHolder;
+
+  /// No description provided for @cardNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Card number'**
+  String get cardNumber;
+
+  /// No description provided for @cardNumberValid.
+  ///
+  /// In en, this message translates to:
+  /// **'{brand} · valid number'**
+  String cardNumberValid(String brand);
+
+  /// No description provided for @cardNumberTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The number is too short.'**
+  String get cardNumberTooShort;
+
+  /// No description provided for @cardNumberWrongLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong number of digits for {brand}.'**
+  String cardNumberWrongLength(String brand);
+
+  /// No description provided for @cardBrandUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'this card'**
+  String get cardBrandUnknown;
+
+  /// No description provided for @cardNumberChecksum.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid number: check the digits.'**
+  String get cardNumberChecksum;
+
+  /// No description provided for @cardExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry'**
+  String get cardExpiry;
+
+  /// No description provided for @cardExpiryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'MM/YY'**
+  String get cardExpiryHint;
+
+  /// No description provided for @cardExpiryInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the MM/YY format.'**
+  String get cardExpiryInvalid;
+
+  /// No description provided for @cardExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Card expired'**
+  String get cardExpired;
+
+  /// No description provided for @cardCvv.
+  ///
+  /// In en, this message translates to:
+  /// **'CVV'**
+  String get cardCvv;
+
+  /// No description provided for @cardPin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get cardPin;
+
+  /// No description provided for @vaultCopyCardNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy card number'**
+  String get vaultCopyCardNumber;
+
+  /// No description provided for @vaultShowWifiQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Wi-Fi QR code'**
+  String get vaultShowWifiQr;
+
+  /// No description provided for @vaultExpiresOn.
+  ///
+  /// In en, this message translates to:
+  /// **'exp. {expiry}'**
+  String vaultExpiresOn(String expiry);
 }
 
 class _AppLocalizationsDelegate

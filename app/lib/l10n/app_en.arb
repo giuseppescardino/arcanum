@@ -651,5 +651,62 @@
   "notesDivider": "Divider",
   "notesEmptyPreview": "Nothing to show.",
   "notesOpenLinkTitle": "Open link?",
-  "notesOpen": "Open"
+  "notesOpen": "Open",
+  "close": "Close",
+  "editorKindWifi": "Wi-Fi",
+  "editorKindCard": "Card",
+  "wifiSsid": "Network name (SSID)",
+  "wifiSsidRequired": "Enter the network name.",
+  "wifiSecurity": "Security",
+  "wifiSecurityWpa": "WPA/WPA2/WPA3",
+  "wifiSecurityWep": "WEP",
+  "wifiSecurityNone": "None (open network)",
+  "wifiHidden": "Hidden network",
+  "wifiShowQr": "Show QR code",
+  "wifiQrHint": "Scan it with the other phone's camera to join the network.",
+  "wifiQrSemantics": "QR code to join {ssid}",
+  "@wifiQrSemantics": {
+    "placeholders": {
+      "ssid": {
+        "type": "String"
+      }
+    }
+  },
+  "cardHolder": "Cardholder",
+  "cardNumber": "Card number",
+  "cardNumberValid": "{brand} · valid number",
+  "@cardNumberValid": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "cardNumberTooShort": "The number is too short.",
+  "cardNumberWrongLength": "Wrong number of digits for {brand}.",
+  "@cardNumberWrongLength": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "cardBrandUnknown": "this card",
+  "cardNumberChecksum": "Invalid number: check the digits.",
+  "cardExpiry": "Expiry",
+  "cardExpiryHint": "MM/YY",
+  "cardExpiryInvalid": "Use the MM/YY format.",
+  "cardExpired": "Card expired",
+  "cardCvv": "CVV",
+  "cardPin": "PIN",
+  "vaultCopyCardNumber": "Copy card number",
+  "vaultShowWifiQr": "Show Wi-Fi QR code",
+  "vaultExpiresOn": "exp. {expiry}",
+  "@vaultExpiresOn": {
+    "placeholders": {
+      "expiry": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -8,7 +8,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `internal`, `new`, `parse_secret_key`, `vault`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Lets the UI validate a typed Secret Key before attempting an unlock.
 bool isValidSecretKey({required String secretKey}) =>
@@ -112,6 +112,45 @@ abstract class VaultHandle implements RustOpaqueInterface {
   });
 }
 
+class CardFields {
+  final String holder;
+
+  /// Digits only.
+  final String number;
+
+  /// `MM/YY`.
+  final String expiry;
+  final String cvv;
+  final String pin;
+
+  const CardFields({
+    required this.holder,
+    required this.number,
+    required this.expiry,
+    required this.cvv,
+    required this.pin,
+  });
+
+  @override
+  int get hashCode =>
+      holder.hashCode ^
+      number.hashCode ^
+      expiry.hashCode ^
+      cvv.hashCode ^
+      pin.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CardFields &&
+          runtimeType == other.runtimeType &&
+          holder == other.holder &&
+          number == other.number &&
+          expiry == other.expiry &&
+          cvv == other.cvv &&
+          pin == other.pin;
+}
+
 /// Editable fields of an item.
 class ItemFields {
   final VaultItemKind kind;
@@ -129,6 +168,12 @@ class ItemFields {
   /// Color of a `Group` record as 0xAARRGGBB.
   final int? color;
 
+  /// Network of a `Wifi` item; its password is `password`.
+  final WifiFields? wifi;
+
+  /// Details of a `Card` item.
+  final CardFields? card;
+
   const ItemFields({
     required this.kind,
     required this.title,
@@ -140,6 +185,8 @@ class ItemFields {
     required this.favorite,
     required this.group,
     this.color,
+    this.wifi,
+    this.card,
   });
 
   @override
@@ -153,7 +200,9 @@ class ItemFields {
       totp.hashCode ^
       favorite.hashCode ^
       group.hashCode ^
-      color.hashCode;
+      color.hashCode ^
+      wifi.hashCode ^
+      card.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -169,7 +218,9 @@ class ItemFields {
           totp == other.totp &&
           favorite == other.favorite &&
           group == other.group &&
-          color == other.color;
+          color == other.color &&
+          wifi == other.wifi &&
+          card == other.card;
 }
 
 class SyncInfo {
@@ -309,7 +360,35 @@ class VaultItem {
 enum VaultItemKind {
   login,
   secureNote,
+  wifi,
+  card,
 
   /// Settings of the group in `group` (its color); not shown as an item.
   group,
 }
+
+class WifiFields {
+  final String ssid;
+  final WifiSecurityKind security;
+  final bool hidden;
+
+  const WifiFields({
+    required this.ssid,
+    required this.security,
+    required this.hidden,
+  });
+
+  @override
+  int get hashCode => ssid.hashCode ^ security.hashCode ^ hidden.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WifiFields &&
+          runtimeType == other.runtimeType &&
+          ssid == other.ssid &&
+          security == other.security &&
+          hidden == other.hidden;
+}
+
+enum WifiSecurityKind { wpa, wep, none }

@@ -7,6 +7,10 @@ pub enum ItemKind {
     #[default]
     Login,
     SecureNote,
+    /// Wi-Fi network: [`ItemData::wifi`], password in [`ItemData::password`].
+    Wifi,
+    /// Payment card: [`ItemData::card`].
+    Card,
     /// Not an entry: settings of the group named in [`ItemData::group`]
     /// (its color). Stored and synced like an item, so group settings
     /// are as encrypted as everything else.
@@ -42,6 +46,49 @@ pub struct ItemData {
     /// Color of a [`ItemKind::Group`] record as 0xAARRGGBB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub color: Option<u32>,
+    /// Network details of a [`ItemKind::Wifi`] item.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wifi: Option<WifiData>,
+    /// Details of a [`ItemKind::Card`] item.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub card: Option<CardData>,
+}
+
+/// Wi-Fi authentication, as named in the `WIFI:` QR code format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, Zeroize)]
+#[serde(rename_all = "snake_case")]
+pub enum WifiSecurity {
+    #[default]
+    Wpa,
+    Wep,
+    None,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Zeroize)]
+pub struct WifiData {
+    #[serde(default)]
+    pub ssid: String,
+    #[serde(default)]
+    pub security: WifiSecurity,
+    /// The network does not broadcast its name.
+    #[serde(default)]
+    pub hidden: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Zeroize)]
+pub struct CardData {
+    #[serde(default)]
+    pub holder: String,
+    /// Digits only.
+    #[serde(default)]
+    pub number: String,
+    /// `MM/YY`.
+    #[serde(default)]
+    pub expiry: String,
+    #[serde(default)]
+    pub cvv: String,
+    #[serde(default)]
+    pub pin: String,
 }
 
 /// Separates the levels of a group path.

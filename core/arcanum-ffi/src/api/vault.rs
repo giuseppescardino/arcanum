@@ -6,7 +6,8 @@ use std::sync::{Mutex, MutexGuard};
 
 use arcanum_sync::SyncError;
 use arcanum_vault::{
-    normalize_group, ItemData, ItemKind, KdfParams, SecretKey, SyncReport, Vault, VaultError,
+    normalize_group, CardData, ItemData, ItemKind, KdfParams, SecretKey, SyncReport, Vault,
+    VaultError, WifiData, WifiSecurity,
 };
 use data_encoding::BASE64;
 use flutter_rust_bridge::frb;
@@ -16,6 +17,8 @@ use zeroize::Zeroizing;
 pub enum VaultItemKind {
     Login,
     SecureNote,
+    Wifi,
+    Card,
     /// Settings of the group in `group` (its color); not shown as an item.
     Group,
 }
@@ -35,6 +38,35 @@ pub struct ItemFields {
     pub group: String,
     /// Color of a `Group` record as 0xAARRGGBB.
     pub color: Option<u32>,
+    /// Network of a `Wifi` item; its password is `password`.
+    pub wifi: Option<WifiFields>,
+    /// Details of a `Card` item.
+    pub card: Option<CardFields>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WifiSecurityKind {
+    Wpa,
+    Wep,
+    None,
+}
+
+#[derive(Debug, Clone)]
+pub struct WifiFields {
+    pub ssid: String,
+    pub security: WifiSecurityKind,
+    pub hidden: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct CardFields {
+    pub holder: String,
+    /// Digits only.
+    pub number: String,
+    /// `MM/YY`.
+    pub expiry: String,
+    pub cvv: String,
+    pub pin: String,
 }
 
 #[derive(Debug, Clone)]
@@ -411,6 +443,8 @@ impl From<ItemFields> for ItemData {
         d.kind = match f.kind {
             VaultItemKind::Login => ItemKind::Login,
             VaultItemKind::SecureNote => ItemKind::SecureNote,
+            VaultItemKind::Wifi => ItemKind::Wifi,
+            VaultItemKind::Card => ItemKind::Card,
             VaultItemKind::Group => ItemKind::Group,
         };
         d.title = f.title;
@@ -422,6 +456,22 @@ impl From<ItemFields> for ItemData {
         d.favorite = f.favorite;
         d.group = normalize_group(&f.group);
         d.color = f.color;
+        d.wifi = f.wifi.map(|w| WifiData {
+            ssid: w.ssid,
+            security: match w.security {
+                WifiSecurityKind::Wpa => WifiSecurity::Wpa,
+                WifiSecurityKind::Wep => WifiSecurity::Wep,
+                WifiSecurityKind::None => WifiSecurity::None,
+            },
+            hidden: w.hidden,
+        });
+        d.card = f.card.map(|c| CardData {
+            holder: c.holder,
+            number: c.number.chars().filter(char::is_ascii_digit).collect(),
+            expiry: c.expiry,
+            cvv: c.cvv,
+            pin: c.pin,
+        });
         d
     }
 }
@@ -442,6 +492,8 @@ impl From<&ItemData> for ItemFields {
             kind: match d.kind {
                 ItemKind::Login => VaultItemKind::Login,
                 ItemKind::SecureNote => VaultItemKind::SecureNote,
+                ItemKind::Wifi => VaultItemKind::Wifi,
+                ItemKind::Card => VaultItemKind::Card,
                 ItemKind::Group => VaultItemKind::Group,
             },
             title: d.title.clone(),
@@ -453,6 +505,22 @@ impl From<&ItemData> for ItemFields {
             favorite: d.favorite,
             group: d.group.clone(),
             color: d.color,
+            wifi: d.wifi.as_ref().map(|w| WifiFields {
+                ssid: w.ssid.clone(),
+                security: match w.security {
+                    WifiSecurity::Wpa => WifiSecurityKind::Wpa,
+                    WifiSecurity::Wep => WifiSecurityKind::Wep,
+                    WifiSecurity::None => WifiSecurityKind::None,
+                },
+                hidden: w.hidden,
+            }),
+            card: d.card.as_ref().map(|c| CardFields {
+                holder: c.holder.clone(),
+                number: c.number.clone(),
+                expiry: c.expiry.clone(),
+                cvv: c.cvv.clone(),
+                pin: c.pin.clone(),
+            }),
         }
     }
 }
