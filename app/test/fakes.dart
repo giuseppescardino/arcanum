@@ -365,6 +365,7 @@ class MemorySecretKeyStore extends SecretKeyStore {
 
 ItemFields login(
   String title, {
+  String username = 'alice',
   String password = 'pw',
   bool favorite = false,
   String group = '',
@@ -372,7 +373,7 @@ ItemFields login(
 }) => ItemFields(
   kind: VaultItemKind.login,
   title: title,
-  username: 'alice',
+  username: username,
   password: password,
   urls: urls,
   notes: '',
