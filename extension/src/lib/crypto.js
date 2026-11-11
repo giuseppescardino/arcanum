@@ -12,6 +12,7 @@ const subtle = globalThis.crypto.subtle;
 const PAIR_LABEL = enc.encode('pm/bridge-pair/v1');
 const KEY_INFO = enc.encode('pm/bridge-key/v1');
 const CODE_INFO = enc.encode('pm/bridge-code/v1');
+const COMMIT_LABEL = enc.encode('pm/bridge-commit/v1');
 const AAD_LABEL = { req: 'pm/bridge-req/v1', res: 'pm/bridge-res/v1' };
 
 // PKCS#8 header for a raw X25519 private key (RFC 8410).
@@ -50,6 +51,14 @@ async function keyPairFromScalar(scalar) {
 }
 
 /**
+ * SHA-256(label ‖ extPub ‖ nonce): sent before the app's key is known, so
+ * a man in the middle cannot search for a key that matches the code.
+ */
+async function commitment(extPub, nonce) {
+  return new Uint8Array(await subtle.digest('SHA-256', concat(COMMIT_LABEL, extPub, nonce)));
+}
+
+/**
  * Derives the message key and the 6-digit code. `extPub`/`appPub` fix the
  * transcript order; `peer` is the other side's public key.
  */
@@ -83,5 +92,5 @@ async function open(key, client, dir, b64) {
   return dec.decode(pt);
 }
 
-Object.assign(globalThis.Arcanum, { fromHex, toB64, fromB64, generateKeyPair, keyPairFromScalar, derive, importKey, seal, open });
+Object.assign(globalThis.Arcanum, { commitment, fromHex, toB64, fromB64, generateKeyPair, keyPairFromScalar, derive, importKey, seal, open });
 })();

@@ -8,7 +8,7 @@ mod pairing;
 mod replay;
 
 pub use envelope::{open, seal, seal_with_nonce, Direction};
-pub use pairing::{derive, EphemeralKey, Paired};
+pub use pairing::{commitment, derive, verify_commitment, EphemeralKey, Paired, COMMIT_NONCE_LEN};
 pub use replay::ReplayGuard;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -21,4 +21,6 @@ pub enum BridgeError {
     Replay,
     #[error("message timestamp outside the accepted window")]
     Stale,
+    #[error("revealed key does not match the commitment")]
+    BadCommitment,
 }

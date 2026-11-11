@@ -59,7 +59,7 @@ function renderPairing(pairing) {
       p?.status === 'pairing_closed'
         ? 'In Arcanum apri il menu → Browser collegati → Collega browser, poi premi di nuovo Collega.'
         : p?.status === 'pairing_busy'
-          ? "Un altro browser si sta collegando: riprova tra poco."
+          ? "In Arcanum c'è già una richiesta di collegamento che non hai avviato tu? Premi Rifiuta nell'app, poi riprova."
           : 'Collegamento non riuscito.';
   });
   show(
@@ -72,9 +72,9 @@ function renderPairing(pairing) {
 
 function showCode(code) {
   show(
-    h('p', {}, 'Conferma in Arcanum che il codice sia lo stesso:'),
+    h('p', {}, 'Digita questo codice in Arcanum:'),
     h('div', { class: 'code' }, `${code.slice(0, 3)} ${code.slice(3)}`),
-    h('p', { class: 'muted' }, 'Se il codice è diverso, rifiuta nell’app.'),
+    h('p', { class: 'muted' }, 'Arcanum lo chiede per collegare questo browser. Non comunicarlo a nessuno.'),
   );
   const timer = setInterval(async () => {
     const { pairing } = await send({ kind: 'pairing' });

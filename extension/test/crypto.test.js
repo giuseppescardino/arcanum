@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import Arcanum from './load.js';
 
-const { derive, generateKeyPair, importKey, keyPairFromScalar, open, seal, fromHex } = Arcanum;
+const { commitment, derive, generateKeyPair, importKey, keyPairFromScalar, open, seal, fromHex } = Arcanum;
 
 const v = JSON.parse(readFileSync(new URL('./vectors.json', import.meta.url)));
 
@@ -20,6 +20,11 @@ test('reproduces the Rust request ciphertext and opens the response', async () =
   const ct = await seal(key, v.client, 'req', v.plaintext, fromHex(v.nonce));
   assert.equal(ct, v.request_ct);
   assert.equal(await open(key, v.client, 'res', v.response_ct), v.plaintext);
+});
+
+test('reproduces the Rust commitment', async () => {
+  const c = await commitment(fromHex(v.ext_pub), fromHex(v.commit_nonce));
+  assert.equal(Buffer.from(c).toString('hex'), v.commit);
 });
 
 test('wrong direction is rejected', async () => {

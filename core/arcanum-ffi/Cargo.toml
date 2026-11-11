@@ -18,6 +18,7 @@ arcanum-sync.workspace = true
 arcanum-tools.workspace = true
 arcanum-bridge.workspace = true
 zeroize.workspace = true
+rand_core.workspace = true
 data-encoding.workspace = true
 
 # Generated FFI glue needs `unsafe`, so the workspace lints don't apply here.

@@ -1635,6 +1635,7 @@ dependencies = [
  "arcanum-vault",
  "data-encoding",
  "flutter_rust_bridge",
+ "rand_core 0.6.4",
  "zeroize",
 ]
 

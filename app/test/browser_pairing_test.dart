@@ -66,15 +66,27 @@ void main() {
 
   Future<void> pairStart(WidgetTester tester) => tester.runAsync(() async {
     final client = HttpClient();
-    final req = await client.post('127.0.0.1', server.port!, '/v1');
-    req.write(
-      jsonEncode({
-        'type': 'pair_start',
-        'name': 'Chrome',
-        'pub': base64.encode(List.filled(32, 3)),
-      }),
-    );
-    await (await req.close()).drain<void>();
+    Future<Map<String, Object?>> post(Map<String, Object?> body) async {
+      final req = await client.post('127.0.0.1', server.port!, '/v1');
+      req.write(jsonEncode(body));
+      final res = await req.close();
+      return (jsonDecode(await utf8.decodeStream(res)) as Map)
+          .cast<String, Object?>();
+    }
+
+    // Commit, then reveal (FakeBridgeCrypto: commitment == nonce).
+    final nonce = base64.encode(List.filled(32, 5));
+    final start = await post({
+      'type': 'pair_start',
+      'name': 'Chrome',
+      'commit': nonce,
+    });
+    await post({
+      'type': 'pair_reveal',
+      'pairing': start['pairing'],
+      'pub': base64.encode(List.filled(32, 3)),
+      'nonce': nonce,
+    });
     client.close();
   });
 
@@ -99,7 +111,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Collegare Chrome?'), findsOneWidget);
-    expect(find.text('123 456'), findsOneWidget);
+    // The app never shows the code: the user types the browser's.
+    expect(find.text('123456'), findsNothing);
+    await tester.enterText(find.byType(TextField), '000000');
+    await tester.tap(find.widgetWithText(FilledButton, 'Collega'));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pumpAndSettle();
+    expect(find.text('Codice errato'), findsOneWidget);
+    expect(store.saved.single.name, 'Opera');
+
+    await tester.enterText(find.byType(TextField), '123456');
     await tester.tap(find.widgetWithText(FilledButton, 'Collega'));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pumpAndSettle();

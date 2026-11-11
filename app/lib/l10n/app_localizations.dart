@@ -1882,7 +1882,7 @@ abstract class AppLocalizations {
   /// No description provided for @browsersPairBody.
   ///
   /// In en, this message translates to:
-  /// **'Check that the browser shows the same code. If it is different, reject.'**
+  /// **'Type the 6-digit code shown by the browser\'s Arcanum extension. If the browser shows no code, reject.'**
   String get browsersPairBody;
 
   /// No description provided for @browsersReject.
@@ -1902,6 +1902,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The browser connection could not start: ports 47613–47615 are in use.'**
   String get browsersPortsBusy;
+
+  /// No description provided for @browsersWrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong code'**
+  String get browsersWrongCode;
 }
 
 class _AppLocalizationsDelegate

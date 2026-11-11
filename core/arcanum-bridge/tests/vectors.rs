@@ -2,7 +2,7 @@
 //! (`extension/test/crypto.test.js`). `UPDATE_VECTORS=1 cargo test`
 //! rewrites the file; otherwise the test fails if it is out of date.
 
-use arcanum_bridge::{derive, seal_with_nonce, Direction, EphemeralKey};
+use arcanum_bridge::{commitment, derive, seal_with_nonce, Direction, EphemeralKey};
 
 const PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -22,6 +22,8 @@ fn vectors_match_file() {
         "ext_scalar": hex::encode([1u8; 32]),
         "app_scalar": hex::encode([2u8; 32]),
         "ext_pub": hex::encode(e),
+        "commit_nonce": hex::encode([3u8; 32]),
+        "commit": hex::encode(commitment(&e, &[3u8; 32])),
         "app_pub": hex::encode(a),
         "key": hex::encode(*paired.key),
         "code": paired.code,

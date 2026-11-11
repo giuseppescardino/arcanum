@@ -12,6 +12,10 @@ use crate::BridgeError;
 const PAIR_LABEL: &[u8] = b"pm/bridge-pair/v1";
 const KEY_INFO: &[u8] = b"pm/bridge-key/v1";
 const CODE_INFO: &[u8] = b"pm/bridge-code/v1";
+const COMMIT_LABEL: &[u8] = b"pm/bridge-commit/v1";
+
+/// Bytes of randomness the browser adds to its commitment.
+pub const COMMIT_NONCE_LEN: usize = 32;
 
 /// One side's key pair for a single pairing attempt.
 pub struct EphemeralKey(StaticSecret);
@@ -29,6 +33,27 @@ impl EphemeralKey {
     pub fn public(&self) -> [u8; 32] {
         PublicKey::from(&self.0).to_bytes()
     }
+}
+
+/// The browser's commitment to its public key, sent before it sees the
+/// app's key: `SHA-256(label ‖ ext_pub ‖ nonce)`. Without it a man in the
+/// middle could pick its own key after seeing the app's and search for
+/// one that gives both sides the same 6-digit code.
+pub fn commitment(ext_pub: &[u8], nonce: &[u8]) -> [u8; 32] {
+    Sha256::new()
+        .chain_update(COMMIT_LABEL)
+        .chain_update(ext_pub)
+        .chain_update(nonce)
+        .finalize()
+        .into()
+}
+
+/// Checks a revealed key and nonce against the earlier commitment.
+pub fn verify_commitment(commit: &[u8], ext_pub: &[u8], nonce: &[u8]) -> Result<(), BridgeError> {
+    if nonce.len() != COMMIT_NONCE_LEN || commit != commitment(ext_pub, nonce) {
+        return Err(BridgeError::BadCommitment);
+    }
+    Ok(())
 }
 
 /// Result of a pairing: the shared key and the verification code.
@@ -117,6 +142,37 @@ mod tests {
         let short = [9u8; 31];
         let r = derive(&app, &short, &app.public(), &short);
         assert_eq!(r.err(), Some(BridgeError::InvalidKey));
+    }
+
+    #[test]
+    fn commitment_binds_key_and_nonce() {
+        let c = commitment(&[1; 32], &[2; 32]);
+        assert_eq!(c, commitment(&[1; 32], &[2; 32]));
+        assert_ne!(c, commitment(&[9; 32], &[2; 32]));
+        assert_ne!(c, commitment(&[1; 32], &[9; 32]));
+    }
+
+    #[test]
+    fn verify_commitment_rejects_another_key() {
+        let c = commitment(&[1; 32], &[2; 32]);
+        assert_eq!(verify_commitment(&c, &[1; 32], &[2; 32]), Ok(()));
+        assert_eq!(
+            verify_commitment(&c, &[7; 32], &[2; 32]),
+            Err(BridgeError::BadCommitment)
+        );
+        assert_eq!(
+            verify_commitment(&c[..31], &[1; 32], &[2; 32]),
+            Err(BridgeError::BadCommitment)
+        );
+    }
+
+    #[test]
+    fn short_nonce_rejected() {
+        let c = commitment(&[1; 32], &[2; 15]);
+        assert_eq!(
+            verify_commitment(&c, &[1; 32], &[2; 15]),
+            Err(BridgeError::BadCommitment)
+        );
     }
 
     #[test]

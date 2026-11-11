@@ -296,8 +296,9 @@
   "browsersRevoke": "Revoca",
   "browsersConnectedOn": "Collegato il {date}",
   "browsersPairTitle": "Collegare {name}?",
-  "browsersPairBody": "Verifica che il browser mostri lo stesso codice. Se è diverso, rifiuta.",
+  "browsersPairBody": "Digita il codice a 6 cifre mostrato dall'estensione Arcanum nel browser. Se il browser non mostra un codice, rifiuta.",
   "browsersReject": "Rifiuta",
   "browsersApprove": "Collega",
-  "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate."
+  "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.",
+  "browsersWrongCode": "Codice errato"
 }

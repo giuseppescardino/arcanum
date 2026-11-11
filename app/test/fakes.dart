@@ -466,20 +466,33 @@ class FakeFileDialogs implements FileDialogs {
 }
 
 /// Reversible stand-in for the bridge crypto: "ciphertext" is base64 of
-/// `client|direction|plaintext`, so tests can read and forge messages.
+/// `client|direction|plaintext`, so tests can read and forge messages. Its
+/// commitment rule: the commitment must equal the nonce.
 class FakeBridgeCrypto implements BridgeCrypto {
+  static const code = '123456';
+
   @override
-  BridgePairing pairRespond(Uint8List extPub) {
-    if (extPub.length != 32) {
+  BridgeAppKey pairBegin() => BridgeAppKey(
+    appPub: Uint8List.fromList(List.filled(32, 9)),
+    secret: Uint8List.fromList(List.filled(32, 1)),
+  );
+
+  @override
+  BridgePairing pairFinish(
+    BridgeAppKey appKey,
+    Uint8List extPub,
+    Uint8List nonce,
+    Uint8List commit,
+  ) {
+    if (extPub.length != 32 || base64.encode(commit) != base64.encode(nonce)) {
       throw const VaultFailure(
         code: VaultFailureCode.invalidInput,
         message: '',
       );
     }
     return BridgePairing(
-      appPub: Uint8List.fromList(List.filled(32, 9)),
       key: Uint8List.fromList(List.filled(32, extPub[1])),
-      code: '123456',
+      code: code,
     );
   }
 

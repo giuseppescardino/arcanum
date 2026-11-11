@@ -5,7 +5,7 @@
 
 (() => {
 globalThis.Arcanum ??= {};
-const { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = globalThis.Arcanum;
+const { commitment, derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = globalThis.Arcanum;
 
 const PORTS = [47613, 47614, 47615];
 const PAIRING_TIMEOUT_MS = 130_000;
@@ -100,12 +100,25 @@ class BridgeClient {
     await this.storage.remove('pairing');
   }
 
-  /** Pairs with the app; `onCode(code)` shows the 6 digits to compare. */
+  /**
+   * Pairs with the app; `onCode(code)` shows the 6 digits the user types in
+   * the app. The key is committed before the app's key is known and revealed
+   * only afterwards.
+   */
   async pair(name, onCode) {
     const kp = await generateKeyPair();
-    const start = await this._send({ type: 'pair_start', name, pub: toB64(kp.publicRaw) });
+    const nonce = crypto.getRandomValues(new Uint8Array(32));
+    const commit = await commitment(kp.publicRaw, nonce);
+    const start = await this._send({ type: 'pair_start', name, commit: toB64(commit) });
     if (start.status !== 200) throw new BridgeError(start.json.error || 'bad_response');
     const appPub = fromB64(start.json.pub);
+    const reveal = await this._send({
+      type: 'pair_reveal',
+      pairing: start.json.pairing,
+      pub: toB64(kp.publicRaw),
+      nonce: toB64(nonce),
+    });
+    if (reveal.status !== 200) throw new BridgeError('pairing_rejected');
     const { keyRaw, code } = await derive(kp.privateKey, kp.publicRaw, appPub, appPub);
     onCode(code);
     const deadline = this.now() + PAIRING_TIMEOUT_MS;

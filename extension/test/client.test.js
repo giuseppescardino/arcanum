@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import Arcanum from './load.js';
 
 const { BridgeClient, PORTS } = Arcanum;
-const { derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = Arcanum;
+const { commitment, derive, fromB64, generateKeyPair, importKey, open, seal, toB64 } = Arcanum;
 
 class MemoryStorage {
   constructor(init = {}) { this.data = { ...init }; }
@@ -112,17 +112,26 @@ test('re-probes when the remembered port stops answering', async () => {
   assert.equal(storage.data.port, PORTS[1]);
 });
 
-test('pairing: shows the code and stores the key once approved', async () => {
+test('pairing: commits, reveals, shows the code and stores the key once approved', async () => {
   const app = await generateKeyPair();
   let derived;
+  let commit;
   let polls = 0;
+  const order = [];
   const { fetch } = fakeFetch({
     [PORTS[0]]: async (b) => {
+      order.push(b.type);
       if (b.type === 'hello') return { json: { app: 'arcanum', protocol: 1, pairing: true } };
       if (b.type === 'pair_start') {
-        const extPub = fromB64(b.pub);
-        derived = await derive(app.privateKey, extPub, app.publicRaw, extPub);
+        assert.equal(b.pub, undefined, 'the key must not be sent before the app answers');
+        commit = b.commit;
         return { json: { pairing: 'p1', pub: toB64(app.publicRaw) } };
+      }
+      if (b.type === 'pair_reveal') {
+        const extPub = fromB64(b.pub);
+        assert.equal(toB64(await commitment(extPub, fromB64(b.nonce))), commit);
+        derived = await derive(app.privateKey, extPub, app.publicRaw, extPub);
+        return { json: {} };
       }
       if (b.type === 'pair_status') {
         return { json: ++polls < 3 ? { state: 'pending' } : { state: 'approved', client: 'c9' } };
@@ -133,8 +142,24 @@ test('pairing: shows the code and stores the key once approved', async () => {
   const c = new BridgeClient(opts(fetch, storage));
   let shown;
   await c.pair('Chrome', (code) => { shown = code; });
+  assert.deepEqual(order.filter((t) => t !== 'hello').slice(0, 3), ['pair_start', 'pair_reveal', 'pair_status']);
   assert.equal(shown, derived.code);
-  assert.deepEqual(storage.data.pairing, { client: 'c9', key: toB64(derived.keyRaw) });
+  assert.equal(storage.data.pairing.client, 'c9');
+});
+
+test('a refused reveal ends the pairing', async () => {
+  const app = await generateKeyPair();
+  const { fetch } = fakeFetch({
+    [PORTS[0]]: async (b) => {
+      if (b.type === 'hello') return arcanumHello(b);
+      if (b.type === 'pair_start') return { json: { pairing: 'p1', pub: toB64(app.publicRaw) } };
+      return { status: 400, json: { error: 'bad_request' } };
+    },
+  });
+  const c = new BridgeClient(opts(fetch, new MemoryStorage()));
+  let shown = false;
+  await assert.rejects(c.pair('Chrome', () => { shown = true; }), { code: 'pairing_rejected' });
+  assert.equal(shown, false);
 });
 
 test('pairing closed in the app', async () => {
@@ -151,6 +176,7 @@ test('pairing rejected in the app', async () => {
     [PORTS[0]]: async (b) => {
       if (b.type === 'hello') return arcanumHello(b);
       if (b.type === 'pair_start') return { json: { pairing: 'p1', pub: toB64(app.publicRaw) } };
+      if (b.type === 'pair_reveal') return { json: {} };
       return { json: { state: 'rejected' } };
     },
   });

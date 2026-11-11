@@ -14,17 +14,24 @@ const bridgePorts = [47613, 47614, 47615];
 const _maxBody = 64 * 1024;
 const _pairingWindow = Duration(seconds: 120);
 const _replayWindowMs = 60 * 1000;
+const _maxCodeAttempts = 3;
 
-/// A pairing waiting for the user's decision in the app.
+enum PairingResult { approved, wrongCode, rejected }
+
+/// A pairing started by a browser: committed first, then revealed. Only a
+/// revealed pairing is shown to the user, who must type the browser's
+/// code; the app never displays it.
 class PendingPairing {
-  PendingPairing._(this.id, this.name, this.code, this.key);
+  PendingPairing._(this.id, this.name, this._commit, this._appKey);
 
   final String id;
   final String name;
+  final Uint8List _commit;
+  final BridgeAppKey _appKey;
+  BridgePairing? _result;
+  int _attempts = 0;
 
-  /// 6 digits the browser shows too.
-  final String code;
-  final Uint8List key;
+  bool get revealed => _result != null;
 }
 
 class _HttpError implements Exception {
@@ -88,7 +95,11 @@ class BridgeServer extends ChangeNotifier {
     return _pairingUntil != null;
   }
 
-  PendingPairing? get pending => pairingOpen ? _pending : null;
+  /// The pairing waiting for the user's code, once the browser revealed its key.
+  PendingPairing? get pending {
+    final p = pairingOpen ? _pending : null;
+    return p != null && p.revealed ? p : null;
+  }
 
   Future<void> start() async {
     _browsers = await store.load();
@@ -136,13 +147,24 @@ class BridgeServer extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> approve() async {
+  /// Approves the pending pairing if [typedCode] is the browser's code.
+  /// After [_maxCodeAttempts] wrong codes the pairing is rejected.
+  Future<PairingResult> approve(String typedCode) async {
     final p = pending;
-    if (p == null) return;
+    if (p == null) return PairingResult.rejected;
+    final digits = typedCode.replaceAll(RegExp(r'\s'), '');
+    if (!_sameCode(digits, p._result!.code)) {
+      if (++p._attempts >= _maxCodeAttempts) {
+        reject();
+        return PairingResult.rejected;
+      }
+      notifyListeners();
+      return PairingResult.wrongCode;
+    }
     final browser = PairedBrowser(
       id: _randomId(),
       name: p.name,
-      key: p.key,
+      key: p._result!.key,
       created: _now(),
     );
     _browsers = [..._browsers, browser];
@@ -151,6 +173,16 @@ class BridgeServer extends ChangeNotifier {
     _pending = null;
     _pairingUntil = null;
     notifyListeners();
+    return PairingResult.approved;
+  }
+
+  static bool _sameCode(String a, String b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return diff == 0;
   }
 
   void reject() {
@@ -260,9 +292,13 @@ class BridgeServer extends ChangeNotifier {
         return {'app': 'arcanum', 'protocol': 1, 'pairing': pairingOpen};
       case 'pair_start':
         return _pairStart(body);
+      case 'pair_reveal':
+        return _pairReveal(body);
       case 'pair_status':
         final id = _field(body, 'pairing');
-        if (pending?.id == id) return {'state': 'pending'};
+        if ((pairingOpen ? _pending : null)?.id == id) {
+          return {'state': 'pending'};
+        }
         return _finished[id] ?? {'state': 'rejected'};
       case 'msg':
         return _message(body);
@@ -271,28 +307,47 @@ class BridgeServer extends ChangeNotifier {
     }
   }
 
+  /// Step 1: the browser commits to its key without revealing it.
   Map<String, Object?> _pairStart(Map<String, Object?> body) {
     if (!pairingOpen) throw _HttpError(HttpStatus.forbidden, 'pairing_closed');
     if (_pending != null) throw _HttpError(HttpStatus.conflict, 'pairing_busy');
-    final name = _field(body, 'name');
-    final BridgePairing pairing;
+    final name = _field(body, 'name').trim();
+    final Uint8List commit;
     try {
-      pairing = crypto.pairRespond(base64.decode(_field(body, 'pub')));
-    } catch (e) {
-      if (e is _HttpError) rethrow;
+      commit = base64.decode(_field(body, 'commit'));
+    } on FormatException {
       throw _HttpError(HttpStatus.badRequest, 'bad_request');
     }
-    final trimmed = name.trim();
+    final appKey = crypto.pairBegin();
     _pending = PendingPairing._(
       _randomId(),
-      trimmed.isEmpty
-          ? 'Browser'
-          : trimmed.substring(0, min(trimmed.length, 40)),
-      pairing.code,
-      pairing.key,
+      name.isEmpty ? 'Browser' : name.substring(0, min(name.length, 40)),
+      commit,
+      appKey,
     );
+    return {'pairing': _pending!.id, 'pub': base64.encode(appKey.appPub)};
+  }
+
+  /// Step 2: the browser reveals the key it committed to; only now can
+  /// either side compute the code.
+  Map<String, Object?> _pairReveal(Map<String, Object?> body) {
+    final p = pairingOpen ? _pending : null;
+    if (p == null || p.revealed || body['pairing'] != p.id) {
+      throw _HttpError(HttpStatus.badRequest, 'bad_request');
+    }
+    try {
+      p._result = crypto.pairFinish(
+        p._appKey,
+        base64.decode(_field(body, 'pub')),
+        base64.decode(_field(body, 'nonce')),
+        p._commit,
+      );
+    } catch (_) {
+      reject();
+      throw _HttpError(HttpStatus.badRequest, 'bad_request');
+    }
     notifyListeners();
-    return {'pairing': _pending!.id, 'pub': base64.encode(pairing.appPub)};
+    return {};
   }
 
   Future<Map<String, Object?>> _message(Map<String, Object?> body) async {

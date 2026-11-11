@@ -80,18 +80,30 @@ void main() {
   }
 
   final extPub = base64.encode(List.filled(32, 3));
+  final nonce = base64.encode(List.filled(32, 5));
+
+  Future<Map<String, Object?>> start([String name = 'Chrome']) async =>
+      (await post({'type': 'pair_start', 'name': name, 'commit': nonce})).$2;
+
+  Future<(int, Map<String, Object?>, HttpHeaders)> reveal(
+    Object? pairing, {
+    String? pub,
+    String? withNonce,
+  }) => post({
+    'type': 'pair_reveal',
+    'pairing': pairing,
+    'pub': pub ?? extPub,
+    'nonce': withNonce ?? nonce,
+  });
 
   Future<String> pairBrowser() async {
     server.openPairing();
-    final (_, start, _) = await post({
-      'type': 'pair_start',
-      'name': 'Chrome',
-      'pub': extPub,
-    });
-    await server.approve();
+    final s = await start();
+    await reveal(s['pairing']);
+    expect(await server.approve(FakeBridgeCrypto.code), PairingResult.approved);
     final (_, status, _) = await post({
       'type': 'pair_status',
-      'pairing': start['pairing'],
+      'pairing': s['pairing'],
     });
     return status['client'] as String;
   }
@@ -178,35 +190,33 @@ void main() {
     final (status, body, _) = await post({
       'type': 'pair_start',
       'name': 'Chrome',
-      'pub': extPub,
+      'commit': nonce,
     });
     expect(status, 403);
     expect(body, {'error': 'pairing_closed'});
   });
 
-  test('pairing flow: approve', () async {
+  test('pairing flow: commit, reveal, typed code, approve', () async {
     server.openPairing();
-    final (status, start, _) = await post({
-      'type': 'pair_start',
-      'name': 'Chrome',
-      'pub': extPub,
-    });
+    final s = await start();
+    expect(s['pub'], base64.encode(List.filled(32, 9)));
+    // Nothing to approve until the browser reveals its key.
+    expect(server.pending, isNull);
+
+    final (status, _, _) = await reveal(s['pairing']);
     expect(status, 200);
-    expect(start['pub'], base64.encode(List.filled(32, 9)));
-    expect(server.pending?.code, '123456');
     expect(server.pending?.name, 'Chrome');
 
     var (_, st, _) = await post({
       'type': 'pair_status',
-      'pairing': start['pairing'],
+      'pairing': s['pairing'],
     });
     expect(st, {'state': 'pending'});
 
-    await server.approve();
-    (_, st, _) = await post({
-      'type': 'pair_status',
-      'pairing': start['pairing'],
-    });
+    expect(await server.approve('000000'), PairingResult.wrongCode);
+    expect(server.pending, isNotNull);
+    expect(await server.approve(' 123 456 '), PairingResult.approved);
+    (_, st, _) = await post({'type': 'pair_status', 'pairing': s['pairing']});
     expect(st['state'], 'approved');
     expect(st['client'], isA<String>());
     expect(server.pending, isNull);
@@ -215,62 +225,106 @@ void main() {
     expect(server.browsers.single.id, st['client']);
   });
 
+  test('pair_status before reveal is pending', () async {
+    server.openPairing();
+    final s = await start();
+    final (_, st, _) = await post({
+      'type': 'pair_status',
+      'pairing': s['pairing'],
+    });
+    expect(st, {'state': 'pending'});
+  });
+
+  test('three wrong codes reject the pairing', () async {
+    server.openPairing();
+    final s = await start();
+    await reveal(s['pairing']);
+    expect(await server.approve('111111'), PairingResult.wrongCode);
+    expect(await server.approve('222222'), PairingResult.wrongCode);
+    expect(await server.approve('333333'), PairingResult.rejected);
+    expect(server.pending, isNull);
+    final (_, st, _) = await post({
+      'type': 'pair_status',
+      'pairing': s['pairing'],
+    });
+    expect(st, {'state': 'rejected'});
+    expect(store.saved, isEmpty);
+  });
+
+  test('a reveal that does not match the commitment is rejected', () async {
+    server.openPairing();
+    final s = await start();
+    final (status, _, _) = await reveal(
+      s['pairing'],
+      withNonce: base64.encode(List.filled(32, 6)),
+    );
+    expect(status, 400);
+    expect(server.pending, isNull);
+    final (_, st, _) = await post({
+      'type': 'pair_status',
+      'pairing': s['pairing'],
+    });
+    expect(st, {'state': 'rejected'});
+  });
+
+  test('a reveal for another pairing id is rejected', () async {
+    server.openPairing();
+    await start();
+    final (status, _, _) = await reveal('nope');
+    expect(status, 400);
+  });
+
+  test('a bad public key is rejected at reveal', () async {
+    server.openPairing();
+    final s = await start();
+    final (status, _, _) = await reveal(
+      s['pairing'],
+      pub: base64.encode([1, 2, 3]),
+    );
+    expect(status, 400);
+    expect(server.pending, isNull);
+  });
+
   test('a second pair_start is busy', () async {
     server.openPairing();
-    await post({'type': 'pair_start', 'name': 'Chrome', 'pub': extPub});
+    await start();
     final (status, body, _) = await post({
       'type': 'pair_start',
       'name': 'Opera',
-      'pub': extPub,
+      'commit': nonce,
     });
     expect(status, 409);
     expect(body, {'error': 'pairing_busy'});
   });
 
-  test('a bad public key is a bad request', () async {
-    server.openPairing();
-    final (status, _, _) = await post({
-      'type': 'pair_start',
-      'name': 'Chrome',
-      'pub': base64.encode([1, 2, 3]),
-    });
-    expect(status, 400);
-    expect(server.pending, isNull);
-  });
-
   test('pairing expires after 120 s', () async {
     server.openPairing();
-    final (_, start, _) = await post({
-      'type': 'pair_start',
-      'name': 'Chrome',
-      'pub': extPub,
-    });
+    final s = await start();
+    await reveal(s['pairing']);
     now = now.add(const Duration(seconds: 121));
     expect(server.pending, isNull);
+    expect(await server.approve(FakeBridgeCrypto.code), PairingResult.rejected);
     final (_, st, _) = await post({
       'type': 'pair_status',
-      'pairing': start['pairing'],
+      'pairing': s['pairing'],
     });
     expect(st, {'state': 'rejected'});
     final (status, _, _) = await post({
       'type': 'pair_start',
       'name': 'Chrome',
-      'pub': extPub,
+      'commit': nonce,
     });
     expect(status, 403);
   });
 
   test('reject reports rejected', () async {
     server.openPairing();
-    final (_, start, _) = await post({
-      'type': 'pair_start',
-      'name': 'Chrome',
-      'pub': extPub,
-    });
+    final s = await start();
+    await reveal(s['pairing']);
     server.reject();
     final (_, st, _) = await post({
       'type': 'pair_status',
-      'pairing': start['pairing'],
+      'pairing': s['pairing'],
     });
     expect(st, {'state': 'rejected'});
     expect(store.saved, isEmpty);

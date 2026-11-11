@@ -10,11 +10,26 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'vault.dart';
 
 // These functions are ignored because they are not marked as `pub`: `invalid`, `key32`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
 
-/// Answers a browser's `pair_start` with a fresh key pair.
-BridgePairing bridgePairRespond({required List<int> extPub}) =>
-    RustLib.instance.api.crateApiBridgeBridgePairRespond(extPub: extPub);
+/// Answers a browser's `pair_start` (which carries only its commitment)
+/// with a fresh key pair.
+BridgeAppKey bridgePairBegin() =>
+    RustLib.instance.api.crateApiBridgeBridgePairBegin();
+
+/// Checks the browser's revealed key against its commitment, then derives
+/// the message key and the verification code.
+BridgePairing bridgePairFinish({
+  required List<int> secret,
+  required List<int> extPub,
+  required List<int> nonce,
+  required List<int> commit,
+}) => RustLib.instance.api.crateApiBridgeBridgePairFinish(
+  secret: secret,
+  extPub: extPub,
+  nonce: nonce,
+  commit: commit,
+);
 
 /// Decrypts a request from the browser identified by `client`.
 String bridgeOpenRequest({
@@ -38,29 +53,43 @@ String bridgeSealResponse({
   plaintext: plaintext,
 );
 
-/// The app's half of a pairing.
-class BridgePairing {
+/// The app's ephemeral key pair for one pairing, held by Dart only until
+/// the browser reveals its key (at most the 120 s pairing window).
+class BridgeAppKey {
   final Uint8List appPub;
-  final Uint8List key;
+  final Uint8List secret;
 
-  /// 6-digit code the user compares with the one the browser shows.
-  final String code;
-
-  const BridgePairing({
-    required this.appPub,
-    required this.key,
-    required this.code,
-  });
+  const BridgeAppKey({required this.appPub, required this.secret});
 
   @override
-  int get hashCode => appPub.hashCode ^ key.hashCode ^ code.hashCode;
+  int get hashCode => appPub.hashCode ^ secret.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BridgeAppKey &&
+          runtimeType == other.runtimeType &&
+          appPub == other.appPub &&
+          secret == other.secret;
+}
+
+/// Result of a pairing.
+class BridgePairing {
+  final Uint8List key;
+
+  /// 6-digit code the user types in the app from the browser.
+  final String code;
+
+  const BridgePairing({required this.key, required this.code});
+
+  @override
+  int get hashCode => key.hashCode ^ code.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BridgePairing &&
           runtimeType == other.runtimeType &&
-          appPub == other.appPub &&
           key == other.key &&
           code == other.code;
 }

@@ -141,14 +141,41 @@ class _BrowserPairingScreenState extends State<BrowserPairingScreen> {
   }
 }
 
-class _PairingDialog extends StatelessWidget {
+class _PairingDialog extends StatefulWidget {
   const _PairingDialog({required this.server});
 
   final BridgeServer server;
 
   @override
+  State<_PairingDialog> createState() => _PairingDialogState();
+}
+
+/// The user types the code the browser shows. The app never displays it,
+/// so whoever started the pairing can only be approved by someone who can
+/// see that browser.
+class _PairingDialogState extends State<_PairingDialog> {
+  final _code = TextEditingController();
+  bool _wrong = false;
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final result = await widget.server.approve(_code.text);
+    if (!mounted) return;
+    if (result == PairingResult.wrongCode) {
+      setState(() => _wrong = true);
+      _code.clear();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final server = widget.server;
     return ListenableBuilder(
       listenable: server,
       builder: (context, _) {
@@ -160,20 +187,30 @@ class _PairingDialog extends StatelessWidget {
           });
           return const SizedBox.shrink();
         }
-        final code = pending.code;
         return AlertDialog(
           title: Text(l10n.browsersPairTitle(pending.name)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${code.substring(0, 3)} ${code.substring(3)}',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              Text(l10n.browsersPairBody),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _code,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                maxLength: 7,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '000000',
+                  errorText: _wrong ? l10n.browsersWrongCode : null,
+                ),
+                onSubmitted: (_) => _submit(),
               ),
-              const SizedBox(height: 16),
-              Text(l10n.browsersPairBody),
             ],
           ),
           actions: [
@@ -181,10 +218,7 @@ class _PairingDialog extends StatelessWidget {
               onPressed: server.reject,
               child: Text(l10n.browsersReject),
             ),
-            FilledButton(
-              onPressed: server.approve,
-              child: Text(l10n.browsersApprove),
-            ),
+            FilledButton(onPressed: _submit, child: Text(l10n.browsersApprove)),
           ],
         );
       },

@@ -1096,7 +1096,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browsersPairBody =>
-      'Check that the browser shows the same code. If it is different, reject.';
+      'Type the 6-digit code shown by the browser\'s Arcanum extension. If the browser shows no code, reject.';
 
   @override
   String get browsersReject => 'Reject';
@@ -1107,4 +1107,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get browsersPortsBusy =>
       'The browser connection could not start: ports 47613–47615 are in use.';
+
+  @override
+  String get browsersWrongCode => 'Wrong code';
 }
