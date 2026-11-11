@@ -4,7 +4,7 @@
 // nor read it. Page URLs are never sent: the background reads the tab URL.
 
 (() => {
-const { classifyFields } = globalThis.Arcanum;
+const { classifyFields, captureAllowed, isLoginButton } = globalThis.Arcanum;
 const ext = globalThis.browser ?? globalThis.chrome;
 
 // icons/icon-32.png, inlined so no extension file has to be web-accessible.
@@ -93,10 +93,37 @@ function setValue(el, value) {
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+/** Ignores clicks a page script dispatched; only the user's count. */
+function trusted(handler) {
+  return (e) => {
+    if (e.isTrusted) handler(e);
+  };
+}
+
+// The host element is styled inline with !important, which no page
+// stylesheet can override, so a page cannot hide our banner and put a
+// decoy under its buttons. Re-asserted if a page script edits it.
+const HOST_STYLE = {
+  display: 'block',
+  position: 'static',
+  opacity: '1',
+  visibility: 'visible',
+  filter: 'none',
+  transform: 'none',
+  clip: 'auto',
+  'clip-path': 'none',
+  'pointer-events': 'auto',
+  'mix-blend-mode': 'normal',
+};
+
+function pinStyle(node) {
+  for (const [k, v] of Object.entries(HOST_STYLE)) node.style.setProperty(k, v, 'important');
+}
+
 function el(tag, attrs = {}, ...children) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
-    if (k === 'onclick') n.addEventListener('click', v);
+    if (k === 'onclick') n.addEventListener('click', trusted(v));
     else if (k === 'class') n.className = v;
     else n.setAttribute(k, v);
   }
@@ -115,10 +142,21 @@ function start() {
       }
     });
 
-  const host = document.createElement('arcanum-ui');
-  const root = host.attachShadow({ mode: 'closed' });
-  root.append(el('style', {}, CSS));
-  document.documentElement.append(host);
+  // Created on first use, so pages without a login form never see it.
+  let host = null;
+  let root = null;
+
+  function ui() {
+    if (!host) {
+      host = document.createElement('arcanum-ui');
+      root = host.attachShadow({ mode: 'closed' });
+      root.append(el('style', {}, CSS));
+      pinStyle(host);
+      new MutationObserver(() => pinStyle(host)).observe(host, { attributes: true });
+    }
+    if (!host.isConnected) document.documentElement.append(host);
+    return root;
+  }
 
   let field = null; // input the icon is attached to
   let icon = null;
@@ -159,8 +197,8 @@ function start() {
     icon = el('button', { class: 'icon', type: 'button', title: 'Arcanum' }, el('img', { src: ICON, alt: '' }));
     // Keep focus in the field while clicking the icon.
     icon.addEventListener('mousedown', (e) => e.preventDefault());
-    icon.addEventListener('click', () => (menu ? closeMenu() : openMenu()));
-    root.append(icon);
+    icon.addEventListener('click', trusted(() => (menu ? closeMenu() : openMenu())));
+    ui().append(icon);
     place();
   }
 
@@ -191,7 +229,7 @@ function start() {
     const target = field;
     const form = analyze(scopeOf(target));
     menu = el('div', { class: 'menu', role: 'menu' });
-    root.append(menu);
+    ui().append(menu);
     place();
 
     if (form.newPassword) {
@@ -254,7 +292,7 @@ function start() {
   document.addEventListener(
     'mousedown',
     (e) => {
-      if (menu && !e.composedPath().includes(host)) closeMenu();
+      if (menu && (!host || !e.composedPath().includes(host))) closeMenu();
     },
     true,
   );
@@ -281,19 +319,26 @@ function start() {
     if (r.pending) setTimeout(checkPending, 1200);
   }
 
-  document.addEventListener('submit', (e) => capture(e.target), true);
+  document.addEventListener(
+    'submit',
+    (e) => {
+      if (captureAllowed(e)) capture(e.target);
+    },
+    true,
+  );
   document.addEventListener(
     'click',
     (e) => {
-      const b = e.target instanceof Element ? e.target.closest('button, input[type=submit]') : null;
-      if (b && (b.type === 'submit' || b.form)) capture(b.form ?? scopeOf(b));
+      if (!captureAllowed(e)) return;
+      const b = e.target instanceof Element ? e.target.closest('button, input[type=submit], [role=button]') : null;
+      if (b && isLoginButton({ text: b.textContent || b.value, inForm: Boolean(b.form) })) capture(scopeOf(b));
     },
     true,
   );
   document.addEventListener(
     'keydown',
     (e) => {
-      if (e.key === 'Enter' && e.target instanceof HTMLInputElement && e.target.type === 'password') {
+      if (e.key === 'Enter' && captureAllowed(e) && e.target instanceof HTMLInputElement && e.target.type === 'password') {
         capture(scopeOf(e.target));
       }
     },
@@ -315,41 +360,57 @@ function start() {
   function showBanner(p) {
     closeBanner();
     const update = p.state === 'update';
-    const text = update
+    const locked = p.state === 'unknown'; // captured while the vault was locked
+    const action = update ? 'Aggiorna' : 'Salva';
+    const ask = update
       ? `Aggiornare in Arcanum la password di ${p.username || p.host}?`
       : `Salvare in Arcanum la password per ${p.host}?`;
-    const message = el('p', {}, text);
-    const primary = el('button', { class: 'btn primary', type: 'button' }, update ? 'Aggiorna' : 'Salva');
+    const lockedText = `Arcanum è bloccato: sbloccalo, poi premi ${action}.`;
+    const message = el('p', {}, locked ? `${ask} ${lockedText}` : ask);
+    const primary = el('button', { class: 'btn primary', type: 'button' }, action);
     const later = el('button', { class: 'btn', type: 'button' }, 'Non ora');
     const actions = el('div', { class: 'actions' }, later, primary);
     banner = el('div', { class: 'banner', role: 'dialog' }, message, actions);
-    root.append(banner);
+    ui().append(banner);
 
-    later.addEventListener('click', async () => {
-      closeBanner();
-      await send({ kind: 'dismiss' });
-    });
-    primary.addEventListener('click', async () => {
-      primary.disabled = true;
-      const r = await send({ kind: 'save' });
-      primary.disabled = false;
-      if (r.saved) {
-        message.textContent = update ? 'Password aggiornata.' : 'Password salvata.';
-        actions.remove();
-        setTimeout(closeBanner, 2000);
-      } else if (r.error === 'locked') {
-        message.textContent = "Arcanum è bloccato: sbloccalo, poi premi di nuovo " + (update ? 'Aggiorna.' : 'Salva.');
-        if (!actions.querySelector('.unlock')) {
-          const unlock = el('button', { class: 'btn unlock', type: 'button' }, 'Sblocca');
-          unlock.addEventListener('click', () => send({ kind: 'openApp' }));
-          actions.insertBefore(unlock, primary);
-        }
-      } else if (r.error) {
-        message.textContent = STATE_TEXT[r.error] ?? 'Impossibile salvare la password.';
-      } else {
+    const offerUnlock = () => {
+      if (actions.querySelector('.unlock')) return;
+      const unlock = el('button', { class: 'btn unlock', type: 'button' }, 'Sblocca');
+      unlock.addEventListener('click', trusted(() => send({ kind: 'openApp' })));
+      actions.insertBefore(unlock, primary);
+    };
+    if (locked) offerUnlock();
+
+    later.addEventListener(
+      'click',
+      trusted(async () => {
         closeBanner();
-      }
-    });
+        await send({ kind: 'dismiss' });
+      }),
+    );
+    primary.addEventListener(
+      'click',
+      trusted(async () => {
+        primary.disabled = true;
+        const r = await send({ kind: 'save' });
+        primary.disabled = false;
+        if (r.saved) {
+          message.textContent = update ? 'Password aggiornata.' : 'Password salvata.';
+          actions.remove();
+          setTimeout(closeBanner, 2000);
+        } else if (r.error === 'locked') {
+          message.textContent = lockedText;
+          offerUnlock();
+        } else if (r.error) {
+          message.textContent = STATE_TEXT[r.error] ?? 'Impossibile salvare la password.';
+        } else {
+          // The 2 minutes ran out: the password is no longer kept.
+          message.textContent = 'Richiesta scaduta: la password non è stata salvata. Inviala di nuovo dal sito per salvarla.';
+          actions.replaceChildren(later);
+          later.textContent = 'Chiudi';
+        }
+      }),
+    );
   }
 
   // ---- Fill requested from the popup ----

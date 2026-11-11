@@ -57,6 +57,28 @@ function isNewPassword(fields, passwords, form) {
   return NEW_HINT.test(`${form.id || ''} ${form.name || ''} ${form.action || ''}`);
 }
 
+const LOGIN_BUTTON = /\b(log ?in|sign ?in|sign ?up|accedi|entra|registrati|registrazione|iscriviti|crea (un )?account|create (an )?account|register|continu[ae]|avanti|next|submit|invia)\b/i;
+
+/**
+ * Whether an event may be treated as the user submitting credentials:
+ * dispatched by the browser (not a page script) and close to a real click
+ * or key press. Pages could otherwise probe or overwrite saved passwords.
+ */
+function captureAllowed(event, userActivation = globalThis.navigator?.userActivation) {
+  if (!event.isTrusted) return false;
+  return userActivation ? userActivation.isActive : true;
+}
+
+/**
+ * Whether a clicked button submits a login without a <form> (single-page
+ * apps). Buttons inside a form are left to its submit event, so eye
+ * toggles and "forgot password" links never capture a half-typed value.
+ */
+function isLoginButton({ text, inForm }) {
+  if (inForm) return false;
+  return LOGIN_BUTTON.test((text ?? '').trim());
+}
+
 globalThis.Arcanum ??= {};
-globalThis.Arcanum.classifyFields = classifyFields;
+Object.assign(globalThis.Arcanum, { classifyFields, captureAllowed, isLoginButton });
 })();

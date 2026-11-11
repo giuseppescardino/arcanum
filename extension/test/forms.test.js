@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import Arcanum from './load.js';
 
-const { classifyFields } = Arcanum;
+const { classifyFields, captureAllowed, isLoginButton } = Arcanum;
 
 const f = (type, extra = {}) => ({ type, name: '', id: '', autocomplete: '', placeholder: '', visible: true, ...extra });
 
@@ -51,4 +51,32 @@ test('password-only form has no username', () => {
 
 test('form without password fields has no passwords', () => {
   assert.deepEqual(classifyFields([f('text'), f('search')]).passwords, []);
+});
+
+test('scripted events are never captured', () => {
+  assert.equal(captureAllowed({ isTrusted: false }, { isActive: true }), false);
+});
+
+test('trusted events need a recent user gesture', () => {
+  assert.equal(captureAllowed({ isTrusted: true }, { isActive: true }), true);
+  // form.requestSubmit() from a timer fires a trusted submit without one.
+  assert.equal(captureAllowed({ isTrusted: true }, { isActive: false }), false);
+});
+
+test('browsers without userActivation fall back to isTrusted', () => {
+  assert.equal(captureAllowed({ isTrusted: true }, undefined), true);
+});
+
+test('formless buttons count only when they read like a login or sign-up', () => {
+  for (const t of ['Accedi', 'Log in', 'Sign in', 'Continua', 'Registrati', 'Create account', 'Submit']) {
+    assert.equal(isLoginButton({ text: t, inForm: false, type: 'button' }), true, t);
+  }
+  for (const t of ['Mostra password', 'Show', 'Forgot password?', '👁', '']) {
+    assert.equal(isLoginButton({ text: t, inForm: false, type: 'button' }), false, t);
+  }
+});
+
+test('buttons inside a form never count: the submit event covers real submits', () => {
+  assert.equal(isLoginButton({ text: 'Accedi', inForm: true, type: 'submit' }), false);
+  assert.equal(isLoginButton({ text: 'Mostra', inForm: true, type: 'button' }), false);
 });
