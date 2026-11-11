@@ -10,7 +10,6 @@ import 'package:arcanum/app/secret_key_store.dart';
 import 'package:arcanum/app/transfer.dart';
 import 'package:arcanum/browser/bridge_clients.dart';
 import 'package:arcanum/browser/bridge_crypto.dart';
-import 'package:arcanum/src/rust/api/bridge.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 
 const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
