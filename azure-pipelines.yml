@@ -118,6 +118,18 @@ stages:
             workingDirectory: app
             displayName: flutter test
 
+      - job: Extension
+        displayName: Browser extension test
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: '24.x'
+          - bash: npm test
+            workingDirectory: extension
+            displayName: npm test
+
       - job: Android
         displayName: Android APK
         pool:

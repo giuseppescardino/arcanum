@@ -122,6 +122,22 @@ jobs:
       - name: docker build
         run: docker build -f deploy/Dockerfile -t arcanum-server:${{ github.sha }} .
 
+  # ------------------------------------------------------------ extension
+  extension:
+    name: Browser extension (test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      # No dependencies: node:test only. The vectors it checks are
+      # verified against the Rust core by the core job.
+      - run: npm test
+
   # ------------------------------------------------------------------ app
   app-test:
     name: Flutter analyze & test
