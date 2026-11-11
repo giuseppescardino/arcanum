@@ -1,0 +1,29 @@
+[package]
+name = "arcanum-e2e"
+version = "0.1.0"
+description = "End-to-end tests: the real sync server binary + PostgreSQL + the core sync client"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+rust-version = "1.89"
+publish = false
+
+# A workspace of its own. The server (sqlx) and the client vault (rusqlite)
+# each pin a different libsqlite3-sys, and Cargo allows only one crate that
+# links `sqlite3` per lockfile, so this crate never links the server: it runs
+# the `arcanum-server` binary and talks to PostgreSQL with `postgres`.
+[workspace]
+
+[dev-dependencies]
+arcanum-crypto = { path = "../core/arcanum-crypto" }
+arcanum-sync = { path = "../core/arcanum-sync" }
+arcanum-vault = { path = "../core/arcanum-vault" }
+postgres = { version = "0.19", features = ["with-uuid-1"] }
+uuid = "1"
+ureq = { version = "2", features = ["json"] }
+serde_json = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"

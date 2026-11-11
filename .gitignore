@@ -1,5 +1,6 @@
 /core/target/
 /server/target/
+/e2e/target/
 **/*.rs.bk
 .DS_Store
 .idea/

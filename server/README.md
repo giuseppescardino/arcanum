@@ -153,7 +153,14 @@ Locally the server defaults to invite-only: add `ARCANUM_REGISTRATION=open` to t
 cargo test
 ```
 
-The end-to-end tests use `TEST_DATABASE_URL`, which defaults to `postgres://postgres@localhost:5433/arcanum_test`.
+The end-to-end tests (server + PostgreSQL + the core sync client) live in their own workspace, `e2e/`, because the server (sqlx) and the client vault (rusqlite) can't share a `libsqlite3-sys` version. They run the server binary, so build it first:
+
+```bash
+cargo build
+cd ../e2e && cargo test
+```
+
+They use `TEST_DATABASE_URL`, which defaults to `postgres://postgres@localhost:5433/arcanum_test`, and `ARCANUM_SERVER_BIN` to point at a different binary.
 
 ## API (`/v1`)
 
