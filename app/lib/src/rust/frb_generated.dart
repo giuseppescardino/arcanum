@@ -3,6 +3,7 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'api/bridge.dart';
 import 'api/tools.dart';
 import 'api/transfer.dart';
 import 'api/vault.dart';
@@ -71,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1817399962;
+  int get rustContentHash => -1835003701;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -201,6 +202,20 @@ abstract class RustLibApi extends BaseApi {
     required VaultHandle that,
     required String id,
     required ItemFields fields,
+  });
+
+  String crateApiBridgeBridgeOpenRequest({
+    required List<int> key,
+    required String client,
+    required String ciphertext,
+  });
+
+  BridgePairing crateApiBridgeBridgePairRespond({required List<int> extPub});
+
+  String crateApiBridgeBridgeSealResponse({
+    required List<int> key,
+    required String client,
+    required String plaintext,
   });
 
   Future<Uint8List> crateApiTransferExportBackup({
@@ -1225,6 +1240,96 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  String crateApiBridgeBridgeOpenRequest({
+    required List<int> key,
+    required String client,
+    required String ciphertext,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_String(client, serializer);
+          sse_encode_String(ciphertext, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_vault_failure,
+        ),
+        constMeta: kCrateApiBridgeBridgeOpenRequestConstMeta,
+        argValues: [key, client, ciphertext],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBridgeBridgeOpenRequestConstMeta =>
+      const TaskConstMeta(
+        debugName: "bridge_open_request",
+        argNames: ["key", "client", "ciphertext"],
+      );
+
+  @override
+  BridgePairing crateApiBridgeBridgePairRespond({required List<int> extPub}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(extPub, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bridge_pairing,
+          decodeErrorData: sse_decode_vault_failure,
+        ),
+        constMeta: kCrateApiBridgeBridgePairRespondConstMeta,
+        argValues: [extPub],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBridgeBridgePairRespondConstMeta =>
+      const TaskConstMeta(
+        debugName: "bridge_pair_respond",
+        argNames: ["extPub"],
+      );
+
+  @override
+  String crateApiBridgeBridgeSealResponse({
+    required List<int> key,
+    required String client,
+    required String plaintext,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_String(client, serializer);
+          sse_encode_String(plaintext, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_vault_failure,
+        ),
+        constMeta: kCrateApiBridgeBridgeSealResponseConstMeta,
+        argValues: [key, client, plaintext],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBridgeBridgeSealResponseConstMeta =>
+      const TaskConstMeta(
+        debugName: "bridge_seal_response",
+        argNames: ["key", "client", "plaintext"],
+      );
+
+  @override
   Future<Uint8List> crateApiTransferExportBackup({
     required List<ItemFields> items,
     required List<int> password,
@@ -1238,7 +1343,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1269,7 +1374,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1299,7 +1404,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             options,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1330,7 +1435,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             options,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1358,7 +1463,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 34,
             port: port_,
           );
         },
@@ -1383,7 +1488,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(secretKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
@@ -1409,7 +1514,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(secret, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
@@ -1439,7 +1544,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 37,
             port: port_,
           );
         },
@@ -1467,7 +1572,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(password, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_password_strength,
@@ -1496,7 +1601,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 36,
+            funcId: 39,
             port: port_,
           );
         },
@@ -1528,7 +1633,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(secret, serializer);
           sse_encode_i_64(unixSeconds, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_totp_code,
@@ -1636,6 +1741,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WifiFields dco_decode_box_autoadd_wifi_fields(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_wifi_fields(raw);
+  }
+
+  @protected
+  BridgePairing dco_decode_bridge_pairing(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return BridgePairing(
+      appPub: dco_decode_list_prim_u_8_strict(arr[0]),
+      key: dco_decode_list_prim_u_8_strict(arr[1]),
+      code: dco_decode_String(arr[2]),
+    );
   }
 
   @protected
@@ -2031,6 +2149,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WifiFields sse_decode_box_autoadd_wifi_fields(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_wifi_fields(deserializer));
+  }
+
+  @protected
+  BridgePairing sse_decode_bridge_pairing(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_appPub = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_key = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_code = sse_decode_String(deserializer);
+    return BridgePairing(appPub: var_appPub, key: var_key, code: var_code);
   }
 
   @protected
@@ -2504,6 +2631,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_wifi_fields(self, serializer);
+  }
+
+  @protected
+  void sse_encode_bridge_pairing(BridgePairing self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_prim_u_8_strict(self.appPub, serializer);
+    sse_encode_list_prim_u_8_strict(self.key, serializer);
+    sse_encode_String(self.code, serializer);
   }
 
   @protected

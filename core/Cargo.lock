@@ -1629,6 +1629,7 @@ dependencies = [
 name = "rust_lib_arcanum"
 version = "0.1.0"
 dependencies = [
+ "arcanum-bridge",
  "arcanum-sync",
  "arcanum-tools",
  "arcanum-vault",

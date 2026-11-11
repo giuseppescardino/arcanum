@@ -16,6 +16,7 @@ flutter_rust_bridge = "=2.13.0"
 arcanum-vault.workspace = true
 arcanum-sync.workspace = true
 arcanum-tools.workspace = true
+arcanum-bridge.workspace = true
 zeroize.workspace = true
 data-encoding.workspace = true
 
