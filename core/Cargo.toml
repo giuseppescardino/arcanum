@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["arcanum-crypto", "arcanum-proto", "arcanum-vault", "arcanum-sync", "arcanum-tools", "arcanum-ffi"]
+members = ["arcanum-crypto", "arcanum-proto", "arcanum-vault", "arcanum-sync", "arcanum-tools", "arcanum-bridge", "arcanum-ffi"]
 
 [workspace.package]
 edition = "2021"
@@ -28,6 +28,7 @@ arcanum-vault = { path = "arcanum-vault" }
 arcanum-proto = { path = "arcanum-proto" }
 arcanum-sync = { path = "arcanum-sync" }
 arcanum-tools = { path = "arcanum-tools" }
+arcanum-bridge = { path = "arcanum-bridge" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

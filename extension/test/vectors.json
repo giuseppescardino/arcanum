@@ -1,0 +1,13 @@
+{
+  "app_pub": "ce8d3ad1ccb633ec7b70c17814a5c76ecd029685050d344745ba05870e587d59",
+  "app_scalar": "0202020202020202020202020202020202020202020202020202020202020202",
+  "client": "client-1",
+  "code": "831707",
+  "ext_pub": "a4e09292b651c278b9772c569f5fa9bb13d906b46ab68c9df9dc2b4409f8a209",
+  "ext_scalar": "0101010101010101010101010101010101010101010101010101010101010101",
+  "key": "b2c7c2a8a21663c5d15cd17afb849f499df5c35839460db8b554564ffabad692",
+  "nonce": "070707070707070707070707",
+  "plaintext": "{\"id\":\"x\",\"ts\":0,\"body\":{\"op\":\"status\"}}",
+  "request_ct": "BwcHBwcHBwcHBwcH4+IEk84rl6X3RS59TbnWaMOxLX63Sjw6XQ08GLB2CodJEu3q9pmFTlaPvXXt/BNkGKJzHULuUso=",
+  "response_ct": "BwcHBwcHBwcHBwcH4+IEk84rl6X3RS59TbnWaMOxLX63Sjw6XQ08GLB2CodJEu3q9pmFTiiuKxbCKWJcZtaSVS23ZtU="
+}
