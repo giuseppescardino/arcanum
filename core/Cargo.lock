@@ -94,7 +94,7 @@ dependencies = [
  "proptest",
  "rand_core 0.6.4",
  "serde",
- "sha2",
+ "sha2 0.11.1",
  "thiserror",
  "zeroize",
 ]
@@ -108,7 +108,7 @@ dependencies = [
  "opaque-ke",
  "serde",
  "serde_json",
- "sha2",
+ "sha2 0.11.1",
 ]
 
 [[package]]
@@ -135,7 +135,7 @@ dependencies = [
  "hmac 0.12.1",
  "rand_core 0.6.4",
  "sha1",
- "sha2",
+ "sha2 0.11.1",
  "thiserror",
  "url",
  "zeroize",
@@ -695,7 +695,7 @@ dependencies = [
  "curve25519-dalek",
  "ed25519",
  "serde",
- "sha2",
+ "sha2 0.10.9",
  "signature",
  "subtle",
 ]
@@ -1858,6 +1858,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47d7069beb7d6ac7b9acd1039986e73443f24234f41074da099d6f994ac9ad19"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.3.1",
+ "digest 0.11.3",
+]
+
+[[package]]
 name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2194,7 +2205,7 @@ dependencies = [
  "generic-array",
  "rand_core 0.6.4",
  "serde",
- "sha2",
+ "sha2 0.10.9",
  "subtle",
  "zeroize",
 ]
