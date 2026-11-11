@@ -57,7 +57,7 @@ void main() {
     await expectLater(
       controller.enableSync(
         serverUrl: 'https://sync.example',
-          password: 'nope',
+        password: 'nope',
       ),
       throwsA(isA<VaultFailure>()),
     );

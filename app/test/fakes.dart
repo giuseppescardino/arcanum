@@ -8,6 +8,9 @@ import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
 import 'package:arcanum/app/secret_key_store.dart';
 import 'package:arcanum/app/transfer.dart';
+import 'package:arcanum/browser/bridge_clients.dart';
+import 'package:arcanum/browser/bridge_crypto.dart';
+import 'package:arcanum/src/rust/api/bridge.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 
 const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
@@ -461,4 +464,65 @@ class FakeFileDialogs implements FileDialogs {
     savedBytes = bytes;
     return true;
   }
+}
+
+/// Reversible stand-in for the bridge crypto: "ciphertext" is base64 of
+/// `client|direction|plaintext`, so tests can read and forge messages.
+class FakeBridgeCrypto implements BridgeCrypto {
+  @override
+  BridgePairing pairRespond(Uint8List extPub) {
+    if (extPub.length != 32) {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+    return BridgePairing(
+      appPub: Uint8List.fromList(List.filled(32, 9)),
+      key: Uint8List.fromList(List.filled(32, extPub[1])),
+      code: '123456',
+    );
+  }
+
+  static String seal(String client, String dir, String plaintext) =>
+      base64.encode(utf8.encode('$client|$dir|$plaintext'));
+
+  static String open(String client, String dir, String ct) {
+    final text = utf8.decode(base64.decode(ct));
+    final prefix = '$client|$dir|';
+    if (!text.startsWith(prefix)) {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+    return text.substring(prefix.length);
+  }
+
+  @override
+  String openRequest(Uint8List key, String client, String ciphertext) {
+    try {
+      return open(client, 'req', ciphertext);
+    } on FormatException {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+  }
+
+  @override
+  String sealResponse(Uint8List key, String client, String plaintext) =>
+      seal(client, 'res', plaintext);
+}
+
+class MemoryBridgeClientStore implements BridgeClientStore {
+  List<PairedBrowser> saved = [];
+
+  @override
+  Future<List<PairedBrowser>> load() async => List.of(saved);
+
+  @override
+  Future<void> save(List<PairedBrowser> browsers) async =>
+      saved = List.of(browsers);
 }
