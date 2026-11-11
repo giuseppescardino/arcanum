@@ -4,10 +4,9 @@
 
 name: CI
 
+# Manual runs only: start it from the Actions tab ("Run workflow") or with
+# `gh workflow run ci.yml`.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
