@@ -45,6 +45,13 @@ void main() {
     return controller.items.firstWhere((i) => i.fields.title == title).id;
   }
 
+  Future<Map<String, Object?>> check(String user, String pw) => handler.handle({
+    'op': 'check',
+    'url': 'https://example.com/',
+    'username': user,
+    'password': pw,
+  });
+
   test('status reports locked and unlocked', () async {
     expect(await handler.handle({'op': 'status'}), {'locked': false});
     controller.lock();
@@ -233,5 +240,75 @@ void main() {
   test('unknown op or missing fields is a bad request', () async {
     expect(await handler.handle({'op': 'nope'}), {'error': 'bad_request'});
     expect(await handler.handle({'op': 'fill'}), {'error': 'bad_request'});
+  });
+
+  test(
+    'two-step login: empty username updates the only login for the site',
+    () async {
+      final id = await add('Example', urls: ['example.com'], password: 'old');
+      expect(await check('', 'new-pw'), {'state': 'update', 'id': id});
+    },
+  );
+
+  test(
+    'two-step login: empty username with a stored password is same',
+    () async {
+      await add('A', urls: ['example.com'], username: 'a', password: 'pa');
+      await add('B', urls: ['example.com'], username: 'b', password: 'pb');
+      expect(await check('', 'pb'), {'state': 'same'});
+    },
+  );
+
+  test('two-step login: empty username with several logins is new', () async {
+    await add('A', urls: ['example.com'], username: 'a', password: 'pa');
+    await add('B', urls: ['example.com'], username: 'b', password: 'pb');
+    expect(await check('', 'other'), {'state': 'new'});
+  });
+
+  test('usernames compare case-insensitively', () async {
+    final id = await add(
+      'Example',
+      urls: ['example.com'],
+      username: 'Alice@Example.com',
+      password: 'old',
+    );
+    expect(await check('alice@example.com', 'new'), {
+      'state': 'update',
+      'id': id,
+    });
+  });
+
+  group('auto-lock', () {
+    late VaultController quick;
+    late BridgeHandler h;
+
+    setUp(() async {
+      quick = VaultController(
+        handle: FakeVaultHandle(),
+        secretKeys: MemorySecretKeyStore(),
+        quickUnlock: FakeQuickUnlockStore(available: false),
+        autoLockAfter: const Duration(milliseconds: 300),
+      );
+      h = BridgeHandler(controller: quick, tools: tools, showApp: () async {});
+      await quick.create('master-password');
+      quick.confirmEmergencyKit();
+      quick.touch();
+    });
+
+    tearDown(() => quick.dispose());
+
+    test('list and check from a page do not postpone it', () async {
+      for (var i = 0; i < 4; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await h.handle({'op': 'list', 'url': 'https://example.com'});
+        await h.handle({
+          'op': 'check',
+          'url': 'https://example.com',
+          'username': 'a',
+          'password': 'b',
+        });
+      }
+      expect(quick.stage, VaultStage.locked);
+    });
   });
 }

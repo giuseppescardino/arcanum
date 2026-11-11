@@ -41,6 +41,11 @@ class BridgeHandler {
 
   static const _needsUnlock = {'list', 'fill', 'check', 'save', 'update'};
 
+  /// Ops that follow a click in the extension's own UI. Only these count
+  /// as activity: a page can trigger list/check by itself and must not be
+  /// able to keep the vault from locking.
+  static const _userActions = {'fill', 'save', 'update'};
+
   Future<Map<String, Object?>> handle(Map<String, Object?> body) async {
     final op = body['op'];
     try {
@@ -48,7 +53,7 @@ class BridgeHandler {
         if (controller.stage != VaultStage.unlocked) {
           return {'error': 'locked'};
         }
-        controller.touch();
+        if (_userActions.contains(op)) controller.touch();
       }
       switch (op) {
         case 'status':
@@ -84,10 +89,21 @@ class BridgeHandler {
         case 'check':
           final host = pageHost(_str(body, 'url'));
           if (host == null) return {'error': 'bad_request'};
-          final username = _str(body, 'username').trim();
+          final username = _str(body, 'username').trim().toLowerCase();
           final password = _str(body, 'password');
-          for (final i in _matching(host)) {
-            if (i.fields.username.trim() != username) continue;
+          final matching = _matching(host).toList();
+          if (username.isEmpty) {
+            // Two-step logins submit the password without the username.
+            if (matching.any((i) => i.fields.password == password)) {
+              return {'state': 'same'};
+            }
+            if (matching.length == 1) {
+              return {'state': 'update', 'id': matching.single.id};
+            }
+            return {'state': 'new'};
+          }
+          for (final i in matching) {
+            if (i.fields.username.trim().toLowerCase() != username) continue;
             return i.fields.password == password
                 ? {'state': 'same'}
                 : {'state': 'update', 'id': i.id};
