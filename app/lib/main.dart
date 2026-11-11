@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app/android_language.dart';
@@ -7,8 +10,13 @@ import 'app/favicons.dart';
 import 'app/language_settings.dart';
 import 'app/quick_access.dart';
 import 'app/secret_key_store.dart';
+import 'app/tools.dart';
 import 'app/vault_controller.dart';
 import 'autofill/autofill_app.dart';
+import 'browser/bridge_clients.dart';
+import 'browser/bridge_crypto.dart';
+import 'browser/bridge_handler.dart';
+import 'browser/bridge_server.dart';
 import 'autofill/autofill_bridge.dart';
 import 'src/rust/api/vault.dart';
 import 'src/rust/frb_generated.dart';
@@ -52,6 +60,34 @@ Future<VaultController> _openVault() async {
   return controller;
 }
 
+/// Loopback server for the browser extension, desktop only. Never throws:
+/// the browser connection is a convenience, not a requirement.
+Future<BridgeServer?> _startBrowserBridge(VaultController controller) async {
+  if (!Platform.isMacOS && !Platform.isWindows) return null;
+  final server = BridgeServer(
+    handler: BridgeHandler(
+      controller: controller,
+      tools: const RustTools(),
+      showApp: () async {
+        try {
+          await windowManager.show();
+          await windowManager.focus();
+        } catch (e) {
+          debugPrint('Cannot bring the window forward: $e');
+        }
+      },
+    ),
+    crypto: const RustBridgeCrypto(),
+    store: SecureBridgeClientStore(),
+  );
+  try {
+    await server.start();
+  } catch (e) {
+    debugPrint('Browser bridge unavailable: $e');
+  }
+  return server;
+}
+
 Future<void> main() async {
   final controller = await _openVault();
   final language = await _loadLanguage();
@@ -61,12 +97,14 @@ Future<void> main() async {
   final breach = await _loadBreachChecker();
   final favicons = await _loadFavicons();
   await QuickAccess.init();
+  final bridge = await _startBrowserBridge(controller);
   runApp(
     ArcanumApp(
       controller: controller,
       language: language,
       breach: breach,
       favicons: favicons,
+      bridge: bridge,
     ),
   );
 }

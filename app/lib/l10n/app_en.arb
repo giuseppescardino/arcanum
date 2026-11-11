@@ -708,5 +708,33 @@
         "type": "String"
       }
     }
-  }
+  },
+  "browsersTitle": "Connected browsers",
+  "browsersIntro": "Connect the Arcanum extension for Chrome, Opera or Safari: it fills and saves passwords while the app is unlocked.",
+  "browsersConnect": "Connect browser",
+  "browsersWaiting": "Waiting for the browser… Open the Arcanum extension and press Connect within 2 minutes.",
+  "browsersNone": "No connected browsers",
+  "browsersRevoke": "Revoke",
+  "browsersConnectedOn": "Connected on {date}",
+  "@browsersConnectedOn": {
+    "description": "When a browser was paired",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "browsersPairTitle": "Connect {name}?",
+  "@browsersPairTitle": {
+    "description": "Pairing confirmation title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "browsersPairBody": "Check that the browser shows the same code. If it is different, reject.",
+  "browsersReject": "Reject",
+  "browsersApprove": "Connect",
+  "browsersPortsBusy": "The browser connection could not start: ports 47613–47615 are in use."
 }

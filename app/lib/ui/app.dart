@@ -6,7 +6,9 @@ import '../app/breach_check.dart';
 import '../app/favicons.dart';
 import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
+import '../browser/bridge_server.dart';
 import '../l10n/l10n.dart';
+import 'browser_pairing.dart';
 import 'emergency_kit_screen.dart';
 import 'setup_screen.dart';
 import 'theme.dart';
@@ -20,6 +22,7 @@ class ArcanumApp extends StatefulWidget {
     LanguageSettings? language,
     BreachChecker? breach,
     FaviconCache? favicons,
+    this.bridge,
   }) : language = language ?? LanguageSettings(),
        breach = breach ?? BreachChecker(),
        favicons = favicons ?? FaviconCache.disabled();
@@ -28,6 +31,9 @@ class ArcanumApp extends StatefulWidget {
   final LanguageSettings language;
   final BreachChecker breach;
   final FaviconCache favicons;
+
+  /// Browser extension server; null where it does not run (mobile).
+  final BridgeServer? bridge;
 
   @override
   State<ArcanumApp> createState() => _ArcanumAppState();
@@ -94,39 +100,46 @@ class _ArcanumAppState extends State<ArcanumApp> {
         checker: widget.breach,
         child: FaviconScope(
           cache: widget.favicons,
-          child: ListenableBuilder(
-            listenable: Listenable.merge([_controller, widget.language]),
-            builder: (context, _) => MaterialApp(
-              title: 'Arcanum',
-              navigatorKey: _navigatorKey,
-              debugShowCheckedModeBanner: false,
-              theme: appTheme(Brightness.light),
-              darkTheme: appTheme(Brightness.dark),
-              locale: widget.language.locale,
-              supportedLocales: AppLocalizations.supportedLocales,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              builder: (context, child) {
-                trackLocale(context);
-                return Listener(
-                  onPointerDown: (_) => _controller.touch(),
-                  child: child,
-                );
-              },
-              home: KeyedSubtree(
-                key: ValueKey(_controller.stage),
-                child: switch (_controller.stage) {
-                  VaultStage.setup => SetupScreen(controller: _controller),
-                  VaultStage.emergencyKit => EmergencyKitScreen(
-                    controller: _controller,
-                  ),
-                  VaultStage.locked => UnlockScreen(controller: _controller),
-                  VaultStage.unlocked => VaultScreen(controller: _controller),
+          child: _withBridge(
+            ListenableBuilder(
+              listenable: Listenable.merge([_controller, widget.language]),
+              builder: (context, _) => MaterialApp(
+                title: 'Arcanum',
+                navigatorKey: _navigatorKey,
+                debugShowCheckedModeBanner: false,
+                theme: appTheme(Brightness.light),
+                darkTheme: appTheme(Brightness.dark),
+                locale: widget.language.locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                builder: (context, child) {
+                  trackLocale(context);
+                  return Listener(
+                    onPointerDown: (_) => _controller.touch(),
+                    child: child,
+                  );
                 },
+                home: KeyedSubtree(
+                  key: ValueKey(_controller.stage),
+                  child: switch (_controller.stage) {
+                    VaultStage.setup => SetupScreen(controller: _controller),
+                    VaultStage.emergencyKit => EmergencyKitScreen(
+                      controller: _controller,
+                    ),
+                    VaultStage.locked => UnlockScreen(controller: _controller),
+                    VaultStage.unlocked => VaultScreen(controller: _controller),
+                  },
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _withBridge(Widget child) {
+    final bridge = widget.bridge;
+    return bridge == null ? child : BridgeScope(server: bridge, child: child);
   }
 }
