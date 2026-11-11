@@ -35,8 +35,11 @@ The threat model and cryptographic design are described in [docs/SECURITY.md](do
 # Core
 cd core && cargo test --workspace
 
-# Server (needs PostgreSQL, see server/README.md)
+# Server
 cd server && cargo test
+
+# End-to-end: server + sync client (needs PostgreSQL, see server/README.md)
+cd server && cargo build && cd ../e2e && cargo test
 
 # App
 cd app && flutter pub get && flutter test

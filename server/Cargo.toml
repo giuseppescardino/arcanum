@@ -26,12 +26,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2"
 
-[dev-dependencies]
-arcanum-sync = { path = "../core/arcanum-sync" }
-arcanum-vault = { path = "../core/arcanum-vault" }
-tempfile = "3"
-ureq = { version = "2", features = ["json"] }
-
 [lints.rust]
 unsafe_code = "forbid"
 

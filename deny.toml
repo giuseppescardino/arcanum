@@ -1,5 +1,5 @@
-# cargo-deny policy for both Rust workspaces (`core/` and `server/`), run
-# in CI from each folder: `cargo deny check`.
+# cargo-deny policy for the Rust workspaces (`core/`, `server/` and `e2e/`),
+# run in CI from each folder: `cargo deny check`.
 
 [graph]
 all-features = false
