@@ -133,23 +133,34 @@ The extension (`extension/`) fills saved logins, suggests generated passwords an
 - **Pairing** (`core/arcanum-bridge`):
   - It starts only from the app ("Browser collegati" → "Collega browser"). That opens a 120-second window that accepts a single pending request; outside it, pairing requests are refused.
   - Browser and app run an ephemeral **X25519** exchange. Both derive, with HKDF-SHA256 over a transcript hash of the two public keys, the key (`pm/bridge-key/v1`) and a 6-digit code (`pm/bridge-code/v1`).
-  - The user approves in the app only if the code shown by the browser matches. A man-in-the-middle ends up with different codes.
-  - The key is never shown or typed, so it cannot be brute-forced offline or online, and every attempt needs a click in the app.
+  - **Commit, then reveal:** the browser first sends only `SHA-256("pm/bridge-commit/v1" ‖ its public key ‖ 32 random bytes)`. It reveals the key and the nonce only after it has received the app's key, and the app checks them against the commitment. A man in the middle therefore has to fix its keys before it can see the other side's, and gets a matching code with probability 10⁻⁶. Without the commitment it could try about a million keys in seconds until the codes matched.
+  - **The code is typed, not compared:** the browser shows the code and the user types it into the app, which never displays it. It accepts three attempts, then rejects the pairing. A local process that starts a pairing before the real browser cannot get approved: the user has no code of its to type.
+  - The key is never shown or typed, so it cannot be brute-forced offline or online.
   - X25519 was preferred to P-256 because the RustCrypto P-256 version compatible with this workspace would bring `crypto-bigint` 0.5 (RUSTSEC-2026-0387, non-constant-time) onto a live path.
 - **Replay:** each request carries a random id and a timestamp. The app rejects timestamps more than 60 seconds away and ids already seen. The extension discards a response whose id is not its request's.
 - **Web pages:**
   - Pages can send requests to `127.0.0.1`, but the app refuses any `Origin` that is not a `chrome-extension://` or `safari-web-extension://` origin.
   - It refuses any `Host` other than `127.0.0.1:<port>`, which stops DNS rebinding.
   - A page cannot produce a valid ciphertext anyway: at most it learns that the app is running.
-  - No extension file is web-accessible, so pages cannot probe for the extension either.
-- **Port squatting:** another process listening on the port cannot decrypt requests and cannot complete a pairing, because the code is confirmed in the real app.
+  - No extension file is web-accessible. The extension's element (`<arcanum-ui>`) is added only to pages where it shows an icon or a banner, so a page can detect the extension only once it has a login form the user interacts with.
+- **Scripted events are ignored:**
+  - A submit, click or Enter counts only when the browser dispatched it (`isTrusted`) and the page has a recent user gesture (`navigator.userActivation`). A page cannot submit guesses to learn whether they match a saved password, nor queue an update with a password of its choice.
+  - Clicks on the extension's own icon, menu and banner must be trusted too, and the banner's host is styled inline with `!important` (re-asserted on change), so a page cannot hide it over a decoy button.
+  - Buttons inside a form never trigger a capture (its submit event does), so an eye toggle never saves a half-typed password.
+  - **Residual:** for a few seconds after a genuine click, a page script still has the gesture and could submit values of its choice. The result is only a banner the user must still confirm.
+- **Auto-lock:** only actions that follow a click in the extension's UI (`fill`, `save`, `update`) count as activity. Listing and checking, which a page can cause, do not postpone the vault's auto-lock.
+- **Port squatting:** another process on a port cannot decrypt requests and cannot complete a pairing. The extension only trusts a port that answers as Arcanum, re-probes when a reply is not the app's, and forgets its pairing only on `unknown_client` from a port that answers as Arcanum.
 - **Phishing:**
-  - The page URL always comes from the browser (`sender.tab.url` in the background), never from the page.
+  - The page URL always comes from the browser, never from the page. A content script always acts on its own tab, and only the popup may name the tab it acts on.
   - Only logins whose saved URL matches that host, or a subdomain on a label boundary, are listed or filled, and `fill` and `update` are refused for any other site.
   - Filling happens only on a click in the extension's own menu or popup, never on page load, and only in the top frame. The menu lives in a closed shadow root that the page cannot read.
-- **Saving:** a submitted username and password are kept in the browser's session storage (memory only) for at most 120 seconds per tab, until the user answers the banner. Only the background sends them to the app, encrypted.
-- **Revocation:** "Revoca" in the app deletes the browser's key. Its next request gets `unknown_client` and the extension forgets the pairing. Keys live in the system keychain on the app side and in the extension's local storage on the browser side.
-- **Residual risk:** malware running as the user can read the key from the browser profile and ask for credentials while the vault is unlocked. That is the "compromised device" case, already out of scope, and the same holds for any native-messaging design.
+  - A fill started from the popup goes from the background straight to the tab's top frame, bound to the host it was checked against. If the tab has navigated meanwhile, the content script drops it, and the password never goes back to the popup.
+- **Saving:** a submitted username and password are kept in the browser's session storage (memory only) for at most 120 seconds. Expired entries are swept on every message, and a tab's entry is dropped when the tab closes. Only the background sends them to the app, encrypted.
+- **Keys:**
+  - On the app side, browser keys live in the system keychain.
+  - In the browser, the key is a **non-extractable** WebCrypto key in IndexedDB of the extension's own origin. Content scripts, which run in the page's renderer, can read `storage.local` but cannot open that database, and no script can export the key's bytes.
+  - "Revoca" in the app deletes the browser's key. Its next request gets `unknown_client`, and the extension forgets the pairing.
+- **Residual risk:** malware running as the user can use the extension's key through its profile and ask for credentials while the vault is unlocked. That is the "compromised device" case, already out of scope, and the same holds for any native-messaging design.
 
 ## Import and export
 

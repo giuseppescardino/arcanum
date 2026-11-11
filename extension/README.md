@@ -41,8 +41,8 @@ open "extension/safari/Arcanum Safari/Arcanum Safari.xcodeproj"
 ## Connect to the app
 
 1. In Arcanum (desktop), open the menu → **Browser collegati** → **Collega browser**. Pairing stays open for 2 minutes.
-2. In the browser, click the Arcanum toolbar button → **Collega**.
-3. Both show a 6-digit code: if they match, press **Collega** in the app.
+2. In the browser, click the Arcanum toolbar button → **Collega**. The popup shows a 6-digit code.
+3. Type that code in the app's dialog and press **Collega**. The app never shows the code itself; after three wrong codes the pairing is rejected.
 
 To disconnect a browser, use **Revoca** in the same screen.
 
@@ -57,6 +57,8 @@ cd extension && npm test
 ```bash
 cd core && UPDATE_VECTORS=1 cargo test -p arcanum-bridge --test vectors
 ```
+
+After editing files under `src/`, press **Reload** on the extension's card: the background keeps its imported scripts cached until the extension reloads.
 
 To try fill and save by hand, serve the sample pages and open `http://localhost:8765/login.html` or `signup.html`:
 
