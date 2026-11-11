@@ -55,6 +55,11 @@ class VaultController extends ChangeNotifier {
   bool hasStoredSecretKey = false;
   List<VaultItem> items = const [];
 
+  /// Colors (0xAARRGGBB) the user gave to groups, by normalized path.
+  /// They come from [VaultItemKind.group] records, which are kept out of
+  /// [items].
+  Map<String, int> groupColors = const {};
+
   /// Set only between account creation and Emergency Kit confirmation.
   String? pendingSecretKey;
 
@@ -91,6 +96,7 @@ class VaultController extends ChangeNotifier {
     hasStoredSecretKey = true;
     pendingSecretKey = secretKey;
     items = const [];
+    groupColors = const {};
     stage = VaultStage.emergencyKit;
     notifyListeners();
   }
@@ -196,6 +202,7 @@ class VaultController extends ChangeNotifier {
     _periodicSyncTimer?.cancel();
     handle.lock();
     items = const [];
+    groupColors = const {};
     syncInfo = null;
     stage = VaultStage.locked;
     notifyListeners();
@@ -222,6 +229,7 @@ class VaultController extends ChangeNotifier {
     hasStoredSecretKey = false;
     quickUnlockEnabled = false;
     items = const [];
+    groupColors = const {};
     linked = false;
     syncInfo = null;
     syncError = null;
@@ -276,6 +284,26 @@ class VaultController extends ChangeNotifier {
   Future<void> renameGroup(String from, String to) async {
     final moved = await handle.renameGroup(from: from, to: to);
     if (moved == 0) return;
+    await _reload();
+    _scheduleSync();
+  }
+
+  /// Color shown for [path]: its own, else the nearest colored ancestor's.
+  int? colorOfGroup(String path) {
+    path = normalizeGroup(path);
+    if (path.isEmpty) return null;
+    final own = groupColors[path];
+    if (own != null) return own;
+    for (final a in groupAncestors(path).reversed) {
+      final c = groupColors[a];
+      if (c != null) return c;
+    }
+    return null;
+  }
+
+  /// Gives group [path] a color; null removes it.
+  Future<void> setGroupColor(String path, int? color) async {
+    await handle.setGroupColor(path: path, color: color);
     await _reload();
     _scheduleSync();
   }
@@ -431,7 +459,16 @@ class VaultController extends ChangeNotifier {
   }
 
   Future<void> _reload() async {
-    items = await handle.listItems();
+    final all = await handle.listItems();
+    items = [
+      for (final i in all)
+        if (i.fields.kind != VaultItemKind.group) i,
+    ];
+    groupColors = {
+      for (final i in all)
+        if (i.fields.kind == VaultItemKind.group && i.fields.color != null)
+          normalizeGroup(i.fields.group): i.fields.color!,
+    };
     notifyListeners();
   }
 

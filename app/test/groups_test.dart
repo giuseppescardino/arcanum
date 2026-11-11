@@ -244,4 +244,56 @@ void main() {
     expect(find.byType(ChoiceChip), findsNothing);
     c.dispose();
   });
+
+  test('group colors are kept apart from items and inherited', () async {
+    final c = await unlockedWith([('Jira', 'Lavoro/Clienti'), ('Bank', '')]);
+    await c.setGroupColor('Lavoro', 0xFF1E88E5);
+    expect(c.items.map((i) => i.fields.title), ['Bank', 'Jira']);
+    expect(c.groups, ['Lavoro', 'Lavoro/Clienti']);
+    expect(c.groupColors, {'Lavoro': 0xFF1E88E5});
+    // A subgroup without its own color uses its parent's.
+    expect(c.colorOfGroup('Lavoro/Clienti'), 0xFF1E88E5);
+    expect(c.colorOfGroup(''), isNull);
+
+    await c.setGroupColor('Lavoro/Clienti', 0xFFE53935);
+    expect(c.colorOfGroup('Lavoro/Clienti'), 0xFFE53935);
+
+    // The color follows a rename and goes away with the group.
+    await c.renameGroup('Lavoro', 'Ufficio');
+    expect(c.colorOfGroup('Ufficio'), 0xFF1E88E5);
+    await c.renameGroup('Ufficio', '');
+    expect(c.groupColors, isEmpty);
+
+    c.dispose();
+  });
+
+  testWidgets('a group gets a color from its menu', (tester) async {
+    desktop(tester);
+    final c = await unlockedWith([('Jira', 'Lavoro'), ('Netflix', 'Svago')]);
+    await tester.pumpWidget(ArcanumApp(controller: c));
+
+    await tester.tap(
+      find.descendant(
+        of: header('Lavoro'),
+        matching: find.byTooltip('Azioni gruppo'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Colore'));
+    await tester.pumpAndSettle();
+    expect(find.text('Colore di "Lavoro"'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('#1e88e5'));
+    await tester.pumpAndSettle();
+
+    expect(c.groupColors, {'Lavoro': 0xFF1E88E5});
+    final icon = tester.widget<Icon>(
+      find.descendant(
+        of: header('Lavoro'),
+        matching: find.byIcon(Icons.folder),
+      ),
+    );
+    expect(icon.color, const Color(0xFF1E88E5));
+
+    c.dispose();
+  });
 }

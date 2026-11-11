@@ -49,6 +49,7 @@ void main() {
         notes: '',
         favorite: false,
         group: 'Lavoro',
+        color: null,
       ),
     );
 
@@ -81,6 +82,7 @@ void main() {
       notes: 'line1\nline2',
       favorite: true,
       group: group,
+      color: null,
     );
     // Generated classes compare list fields by identity: compare by value.
     String describe(ItemFields f) => [

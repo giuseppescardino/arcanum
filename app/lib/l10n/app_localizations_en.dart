@@ -904,4 +904,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorFile(String details) {
     return 'Could not read or write the file: $details';
   }
+
+  @override
+  String get vaultGroupColor => 'Color';
+
+  @override
+  String vaultGroupColorTitle(String group) {
+    return 'Color of \"$group\"';
+  }
+
+  @override
+  String get vaultGroupColorNone => 'No color';
+
+  @override
+  String get vaultGroupColorHint =>
+      'Subgroups without a color of their own use this one.';
+
+  @override
+  String get notesEdit => 'Edit';
+
+  @override
+  String get notesPreview => 'Preview';
+
+  @override
+  String get notesBold => 'Bold';
+
+  @override
+  String get notesItalic => 'Italic';
+
+  @override
+  String get notesStrike => 'Strikethrough';
+
+  @override
+  String get notesHeading => 'Heading';
+
+  @override
+  String get notesBulletList => 'Bulleted list';
+
+  @override
+  String get notesNumberedList => 'Numbered list';
+
+  @override
+  String get notesChecklist => 'Checklist';
+
+  @override
+  String get notesQuote => 'Quote';
+
+  @override
+  String get notesCode => 'Code';
+
+  @override
+  String get notesLink => 'Link';
+
+  @override
+  String get notesDivider => 'Divider';
+
+  @override
+  String get notesEmptyPreview => 'Nothing to show.';
+
+  @override
+  String get notesOpenLinkTitle => 'Open link?';
+
+  @override
+  String get notesOpen => 'Open';
 }

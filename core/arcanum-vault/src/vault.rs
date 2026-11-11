@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
-use crate::model::normalize_group;
+use crate::model::{normalize_group, ItemKind};
 use crate::store::{ItemRow, Store};
 use crate::{Item, ItemData, Result, VaultError};
 
@@ -408,7 +408,10 @@ impl Vault {
     /// Moves group `from`, with all its subgroups, to `to` in one
     /// transaction: `Work` -> `Office` also turns `Work/Clients` into
     /// `Office/Clients`. An empty `to` leaves every item of the subtree
-    /// ungrouped. Returns how many items were moved.
+    /// ungrouped. Group settings records ([`ItemKind::Group`]) move along
+    /// with their group; they are deleted when the subtree is ungrouped or
+    /// when the destination already has its own settings. Returns how many
+    /// items (not settings records) were moved.
     pub fn rename_group(&mut self, from: &str, to: &str) -> Result<u32> {
         let session = self.session.as_ref().ok_or(VaultError::Locked)?;
         let (from, to) = (normalize_group(from), normalize_group(to));
@@ -416,7 +419,10 @@ impl Vault {
             return Ok(0);
         }
         let prefix = format!("{from}/");
+        let mut moved = 0u32;
         let mut rows = Vec::new();
+        let mut staying_settings = std::collections::HashSet::new();
+        let mut moving_settings = Vec::new();
         for row in self.store.live_items(&session.vault_id)? {
             let Some(mut data) = decrypt_data(session, &row)? else {
                 continue;
@@ -427,6 +433,9 @@ impl Vault {
             } else if let Some(rest) = group.strip_prefix(&prefix) {
                 rest
             } else {
+                if data.kind == ItemKind::Group {
+                    staying_settings.insert(group);
+                }
                 continue;
             };
             data.group = if to.is_empty() {
@@ -436,6 +445,11 @@ impl Vault {
             } else {
                 format!("{to}/{rest}")
             };
+            if data.kind == ItemKind::Group {
+                moving_settings.push((row, data));
+                continue;
+            }
+            moved += 1;
             let item_key = unwrap_item_key(session, &row)?;
             rows.push(encrypt_row(
                 session,
@@ -447,13 +461,87 @@ impl Vault {
                 now_ms(),
             )?);
         }
+        for (row, data) in moving_settings {
+            let keep = !data.group.is_empty() && !staying_settings.contains(&data.group);
+            let item_key = unwrap_item_key(session, &row)?;
+            rows.push(encrypt_row(
+                session,
+                row.id,
+                next_revision(row.revision)?,
+                row.wrapped_key,
+                &item_key,
+                keep.then_some(&data),
+                now_ms(),
+            )?);
+        }
         self.store.transaction(|s| {
             for row in &rows {
                 s.upsert_local(row)?;
             }
             Ok(())
         })?;
-        Ok(u32::try_from(rows.len()).unwrap_or(u32::MAX))
+        Ok(moved)
+    }
+
+    /// Sets the color (0xAARRGGBB) of group `path`, or clears it with
+    /// `None`. Stored as an encrypted [`ItemKind::Group`] record, so it
+    /// syncs like an item.
+    pub fn set_group_color(&mut self, path: &str, color: Option<u32>) -> Result<()> {
+        let session = self.session.as_ref().ok_or(VaultError::Locked)?;
+        let path = normalize_group(path);
+        if path.is_empty() {
+            return Ok(());
+        }
+        let mut existing = Vec::new();
+        for row in self.store.live_items(&session.vault_id)? {
+            if let Some(data) = decrypt_data(session, &row)? {
+                if data.kind == ItemKind::Group && normalize_group(&data.group) == path {
+                    existing.push(row);
+                }
+            }
+        }
+        let data = color.map(|color| {
+            let mut d = ItemData::default();
+            d.kind = ItemKind::Group;
+            d.group = path.clone();
+            d.color = Some(color);
+            d
+        });
+        let mut rows = Vec::new();
+        let mut existing = existing.into_iter();
+        if let Some(row) = existing.next() {
+            let item_key = unwrap_item_key(session, &row)?;
+            rows.push(encrypt_row(
+                session,
+                row.id,
+                next_revision(row.revision)?,
+                row.wrapped_key,
+                &item_key,
+                data.as_ref(),
+                now_ms(),
+            )?);
+        } else if let Some(data) = &data {
+            self.insert_new(session, data)?;
+        }
+        // Duplicates (two devices colored the same group offline) go away.
+        for row in existing {
+            let item_key = unwrap_item_key(session, &row)?;
+            rows.push(encrypt_row(
+                session,
+                row.id,
+                next_revision(row.revision)?,
+                row.wrapped_key,
+                &item_key,
+                None,
+                now_ms(),
+            )?);
+        }
+        self.store.transaction(|s| {
+            for row in &rows {
+                s.upsert_local(row)?;
+            }
+            Ok(())
+        })
     }
 
     pub(crate) fn insert_new(&self, session: &Session, data: &ItemData) -> Result<Item> {

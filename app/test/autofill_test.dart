@@ -44,6 +44,7 @@ VaultItem item(String title, {List<String> urls = const []}) => VaultItem(
     notes: '',
     favorite: false,
     group: '',
+    color: null,
   ),
 );
 
@@ -98,6 +99,7 @@ void main() {
           notes: 'x',
           favorite: false,
           group: '',
+          color: null,
         ),
       );
       expect(isSuggested(note, req), isFalse);
@@ -128,6 +130,7 @@ void main() {
           notes: '',
           favorite: false,
           group: '',
+          color: null,
         ),
       );
       await controller.save(
@@ -140,6 +143,7 @@ void main() {
           notes: '',
           favorite: false,
           group: '',
+          color: null,
         ),
       );
     });

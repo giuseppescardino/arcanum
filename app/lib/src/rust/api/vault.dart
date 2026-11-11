@@ -80,6 +80,9 @@ abstract class VaultHandle implements RustOpaqueInterface {
   /// their items); returns how many items were moved.
   Future<int> renameGroup({required String from, required String to});
 
+  /// Sets the color (0xAARRGGBB) of group `path`; `None` clears it.
+  Future<void> setGroupColor({required String path, int? color});
+
   /// Sets up this empty database from an existing server account and
   /// leaves it unlocked.
   Future<SyncSummary> signIn({
@@ -123,6 +126,9 @@ class ItemFields {
   /// Group path, levels separated by `/`; empty for none.
   final String group;
 
+  /// Color of a `Group` record as 0xAARRGGBB.
+  final int? color;
+
   const ItemFields({
     required this.kind,
     required this.title,
@@ -133,6 +139,7 @@ class ItemFields {
     this.totp,
     required this.favorite,
     required this.group,
+    this.color,
   });
 
   @override
@@ -145,7 +152,8 @@ class ItemFields {
       notes.hashCode ^
       totp.hashCode ^
       favorite.hashCode ^
-      group.hashCode;
+      group.hashCode ^
+      color.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -160,7 +168,8 @@ class ItemFields {
           notes == other.notes &&
           totp == other.totp &&
           favorite == other.favorite &&
-          group == other.group;
+          group == other.group &&
+          color == other.color;
 }
 
 class SyncInfo {
@@ -297,4 +306,10 @@ class VaultItem {
           fields == other.fields;
 }
 
-enum VaultItemKind { login, secureNote }
+enum VaultItemKind {
+  login,
+  secureNote,
+
+  /// Settings of the group in `group` (its color); not shown as an item.
+  group,
+}

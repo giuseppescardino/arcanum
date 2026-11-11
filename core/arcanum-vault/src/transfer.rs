@@ -78,7 +78,7 @@ pub struct Imported {
 pub fn export_csv(items: &[ItemData]) -> String {
     let mut out = String::new();
     push_csv_row(&mut out, CSV_HEADER.iter().copied());
-    for d in items {
+    for d in items.iter().filter(|d| d.kind != ItemKind::Group) {
         let extra = d.urls.iter().skip(1).cloned().collect::<Vec<_>>().join(" ");
         let row = [
             d.title.as_str(),
@@ -91,7 +91,7 @@ pub fn export_csv(items: &[ItemData]) -> String {
             if d.favorite { "1" } else { "" },
             match d.kind {
                 ItemKind::Login => "login",
-                ItemKind::SecureNote => "note",
+                ItemKind::SecureNote | ItemKind::Group => "note",
             },
             extra.as_str(),
         ];

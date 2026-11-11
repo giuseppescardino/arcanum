@@ -289,3 +289,61 @@ fn reset_erases_account_and_allows_new_one() {
     v.lock();
     v.unlock(b"another password", &sk).unwrap();
 }
+
+#[test]
+fn group_colors_are_records_that_follow_their_group() {
+    let mut v = Vault::open_in_memory().unwrap();
+    v.create(PW, KdfParams::DEFAULT).unwrap();
+    let mut d = login("Jira", "j");
+    d.group = "Work/Clients".into();
+    v.add_item(&d).unwrap();
+    let colors = |v: &Vault| -> Vec<(String, Option<u32>)> {
+        let mut c: Vec<_> = v
+            .items()
+            .unwrap()
+            .into_iter()
+            .filter(|i| i.data.kind == ItemKind::Group)
+            .map(|i| (i.data.group.clone(), i.data.color))
+            .collect();
+        c.sort();
+        c
+    };
+
+    v.set_group_color(" Work ", Some(0xFF00_00FF)).unwrap();
+    v.set_group_color("Work/Clients", Some(0xFFFF_0000))
+        .unwrap();
+    v.set_group_color("Work", Some(0xFF00_FF00)).unwrap();
+    v.set_group_color("", Some(1)).unwrap();
+    assert_eq!(
+        colors(&v),
+        [
+            ("Work".into(), Some(0xFF00_FF00)),
+            ("Work/Clients".into(), Some(0xFFFF_0000))
+        ]
+    );
+
+    // Settings records move with the group but are not counted as items.
+    assert_eq!(v.rename_group("Work", "Office").unwrap(), 1);
+    assert_eq!(
+        colors(&v),
+        [
+            ("Office".into(), Some(0xFF00_FF00)),
+            ("Office/Clients".into(), Some(0xFFFF_0000))
+        ]
+    );
+
+    // Merging into a colored group keeps the destination's color.
+    v.set_group_color("Home", Some(7)).unwrap();
+    v.rename_group("Office", "Home").unwrap();
+    assert_eq!(
+        colors(&v),
+        [
+            ("Home".into(), Some(7)),
+            ("Home/Clients".into(), Some(0xFFFF_0000))
+        ]
+    );
+
+    v.set_group_color("Home", None).unwrap();
+    v.rename_group("Home", "").unwrap();
+    assert!(colors(&v).is_empty());
+}

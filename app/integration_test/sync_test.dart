@@ -46,6 +46,7 @@ void main() {
     notes: '',
     favorite: false,
     group: '',
+    color: null,
   );
 
   testWidgets('two devices sync through the server', (tester) async {

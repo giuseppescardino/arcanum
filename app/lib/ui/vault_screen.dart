@@ -208,6 +208,18 @@ class _VaultScreenState extends State<VaultScreen> {
     if (_groupFilter == group) setState(() => _groupFilter = null);
   }
 
+  Future<void> _pickGroupColor(String group) async {
+    final picked = await showDialog<_ColorChoice>(
+      context: context,
+      builder: (_) => _GroupColorDialog(
+        group: group,
+        current: _controller.groupColors[normalizeGroup(group)],
+      ),
+    );
+    if (picked == null) return;
+    await _runGroupAction(() => _controller.setGroupColor(group, picked.color));
+  }
+
   Future<void> _runGroupAction(Future<void> Function() action) async {
     try {
       await action();
@@ -217,6 +229,11 @@ class _VaultScreenState extends State<VaultScreen> {
             .showSnackBar(SnackBar(content: Text(failureMessage(e))));
       }
     }
+  }
+
+  Color? _groupColor(String group) {
+    final c = _controller.colorOfGroup(group);
+    return c == null ? null : Color(c);
   }
 
   void _toggleSection(String group) =>
@@ -245,11 +262,13 @@ class _VaultScreenState extends State<VaultScreen> {
           rows.add(
             _GroupHeader(
               name: groupLeaf(group),
+              color: _groupColor(group),
               depth: depth,
               count: section.total,
               collapsed: collapsed(group),
               onToggle: () => _toggleSection(group),
               onRename: group.isEmpty ? null : () => _renameGroup(group),
+              onColor: group.isEmpty ? null : () => _pickGroupColor(group),
               onDelete: group.isEmpty ? null : () => _deleteGroup(group),
             ),
           );
@@ -558,6 +577,7 @@ class _VaultScreenState extends State<VaultScreen> {
                   if (groups.isNotEmpty)
                     _GroupFilterBar(
                       groups: groups,
+                      colorOf: _groupColor,
                       hasUngrouped: _controller.items.any(
                         (i) => i.fields.group.isEmpty,
                       ),
@@ -673,27 +693,30 @@ class _Section {
 class _GroupFilterBar extends StatelessWidget {
   const _GroupFilterBar({
     required this.groups,
+    required this.colorOf,
     required this.hasUngrouped,
     required this.selected,
     required this.onSelected,
   });
 
   final List<String> groups;
+  final Color? Function(String group) colorOf;
   final bool hasUngrouped;
   final String? selected;
   final ValueChanged<String?> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(String label, String? value, {IconData? icon}) => Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        avatar: icon == null ? null : Icon(icon, size: 18),
-        label: Text(label),
-        selected: selected == value,
-        onSelected: (_) => onSelected(value),
-      ),
-    );
+    Widget chip(String label, String? value, {IconData? icon, Color? color}) =>
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            avatar: icon == null ? null : Icon(icon, size: 18, color: color),
+            label: Text(label),
+            selected: selected == value,
+            onSelected: (_) => onSelected(value),
+          ),
+        );
 
     return SizedBox(
       height: 48,
@@ -702,7 +725,13 @@ class _GroupFilterBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
         children: [
           chip(context.l10n.vaultAllGroups, null),
-          for (final g in groups) chip(g, g, icon: Icons.folder_outlined),
+          for (final g in groups)
+            chip(
+              g,
+              g,
+              icon: colorOf(g) == null ? Icons.folder_outlined : Icons.folder,
+              color: colorOf(g),
+            ),
           if (hasUngrouped) chip(context.l10n.noGroup, ''),
         ],
       ),
@@ -714,7 +743,7 @@ class _GroupFilterBar extends StatelessWidget {
 EdgeInsetsGeometry _indent(int depth) =>
     EdgeInsetsDirectional.only(start: 16 + 20.0 * depth, end: 24);
 
-enum _GroupAction { rename, delete }
+enum _GroupAction { rename, color, delete }
 
 class _GroupHeader extends StatelessWidget {
   const _GroupHeader({
@@ -723,11 +752,16 @@ class _GroupHeader extends StatelessWidget {
     required this.count,
     required this.collapsed,
     required this.onToggle,
+    this.color,
     this.onRename,
+    this.onColor,
     this.onDelete,
   });
 
   final String name;
+
+  /// The group's color, or its nearest colored ancestor's.
+  final Color? color;
 
   /// Levels of nesting below the outermost header shown.
   final int depth;
@@ -737,6 +771,7 @@ class _GroupHeader extends StatelessWidget {
   final bool collapsed;
   final VoidCallback onToggle;
   final VoidCallback? onRename;
+  final VoidCallback? onColor;
   final VoidCallback? onDelete;
 
   @override
@@ -746,12 +781,26 @@ class _GroupHeader extends StatelessWidget {
       dense: true,
       contentPadding: _indent(depth),
       onTap: onToggle,
-      leading: Icon(collapsed ? Icons.chevron_right : Icons.expand_more),
-      title: Text(
-        name.isEmpty ? context.l10n.noGroup : name,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
+      leading: Icon(
+        collapsed ? Icons.chevron_right : Icons.expand_more,
+        color: color,
+      ),
+      title: Row(
+        children: [
+          if (color != null) ...[
+            Icon(Icons.folder, size: 18, color: color),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Text(
+              name.isEmpty ? context.l10n.noGroup : name,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: color ?? theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -762,6 +811,7 @@ class _GroupHeader extends StatelessWidget {
               tooltip: context.l10n.vaultGroupActions,
               onSelected: (a) => switch (a) {
                 _GroupAction.rename => onRename!(),
+                _GroupAction.color => onColor!(),
                 _GroupAction.delete => onDelete!(),
               },
               itemBuilder: (_) => [
@@ -769,6 +819,11 @@ class _GroupHeader extends StatelessWidget {
                   value: _GroupAction.rename,
                   child: Text(context.l10n.vaultRenameGroup),
                 ),
+                if (onColor != null)
+                  PopupMenuItem(
+                    value: _GroupAction.color,
+                    child: Text(context.l10n.vaultGroupColor),
+                  ),
                 PopupMenuItem(
                   value: _GroupAction.delete,
                   child: Text(context.l10n.vaultDeleteGroup),
@@ -779,6 +834,102 @@ class _GroupHeader extends StatelessWidget {
             const SizedBox(width: 48),
         ],
       ),
+    );
+  }
+}
+
+/// Result of [_GroupColorDialog]: a wrapper so "no color" (null) can be
+/// told apart from a dismissed dialog.
+class _ColorChoice {
+  const _ColorChoice(this.color);
+  final int? color;
+}
+
+/// Colors offered for groups: readable on light and dark backgrounds.
+const groupPalette = <int>[
+  0xFFE53935, // red
+  0xFFF4511E, // deep orange
+  0xFFFB8C00, // orange
+  0xFFFDD835, // yellow
+  0xFF7CB342, // light green
+  0xFF43A047, // green
+  0xFF00897B, // teal
+  0xFF039BE5, // light blue
+  0xFF1E88E5, // blue
+  0xFF3949AB, // indigo
+  0xFF8E24AA, // purple
+  0xFFD81B60, // pink
+  0xFF6D4C41, // brown
+  0xFF757575, // grey
+];
+
+class _GroupColorDialog extends StatelessWidget {
+  const _GroupColorDialog({required this.group, required this.current});
+
+  final String group;
+  final int? current;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Widget swatch(int? value) {
+      final selected = value == current;
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: value == null
+            ? context.l10n.vaultGroupColorNone
+            : '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+        child: InkResponse(
+          onTap: () => Navigator.pop(context, _ColorChoice(value)),
+          radius: 24,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: value == null ? null : Color(value),
+              border: Border.all(
+                color: selected
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.outlineVariant,
+                width: selected ? 3 : 1,
+              ),
+            ),
+            child: value == null
+                ? Icon(Icons.block, color: theme.colorScheme.outline)
+                : selected
+                ? const Icon(Icons.check, color: Colors.white)
+                : null,
+          ),
+        ),
+      );
+    }
+
+    return AlertDialog(
+      title: Text(context.l10n.vaultGroupColorTitle(groupLeaf(group))),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [swatch(null), for (final c in groupPalette) swatch(c)],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            context.l10n.vaultGroupColorHint,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(context.l10n.cancel),
+        ),
+      ],
     );
   }
 }

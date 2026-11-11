@@ -7,6 +7,10 @@ pub enum ItemKind {
     #[default]
     Login,
     SecureNote,
+    /// Not an entry: settings of the group named in [`ItemData::group`]
+    /// (its color). Stored and synced like an item, so group settings
+    /// are as encrypted as everything else.
+    Group,
 }
 
 /// Everything the user typed. Serialized to JSON and encrypted as one blob,
@@ -35,6 +39,9 @@ pub struct ItemData {
     /// (`Work/Clients`); empty for none.
     #[serde(default)]
     pub group: String,
+    /// Color of a [`ItemKind::Group`] record as 0xAARRGGBB.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<u32>,
 }
 
 /// Separates the levels of a group path.

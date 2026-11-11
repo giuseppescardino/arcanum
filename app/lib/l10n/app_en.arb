@@ -624,5 +624,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "vaultGroupColor": "Color",
+  "vaultGroupColorTitle": "Color of \"{group}\"",
+  "@vaultGroupColorTitle": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultGroupColorNone": "No color",
+  "vaultGroupColorHint": "Subgroups without a color of their own use this one.",
+  "notesEdit": "Edit",
+  "notesPreview": "Preview",
+  "notesBold": "Bold",
+  "notesItalic": "Italic",
+  "notesStrike": "Strikethrough",
+  "notesHeading": "Heading",
+  "notesBulletList": "Bulleted list",
+  "notesNumberedList": "Numbered list",
+  "notesChecklist": "Checklist",
+  "notesQuote": "Quote",
+  "notesCode": "Code",
+  "notesLink": "Link",
+  "notesDivider": "Divider",
+  "notesEmptyPreview": "Nothing to show.",
+  "notesOpenLinkTitle": "Open link?",
+  "notesOpen": "Open"
 }

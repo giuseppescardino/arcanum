@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -314363749;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1817399962;
 
 // Section: executor
 
@@ -960,6 +960,61 @@ fn wire__crate__api__vault__VaultHandle_rename_group_impl(
         },
     )
 }
+fn wire__crate__api__vault__VaultHandle_set_group_color_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "VaultHandle_set_group_color",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VaultHandle>,
+            >>::sse_decode(&mut deserializer);
+            let api_path = <String>::sse_decode(&mut deserializer);
+            let api_color = <Option<u32>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::vault::VaultFailure>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::vault::VaultHandle::set_group_color(
+                        &*api_that_guard,
+                        api_path,
+                        api_color,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__vault__VaultHandle_sign_in_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1776,6 +1831,7 @@ impl SseDecode for crate::api::vault::ItemFields {
         let mut var_totp = <Option<String>>::sse_decode(deserializer);
         let mut var_favorite = <bool>::sse_decode(deserializer);
         let mut var_group = <String>::sse_decode(deserializer);
+        let mut var_color = <Option<u32>>::sse_decode(deserializer);
         return crate::api::vault::ItemFields {
             kind: var_kind,
             title: var_title,
@@ -1786,6 +1842,7 @@ impl SseDecode for crate::api::vault::ItemFields {
             totp: var_totp,
             favorite: var_favorite,
             group: var_group,
+            color: var_color,
         };
     }
 }
@@ -1854,6 +1911,17 @@ impl SseDecode for Option<crate::api::vault::SyncInfo> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<crate::api::vault::SyncInfo>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u32>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2063,6 +2131,7 @@ impl SseDecode for crate::api::vault::VaultItemKind {
         return match inner {
             0 => crate::api::vault::VaultItemKind::Login,
             1 => crate::api::vault::VaultItemKind::SecureNote,
+            2 => crate::api::vault::VaultItemKind::Group,
             _ => unreachable!("Invalid variant for VaultItemKind: {}", inner),
         };
     }
@@ -2144,24 +2213,30 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__vault__VaultHandle_sign_in_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__vault__VaultHandle_sign_out_impl(port, ptr, rust_vec_len, data_len),
-        21 => {
+        19 => wire__crate__api__vault__VaultHandle_set_group_color_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        20 => wire__crate__api__vault__VaultHandle_sign_in_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__vault__VaultHandle_sign_out_impl(port, ptr, rust_vec_len, data_len),
+        22 => {
             wire__crate__api__vault__VaultHandle_sync_info_impl(port, ptr, rust_vec_len, data_len)
         }
-        22 => wire__crate__api__vault__VaultHandle_sync_now_impl(port, ptr, rust_vec_len, data_len),
-        23 => {
+        23 => wire__crate__api__vault__VaultHandle_sync_now_impl(port, ptr, rust_vec_len, data_len),
+        24 => {
             wire__crate__api__vault__VaultHandle_unlink_sync_impl(port, ptr, rust_vec_len, data_len)
         }
-        24 => wire__crate__api__vault__VaultHandle_unlock_impl(port, ptr, rust_vec_len, data_len),
-        25 => {
+        25 => wire__crate__api__vault__VaultHandle_unlock_impl(port, ptr, rust_vec_len, data_len),
+        26 => {
             wire__crate__api__vault__VaultHandle_update_item_impl(port, ptr, rust_vec_len, data_len)
         }
-        26 => wire__crate__api__transfer__export_backup_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__transfer__export_csv_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__vault__init_app_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__transfer__parse_import_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__tools__pwned_password_count_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__transfer__export_backup_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__transfer__export_csv_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__vault__init_app_impl(port, ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__transfer__parse_import_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__tools__pwned_password_count_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2176,12 +2251,12 @@ fn pde_ffi_dispatcher_sync_impl(
     match func_id {
         11 => wire__crate__api__vault__VaultHandle_is_unlocked_impl(ptr, rust_vec_len, data_len),
         13 => wire__crate__api__vault__VaultHandle_lock_impl(ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__tools__generate_passphrase_impl(ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__tools__generate_password_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__vault__is_valid_secret_key_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__tools__is_valid_totp_impl(ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__tools__password_strength_impl(ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__tools__totp_code_impl(ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__tools__generate_passphrase_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__tools__generate_password_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__vault__is_valid_secret_key_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__tools__is_valid_totp_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__tools__password_strength_impl(ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__tools__totp_code_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2262,6 +2337,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::ItemFields {
             self.totp.into_into_dart().into_dart(),
             self.favorite.into_into_dart().into_dart(),
             self.group.into_into_dart().into_dart(),
+            self.color.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2509,6 +2585,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::VaultItemKind {
         match self {
             Self::Login => 0.into_dart(),
             Self::SecureNote => 1.into_dart(),
+            Self::Group => 2.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2611,6 +2688,7 @@ impl SseEncode for crate::api::vault::ItemFields {
         <Option<String>>::sse_encode(self.totp, serializer);
         <bool>::sse_encode(self.favorite, serializer);
         <String>::sse_encode(self.group, serializer);
+        <Option<u32>>::sse_encode(self.color, serializer);
     }
 }
 
@@ -2670,6 +2748,16 @@ impl SseEncode for Option<crate::api::vault::SyncInfo> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::api::vault::SyncInfo>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<u32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u32>::sse_encode(value, serializer);
         }
     }
 }
@@ -2847,6 +2935,7 @@ impl SseEncode for crate::api::vault::VaultItemKind {
             match self {
                 crate::api::vault::VaultItemKind::Login => 0,
                 crate::api::vault::VaultItemKind::SecureNote => 1,
+                crate::api::vault::VaultItemKind::Group => 2,
                 _ => {
                     unimplemented!("");
                 }
