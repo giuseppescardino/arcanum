@@ -22,10 +22,15 @@ function createRouter({ client, session, now = Date.now, resolveTab, deliverFill
 
   const pendingKey = (tabId) => `pending:${tabId}`;
 
+  const isExtensionPage = (sender) => /^(chrome|safari-web)-extension:\/\//.test(sender?.url ?? '');
+
+  /** Content scripts always act on their own tab; only extension pages
+   * (the popup) may name the tab to act on. */
   async function tabOf(msg, sender) {
-    if (sender?.tab) return sender.tab;
-    if (msg.tabId !== undefined && resolveTab) return resolveTab(msg.tabId);
-    return null;
+    if (isExtensionPage(sender)) {
+      return msg.tabId !== undefined && resolveTab ? resolveTab(msg.tabId) : null;
+    }
+    return sender?.tab ?? null;
   }
 
   async function getPending(tabId) {

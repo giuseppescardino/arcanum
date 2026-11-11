@@ -29,7 +29,8 @@ function fakeClient(replies) {
   };
 }
 
-const tab = (id = 7, url = 'https://www.example.com/login') => ({ tab: { id, url } });
+const tab = (id = 7, url = 'https://www.example.com/login') => ({ tab: { id, url }, url });
+const popup = { url: 'chrome-extension://abc/popup/popup.html' };
 
 function setup(replies, start = 1_000_000) {
   const client = fakeClient(replies);
@@ -54,7 +55,7 @@ test('list uses the sender tab url, not one from the message', async () => {
 
 test('popup requests resolve the tab url through the browser', async () => {
   const { client, route } = setup({ list: { logins: [] } });
-  await route({ kind: 'list', tabId: 3 }, {});
+  await route({ kind: 'list', tabId: 3 }, popup);
   assert.equal(client.calls[0].url, 'https://popup.example/');
 });
 
@@ -143,7 +144,7 @@ test('non-http tabs never reach the app', async () => {
 
 test('popup fill is delivered by the background, bound to the checked host', async () => {
   const { client, route, delivered } = setup({ fill: { username: 'u', password: 'p' } });
-  const r = await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, {});
+  const r = await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, popup);
   assert.deepEqual(r, { filled: true });
   assert.equal(client.calls[0].url, 'https://popup.example/');
   assert.deepEqual(delivered, [{ tabId: 3, host: 'popup.example', username: 'u', password: 'p' }]);
@@ -151,7 +152,7 @@ test('popup fill is delivered by the background, bound to the checked host', asy
 
 test('popup fill errors are not delivered', async () => {
   const { route, delivered } = setup({ fill: { throw: 'domain_mismatch' } });
-  assert.deepEqual(await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, {}), { error: 'domain_mismatch' });
+  assert.deepEqual(await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, popup), { error: 'domain_mismatch' });
   assert.equal(delivered.length, 0);
 });
 
@@ -161,4 +162,17 @@ test('pending logins of other tabs are swept when they expire', async () => {
   advance(PENDING_TTL_MS + 1);
   await route({ kind: 'list' }, tab(2, 'chrome://x'));
   assert.deepEqual(Object.keys(session.data), []);
+});
+
+test('a content script can never pick another tab', async () => {
+  const { client, route } = setup({ list: { logins: [] } });
+  await route({ kind: 'list', tabId: 99 }, tab(7, 'https://site.example/'));
+  assert.equal(client.calls[0].url, 'https://site.example/');
+});
+
+test('an extension page opened in a tab may target another tab', async () => {
+  const { client, route } = setup({ list: { logins: [] } });
+  const sender = { url: 'chrome-extension://abc/popup/popup.html', tab: { id: 1, url: 'chrome-extension://abc/popup/popup.html' } };
+  await route({ kind: 'list', tabId: 3 }, sender);
+  assert.equal(client.calls[0].url, 'https://popup.example/');
 });
