@@ -28,12 +28,35 @@ class _UnlockScreenState extends State<UnlockScreen> {
       widget.controller.quickUnlockAvailable &&
       !_askSecretKey;
 
+  late final AppLifecycleListener _lifecycle;
+
+  /// Set while the app is in the background: the system refuses the
+  /// biometric prompt there, so it is shown when the app comes back.
+  bool _promptOnResume = false;
+
   @override
   void initState() {
     super.initState();
-    // Offer biometrics right away, as users expect.
+    _lifecycle = AppLifecycleListener(
+      // Only a real trip to the background (hidden), not the inactive
+      // state the Face ID sheet itself causes, or a cancel would loop.
+      onHide: () => _promptOnResume = true,
+      onResume: () {
+        if (!_promptOnResume) return;
+        _promptOnResume = false;
+        if (_canUseBiometrics) _biometrics();
+      },
+    );
+    // Offer biometrics right away, as users expect. On mobile this screen
+    // is usually built while the app is still coming back (leaving the app
+    // locks the vault): the prompt would fail, so wait until it is active.
     if (_canUseBiometrics) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _biometrics());
+      switch (WidgetsBinding.instance.lifecycleState) {
+        case null || AppLifecycleState.resumed:
+          WidgetsBinding.instance.addPostFrameCallback((_) => _biometrics());
+        case _:
+          _promptOnResume = true;
+      }
     }
   }
 
@@ -54,6 +77,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _password.dispose();
     _secretKey.dispose();
     super.dispose();

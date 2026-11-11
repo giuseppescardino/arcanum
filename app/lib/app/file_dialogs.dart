@@ -28,11 +28,14 @@ class PlatformFileDialogs implements FileDialogs {
   /// Larger files are certainly not a password export.
   static const _maxImportBytes = 64 * 1024 * 1024;
 
-  bool get _isAndroid =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  /// Mobile platforms save through their own document picker, natively.
+  bool get _isMobile =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
-  bool get canSave => !kIsWeb && defaultTargetPlatform != TargetPlatform.iOS;
+  bool get canSave => !kIsWeb;
 
   @override
   Future<Uint8List?> pickFile() async {
@@ -50,8 +53,9 @@ class PlatformFileDialogs implements FileDialogs {
     required String mimeType,
     required Uint8List bytes,
   }) async {
-    if (_isAndroid) {
-      // Storage Access Framework: the user picks where the document goes.
+    if (_isMobile) {
+      // Android's Storage Access Framework or iOS's document picker: the
+      // user picks where the document goes.
       final saved = await _channel.invokeMethod<bool>('saveFile', {
         'name': name,
         'mimeType': mimeType,
