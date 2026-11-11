@@ -30,7 +30,7 @@ function fakeFetch(handlers) {
 const arcanumHello = async (b) => (b.type === 'hello' ? { json: { app: 'arcanum', protocol: 1, pairing: false } } : { status: 400, json: { error: 'bad_request' } });
 
 const KEY = new Uint8Array(32).fill(4);
-const paired = () => new MemoryStorage({ pairing: { client: 'c1', key: toB64(KEY) } });
+const paired = async () => new MemoryStorage({ pairing: { client: 'c1', key: await importKey(KEY) } });
 
 /** A fake app on `port` that decrypts with KEY and answers with `reply(body)`. */
 function fakeApp(reply, { echoId = true } = {}) {
@@ -71,13 +71,13 @@ test('app not running throws not_running', async () => {
 
 test('encrypted request round trip', async () => {
   const { fetch } = fakeFetch({ [PORTS[0]]: fakeApp(async (body) => ({ echo: body.op })) });
-  const c = new BridgeClient(opts(fetch, paired()));
+  const c = new BridgeClient(opts(fetch, await paired()));
   assert.deepEqual(await c.request({ op: 'status' }), { echo: 'status' });
 });
 
 test('an error body is thrown with its code', async () => {
   const { fetch } = fakeFetch({ [PORTS[0]]: fakeApp(async () => ({ error: 'locked' })) });
-  const c = new BridgeClient(opts(fetch, paired()));
+  const c = new BridgeClient(opts(fetch, await paired()));
   await assert.rejects(c.request({ op: 'list', url: 'https://x' }), { code: 'locked' });
 });
 
@@ -85,7 +85,7 @@ test('unknown_client clears the pairing', async () => {
   const { fetch } = fakeFetch({
     [PORTS[0]]: async (b) => (b.type === 'hello' ? arcanumHello(b) : { status: 401, json: { error: 'unknown_client' } }),
   });
-  const storage = paired();
+  const storage = await paired();
   const c = new BridgeClient(opts(fetch, storage));
   await assert.rejects(c.request({ op: 'status' }), { code: 'not_paired' });
   assert.equal(storage.data.pairing, undefined);
@@ -93,7 +93,7 @@ test('unknown_client clears the pairing', async () => {
 
 test('a response for another request id is rejected', async () => {
   const { fetch } = fakeFetch({ [PORTS[0]]: fakeApp(async () => ({}), { echoId: false }) });
-  const c = new BridgeClient(opts(fetch, paired()));
+  const c = new BridgeClient(opts(fetch, await paired()));
   await assert.rejects(c.request({ op: 'status' }), { code: 'bad_response' });
 });
 
@@ -105,7 +105,7 @@ test('request without pairing is not_paired', async () => {
 
 test('re-probes when the remembered port stops answering', async () => {
   const { fetch } = fakeFetch({ [PORTS[1]]: fakeApp(async () => ({ ok: 1 })) });
-  const storage = paired();
+  const storage = await paired();
   storage.data.port = PORTS[0];
   const c = new BridgeClient(opts(fetch, storage));
   assert.deepEqual(await c.request({ op: 'status' }), { ok: 1 });
@@ -145,6 +145,9 @@ test('pairing: commits, reveals, shows the code and stores the key once approved
   assert.deepEqual(order.filter((t) => t !== 'hello').slice(0, 3), ['pair_start', 'pair_reveal', 'pair_status']);
   assert.equal(shown, derived.code);
   assert.equal(storage.data.pairing.client, 'c9');
+  // The key is kept as a non-extractable CryptoKey, never as bytes.
+  assert.ok(storage.data.pairing.key instanceof CryptoKey);
+  assert.equal(storage.data.pairing.key.extractable, false);
 });
 
 test('a refused reveal ends the pairing', async () => {
@@ -183,5 +186,38 @@ test('pairing rejected in the app', async () => {
   const storage = new MemoryStorage();
   const c = new BridgeClient(opts(fetch, storage));
   await assert.rejects(c.pair('Chrome', () => {}), { code: 'pairing_rejected' });
+  assert.equal(storage.data.pairing, undefined);
+});
+
+test('a foreign service on the remembered port is re-probed', async () => {
+  const { fetch } = fakeFetch({
+    [PORTS[0]]: async () => ({ status: 404, json: undefined }),
+    [PORTS[1]]: fakeApp(async () => ({ ok: 1 })),
+  });
+  const storage = await paired();
+  storage.data.port = PORTS[0];
+  const c = new BridgeClient(opts(fetch, storage));
+  assert.deepEqual(await c.request({ op: 'status' }), { ok: 1 });
+  assert.equal(storage.data.port, PORTS[1]);
+});
+
+test("a foreign service's 401 does not unpair", async () => {
+  const { fetch } = fakeFetch({
+    [PORTS[0]]: async () => ({ status: 401, json: { error: 'unknown_client' } }),
+    [PORTS[1]]: fakeApp(async () => ({ ok: 1 })),
+  });
+  const storage = await paired();
+  storage.data.port = PORTS[0];
+  const c = new BridgeClient(opts(fetch, storage));
+  assert.deepEqual(await c.request({ op: 'status' }), { ok: 1 });
+  assert.equal(storage.data.pairing.client, 'c1');
+});
+
+test('keys can live in a separate store', async () => {
+  const { fetch } = fakeFetch({ [PORTS[0]]: fakeApp(async () => ({ ok: 1 })) });
+  const keyStore = await paired();
+  const storage = new MemoryStorage();
+  const c = new BridgeClient({ ...opts(fetch, storage), keyStore });
+  assert.deepEqual(await c.request({ op: 'status' }), { ok: 1 });
   assert.equal(storage.data.pairing, undefined);
 });

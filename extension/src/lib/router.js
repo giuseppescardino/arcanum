@@ -11,10 +11,13 @@ const { httpHost } = globalThis.Arcanum;
 const PENDING_TTL_MS = 120_000;
 
 /**
- * client: BridgeClient; session: async {get,set,remove} (memory only);
- * resolveTab(tabId) -> {id, url} for messages from the popup.
+ * client: BridgeClient; session: async {get,set,remove,keys} (memory only);
+ * resolveTab(tabId) -> {id, url} for messages from the popup;
+ * deliverFill(tabId, {host, username, password}) -> bool sends credentials
+ * to the tab's top frame, whose content script fills them only if its own
+ * host is still `host`.
  */
-function createRouter({ client, session, now = Date.now, resolveTab, browserName = 'Browser' }) {
+function createRouter({ client, session, now = Date.now, resolveTab, deliverFill, browserName = 'Browser' }) {
   let pairing = null; // { code, status: 'waiting'|'done'|<error code> }
 
   const pendingKey = (tabId) => `pending:${tabId}`;
@@ -33,6 +36,15 @@ function createRouter({ client, session, now = Date.now, resolveTab, browserName
       return null;
     }
     return p;
+  }
+
+  /** Forgets every pending login older than the TTL, whatever its tab. */
+  async function sweep() {
+    for (const k of (await session.keys?.()) ?? []) {
+      if (!k.startsWith('pending:')) continue;
+      const p = await session.get(k);
+      if (!p || now() - p.at > PENDING_TTL_MS) await session.remove(k);
+    }
   }
 
   async function check(url, username, password) {
@@ -102,6 +114,14 @@ function createRouter({ client, session, now = Date.now, resolveTab, browserName
       case 'fill':
         if (!host) return { error: 'domain_mismatch' };
         return client.request({ op: 'fill', id: msg.id, url });
+      case 'fillTab': {
+        // From the popup: the password goes straight to the tab, bound to
+        // the host it was checked against, and never back to the popup.
+        if (!host || !tab) return { error: 'domain_mismatch' };
+        const c = await client.request({ op: 'fill', id: msg.id, url });
+        const filled = await deliverFill(tab.id, { host, username: c.username, password: c.password });
+        return { filled: Boolean(filled) };
+      }
       case 'submitted': {
         if (!host || !msg.password) return { pending: false };
         const username = (msg.username ?? '').trim();
@@ -149,6 +169,7 @@ function createRouter({ client, session, now = Date.now, resolveTab, browserName
 
   return async function route(msg, sender) {
     try {
+      await sweep();
       return await handle(msg ?? {}, sender);
     } catch (e) {
       return { error: e?.code ?? 'error' };

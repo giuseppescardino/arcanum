@@ -4,7 +4,7 @@
 // nor read it. Page URLs are never sent: the background reads the tab URL.
 
 (() => {
-const { classifyFields, captureAllowed, isLoginButton } = globalThis.Arcanum;
+const { classifyFields, captureAllowed, isLoginButton, httpHost } = globalThis.Arcanum;
 const ext = globalThis.browser ?? globalThis.chrome;
 
 // icons/icon-32.png, inlined so no extension file has to be web-accessible.
@@ -417,6 +417,11 @@ function start() {
 
   ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (sender.id !== ext.runtime.id || msg?.kind !== 'applyFill') return false;
+    // The tab may have navigated since the background checked the site.
+    if (window !== window.top || httpHost(location.href) !== msg.host) {
+      sendResponse({ filled: false });
+      return false;
+    }
     const active = document.activeElement;
     const anchor =
       active instanceof HTMLInputElement && !SKIP_TYPES.has(active.type)

@@ -21,6 +21,7 @@
         "https://*/*"
       ],
       "js": [
+        "lib/url.js",
         "lib/forms.js",
         "content/ui.js"
       ],

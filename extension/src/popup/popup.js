@@ -98,10 +98,8 @@ async function renderReady() {
         h('div', { class: 'who' }, h('b', {}, login.title), h('small', {}, login.username || '—')),
         h('button', {
           onclick: async () => {
-            const c = await send({ kind: 'fill', id: login.id, tabId: tab.id });
-            if (c.error) return;
-            await ext.tabs.sendMessage(tab.id, { kind: 'applyFill', username: c.username, password: c.password });
-            window.close();
+            const r = await send({ kind: 'fillTab', id: login.id, tabId: tab.id });
+            if (r.filled) window.close();
           },
         }, 'Compila'),
       ),

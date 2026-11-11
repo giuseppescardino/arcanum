@@ -24,13 +24,16 @@ const randomId = () => {
 };
 
 /**
- * storage: async key/value { get(k), set(k, v), remove(k) } holding
- * `port` and `pairing` ({ client, key: base64 }).
+ * storage: async key/value { get(k), set(k, v), remove(k) } holding `port`.
+ * keyStore: the same interface holding `pairing` ({ client, key }), where
+ * key is a non-extractable CryptoKey; in the extension it is IndexedDB of
+ * the extension's own origin, which content scripts cannot open.
  */
 class BridgeClient {
-  constructor({ fetch = globalThis.fetch.bind(globalThis), storage, now = Date.now, sleep, randomId: rid = randomId }) {
+  constructor({ fetch = globalThis.fetch.bind(globalThis), storage, keyStore, now = Date.now, sleep, randomId: rid = randomId }) {
     this.fetch = fetch;
     this.storage = storage;
+    this.keyStore = keyStore ?? storage;
     this.now = now;
     this.sleep = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.randomId = rid;
@@ -75,16 +78,25 @@ class BridgeClient {
     const saved = await this.storage.get('port');
     if (saved) {
       try {
-        return await this._post(saved, body);
+        return { ...(await this._post(saved, body)), port: saved };
       } catch {
         // the app restarted on another port, or is gone
       }
     }
     const { port } = await this._probe();
     try {
-      return await this._post(port, body);
+      return { ...(await this._post(port, body)), port };
     } catch {
       throw new BridgeError('not_running');
+    }
+  }
+
+  async _isArcanum(port) {
+    try {
+      const r = await this._post(port, { type: 'hello' });
+      return r.status === 200 && r.json.app === 'arcanum';
+    } catch {
+      return false;
     }
   }
 
@@ -93,11 +105,11 @@ class BridgeClient {
   }
 
   async isPaired() {
-    return Boolean(await this.storage.get('pairing'));
+    return Boolean(await this.keyStore.get('pairing'));
   }
 
   async unpair() {
-    await this.storage.remove('pairing');
+    await this.keyStore.remove('pairing');
   }
 
   /**
@@ -119,13 +131,14 @@ class BridgeClient {
       nonce: toB64(nonce),
     });
     if (reveal.status !== 200) throw new BridgeError('pairing_rejected');
-    const { keyRaw, code } = await derive(kp.privateKey, kp.publicRaw, appPub, appPub);
+    const { keyRaw, key, code } = await derive(kp.privateKey, kp.publicRaw, appPub, appPub);
     onCode(code);
     const deadline = this.now() + PAIRING_TIMEOUT_MS;
     while (this.now() <= deadline) {
       const r = await this._send({ type: 'pair_status', pairing: start.json.pairing });
       if (r.json.state === 'approved') {
-        await this.storage.set('pairing', { client: r.json.client, key: toB64(keyRaw) });
+        keyRaw.fill(0);
+        await this.keyStore.set('pairing', { client: r.json.client, key });
         return;
       }
       if (r.json.state !== 'pending') throw new BridgeError('pairing_rejected');
@@ -136,13 +149,19 @@ class BridgeClient {
 
   /** Sends an encrypted request; returns the reply body or throws its error. */
   async request(body) {
-    const pairing = await this.storage.get('pairing');
+    const pairing = await this.keyStore.get('pairing');
     if (!pairing) throw new BridgeError('not_paired');
-    const key = await importKey(fromB64(pairing.key));
+    const { client, key } = pairing;
     const id = this.randomId();
-    const ct = await seal(key, pairing.client, 'req', JSON.stringify({ id, ts: this.now(), body }));
-    const r = await this._send({ type: 'msg', client: pairing.client, ct });
-    if (r.status === 401) {
+    const ct = await seal(key, client, 'req', JSON.stringify({ id, ts: this.now(), body }));
+    const msg = { type: 'msg', client, ct };
+    let r = await this._send(msg);
+    if (!(r.status === 200 && typeof r.json.ct === 'string') && !(await this._isArcanum(r.port))) {
+      // Something else answers on the remembered port: find the app again.
+      await this.storage.remove('port');
+      r = await this._send(msg);
+    }
+    if (r.status === 401 && r.json.error === 'unknown_client') {
       await this.unpair();
       throw new BridgeError('not_paired');
     }
@@ -151,7 +170,7 @@ class BridgeClient {
     }
     let reply;
     try {
-      reply = JSON.parse(await open(key, pairing.client, 'res', r.json.ct));
+      reply = JSON.parse(await open(key, client, 'res', r.json.ct));
     } catch {
       throw new BridgeError('bad_response');
     }

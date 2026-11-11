@@ -10,6 +10,7 @@ class MemoryStorage {
   async get(k) { return this.data[k]; }
   async set(k, v) { this.data[k] = v; }
   async remove(k) { delete this.data[k]; }
+  async keys() { return Object.keys(this.data); }
 }
 
 /** Fake client: replies[op] is a value or a function(body); BridgeError codes as {throw: code}. */
@@ -34,8 +35,15 @@ function setup(replies, start = 1_000_000) {
   const client = fakeClient(replies);
   const session = new MemoryStorage();
   let now = start;
-  const route = createRouter({ client, session, now: () => now, resolveTab: async (id) => ({ id, url: 'https://popup.example/' }) });
-  return { client, session, route, advance: (ms) => { now += ms; } };
+  const delivered = [];
+  const route = createRouter({
+    client,
+    session,
+    now: () => now,
+    resolveTab: async (id) => ({ id, url: 'https://popup.example/' }),
+    deliverFill: async (tabId, payload) => { delivered.push({ tabId, ...payload }); return true; },
+  });
+  return { client, session, route, delivered, advance: (ms) => { now += ms; } };
 }
 
 test('list uses the sender tab url, not one from the message', async () => {
@@ -131,4 +139,26 @@ test('non-http tabs never reach the app', async () => {
   assert.deepEqual(await route({ kind: 'list' }, tab(1, 'chrome://settings')), { logins: [] });
   assert.deepEqual(await route({ kind: 'submitted', username: 'a', password: 'p' }, tab(1, 'about:blank')), { pending: false });
   assert.equal(client.calls.length, 0);
+});
+
+test('popup fill is delivered by the background, bound to the checked host', async () => {
+  const { client, route, delivered } = setup({ fill: { username: 'u', password: 'p' } });
+  const r = await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, {});
+  assert.deepEqual(r, { filled: true });
+  assert.equal(client.calls[0].url, 'https://popup.example/');
+  assert.deepEqual(delivered, [{ tabId: 3, host: 'popup.example', username: 'u', password: 'p' }]);
+});
+
+test('popup fill errors are not delivered', async () => {
+  const { route, delivered } = setup({ fill: { throw: 'domain_mismatch' } });
+  assert.deepEqual(await route({ kind: 'fillTab', id: 'i1', tabId: 3 }, {}), { error: 'domain_mismatch' });
+  assert.equal(delivered.length, 0);
+});
+
+test('pending logins of other tabs are swept when they expire', async () => {
+  const { session, route, advance } = setup({ check: { state: 'new' } });
+  await route({ kind: 'submitted', username: 'a', password: 'p' }, tab(1));
+  advance(PENDING_TTL_MS + 1);
+  await route({ kind: 'list' }, tab(2, 'chrome://x'));
+  assert.deepEqual(Object.keys(session.data), []);
 });
