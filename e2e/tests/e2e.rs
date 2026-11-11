@@ -670,7 +670,25 @@ fn unauthenticated_bodies_are_small() {
     let r = ureq::post(&format!("{}/v1/prelogin", server.url))
         .set("Content-Type", "application/json")
         .send_string(&big);
-    assert!(matches!(r, Err(ureq::Error::Status(413, _))), "{r:?}");
+    // The server stops reading at the limit, answers 413 and closes the
+    // connection. The client sees the 413, or, when it is still uploading,
+    // the connection closing under it: both mean the body was refused.
+    let refused = match &r {
+        Err(ureq::Error::Status(413, _)) => true,
+        Err(ureq::Error::Transport(t)) => std::error::Error::source(t)
+            .and_then(|e| e.downcast_ref::<std::io::Error>())
+            .is_some_and(|e| {
+                matches!(
+                    e.kind(),
+                    std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::ConnectionReset
+                )
+            }),
+        _ => false,
+    };
+    assert!(refused, "{r:?}");
+    // Refused, not crashed.
+    let h = ureq::get(&format!("{}/health", server.url)).call().unwrap();
+    assert_eq!(h.into_string().unwrap(), "ok");
 }
 
 #[test]
