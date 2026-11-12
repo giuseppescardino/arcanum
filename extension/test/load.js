@@ -5,5 +5,6 @@ import '../src/lib/crypto.js';
 import '../src/lib/client.js';
 import '../src/lib/router.js';
 import '../src/lib/forms.js';
+import '../src/lib/page.js';
 
 export default globalThis.Arcanum;

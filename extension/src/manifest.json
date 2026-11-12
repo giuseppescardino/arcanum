@@ -23,6 +23,7 @@
       "js": [
         "lib/url.js",
         "lib/forms.js",
+        "lib/page.js",
         "content/ui.js"
       ],
       "run_at": "document_idle",

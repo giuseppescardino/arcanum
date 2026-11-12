@@ -4,7 +4,7 @@
 // nor read it. Page URLs are never sent: the background reads the tab URL.
 
 (() => {
-const { classifyFields, captureAllowed, isLoginButton, httpHost } = globalThis.Arcanum;
+const { classifyFields, captureAllowed, isLoginButton, httpHost, sendToBackground, iconInset } = globalThis.Arcanum;
 const ext = globalThis.browser ?? globalThis.chrome;
 
 // icons/icon-32.png, inlined so no extension file has to be web-accessible.
@@ -132,15 +132,8 @@ function el(tag, attrs = {}, ...children) {
 }
 
 function start() {
-  const send = (msg) =>
-    new Promise((resolve) => {
-      try {
-        const p = ext.runtime.sendMessage(msg, (r) => resolve(r ?? { error: 'error' }));
-        if (p?.then) p.then((r) => resolve(r ?? { error: 'error' }), () => resolve({ error: 'error' }));
-      } catch {
-        resolve({ error: 'error' });
-      }
-    });
+  const send = (msg) => sendToBackground(ext, msg);
+  const inset = iconInset();
 
   // Created on first use, so pages without a login form never see it.
   let host = null;
@@ -180,7 +173,7 @@ function start() {
     if (!field || !field.isConnected) return hideIcon();
     const r = field.getBoundingClientRect();
     if (icon) {
-      icon.style.left = `${r.right - 28}px`;
+      icon.style.left = `${r.right - inset}px`;
       icon.style.top = `${r.top + (r.height - 22) / 2}px`;
     }
     if (menu) {
