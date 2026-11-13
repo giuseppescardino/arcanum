@@ -1,3 +1,4 @@
+import '../app/item_fields.dart';
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
 import '../autofill/matching.dart';
@@ -135,20 +136,7 @@ class BridgeHandler {
           }
           final f = item.fields;
           await controller.save(
-            ItemFields(
-              kind: f.kind,
-              title: f.title,
-              username: f.username,
-              password: _str(body, 'password'),
-              urls: f.urls,
-              notes: f.notes,
-              totp: f.totp,
-              favorite: f.favorite,
-              group: f.group,
-              color: f.color,
-              wifi: f.wifi,
-              card: f.card,
-            ),
+            f.copyWith(password: _str(body, 'password')),
             id: item.id,
           );
           return {};

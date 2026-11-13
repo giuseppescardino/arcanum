@@ -2009,6 +2009,7 @@ impl SseDecode for crate::api::vault::ItemFields {
         let mut var_color = <Option<u32>>::sse_decode(deserializer);
         let mut var_wifi = <Option<crate::api::vault::WifiFields>>::sse_decode(deserializer);
         let mut var_card = <Option<crate::api::vault::CardFields>>::sse_decode(deserializer);
+        let mut var_expiresOn = <Option<String>>::sse_decode(deserializer);
         return crate::api::vault::ItemFields {
             kind: var_kind,
             title: var_title,
@@ -2022,6 +2023,7 @@ impl SseDecode for crate::api::vault::ItemFields {
             color: var_color,
             wifi: var_wifi,
             card: var_card,
+            expires_on: var_expiresOn,
         };
     }
 }
@@ -2637,6 +2639,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::vault::ItemFields {
             self.color.into_into_dart().into_dart(),
             self.wifi.into_into_dart().into_dart(),
             self.card.into_into_dart().into_dart(),
+            self.expires_on.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -3060,6 +3063,7 @@ impl SseEncode for crate::api::vault::ItemFields {
         <Option<u32>>::sse_encode(self.color, serializer);
         <Option<crate::api::vault::WifiFields>>::sse_encode(self.wifi, serializer);
         <Option<crate::api::vault::CardFields>>::sse_encode(self.card, serializer);
+        <Option<String>>::sse_encode(self.expires_on, serializer);
     }
 }
 

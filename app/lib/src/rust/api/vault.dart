@@ -174,6 +174,9 @@ class ItemFields {
   /// Details of a `Card` item.
   final CardFields? card;
 
+  /// Expiry day as `YYYY-MM-DD`.
+  final String? expiresOn;
+
   const ItemFields({
     required this.kind,
     required this.title,
@@ -187,6 +190,7 @@ class ItemFields {
     this.color,
     this.wifi,
     this.card,
+    this.expiresOn,
   });
 
   @override
@@ -202,7 +206,8 @@ class ItemFields {
       group.hashCode ^
       color.hashCode ^
       wifi.hashCode ^
-      card.hashCode;
+      card.hashCode ^
+      expiresOn.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -220,7 +225,8 @@ class ItemFields {
           group == other.group &&
           color == other.color &&
           wifi == other.wifi &&
-          card == other.card;
+          card == other.card &&
+          expiresOn == other.expiresOn;
 }
 
 class SyncInfo {

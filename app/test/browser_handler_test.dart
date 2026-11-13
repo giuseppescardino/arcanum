@@ -203,6 +203,22 @@ void main() {
     expect(f.username, 'alice');
   });
 
+  test('update keeps the expiry of the item', () async {
+    await controller.save(
+      login('Example', urls: ['example.com'], expiresOn: '2027-01-31'),
+    );
+    final id = controller.items.single.id;
+    await handler.handle({
+      'op': 'update',
+      'id': id,
+      'url': 'https://example.com/',
+      'password': 'new',
+    });
+    final after = controller.items.single.fields;
+    expect(after.password, 'new');
+    expect(after.expiresOn, '2027-01-31');
+  });
+
   test('a locked vault refuses list, fill, check, save and update', () async {
     final id = await add('Example', urls: ['example.com']);
     controller.lock();

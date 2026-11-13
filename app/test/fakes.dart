@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:arcanum/app/file_dialogs.dart';
 import 'package:arcanum/app/groups.dart';
+import 'package:arcanum/app/item_fields.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
 import 'package:arcanum/app/secret_key_store.dart';
 import 'package:arcanum/app/transfer.dart';
@@ -300,18 +301,8 @@ class FakeVaultHandle implements VaultHandle {
     );
   }
 
-  static ItemFields _withGroup(ItemFields f, String group) => ItemFields(
-    kind: f.kind,
-    title: f.title,
-    username: f.username,
-    password: f.password,
-    urls: f.urls,
-    notes: f.notes,
-    totp: f.totp,
-    favorite: f.favorite,
-    group: group,
-    color: f.color,
-  );
+  static ItemFields _withGroup(ItemFields f, String group) =>
+      f.copyWith(group: group);
 
   // RustOpaqueInterface members are irrelevant for the fake.
   @override
@@ -372,6 +363,7 @@ ItemFields login(
   bool favorite = false,
   String group = '',
   List<String> urls = const [],
+  String? expiresOn,
 }) => ItemFields(
   kind: VaultItemKind.login,
   title: title,
@@ -382,6 +374,7 @@ ItemFields login(
   favorite: favorite,
   group: group,
   color: null,
+  expiresOn: expiresOn,
 );
 
 /// Stand-in for the Rust formats: one `title|password|group` line per
