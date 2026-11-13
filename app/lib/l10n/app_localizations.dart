@@ -1980,6 +1980,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear expiry date'**
   String get editorExpiryClear;
+
+  /// No description provided for @vaultFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get vaultFavorites;
+
+  /// No description provided for @vaultExpiring.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiring'**
+  String get vaultExpiring;
+
+  /// No description provided for @vaultGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get vaultGroups;
+
+  /// No description provided for @vaultSelectItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item to see its details.'**
+  String get vaultSelectItem;
 }
 
 class _AppLocalizationsDelegate

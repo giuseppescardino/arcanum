@@ -1151,4 +1151,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editorExpiryClear => 'Clear expiry date';
+
+  @override
+  String get vaultFavorites => 'Favorites';
+
+  @override
+  String get vaultExpiring => 'Expiring';
+
+  @override
+  String get vaultGroups => 'Groups';
+
+  @override
+  String get vaultSelectItem => 'Select an item to see its details.';
 }

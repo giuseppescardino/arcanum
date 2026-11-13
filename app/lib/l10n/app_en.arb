@@ -763,5 +763,9 @@
   "expirySoonTooltip": "Expiring soon",
   "editorExpiryLabel": "Expiry date",
   "editorExpiryHelper": "Optional. The item is flagged as the date approaches.",
-  "editorExpiryClear": "Clear expiry date"
+  "editorExpiryClear": "Clear expiry date",
+  "vaultFavorites": "Favorites",
+  "vaultExpiring": "Expiring",
+  "vaultGroups": "Groups",
+  "vaultSelectItem": "Select an item to see its details."
 }

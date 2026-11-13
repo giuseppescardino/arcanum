@@ -1147,4 +1147,16 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get editorExpiryClear => 'Rimuovi scadenza';
+
+  @override
+  String get vaultFavorites => 'Preferiti';
+
+  @override
+  String get vaultExpiring => 'Scadenze';
+
+  @override
+  String get vaultGroups => 'Gruppi';
+
+  @override
+  String get vaultSelectItem => 'Seleziona una voce per vederne i dettagli.';
 }

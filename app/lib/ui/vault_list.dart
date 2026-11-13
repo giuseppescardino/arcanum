@@ -241,10 +241,14 @@ class _VaultListState extends State<VaultList> {
     // root group they show its subgroups; the root's own is left out.
     final showHeaders = _controller.groups.isNotEmpty && filter != '';
     final rootDepth = filter == null ? 0 : 1;
-    // A search shows every match, whatever is collapsed.
-    final searching = widget.query.trim().isNotEmpty;
+    // A search, the favorites and the expiring items show every match,
+    // whatever is collapsed: they are short lists picked on purpose.
+    final expandAll =
+        widget.query.trim().isNotEmpty ||
+        widget.filter is FavoriteItems ||
+        widget.filter is ExpiringItems;
     bool collapsed(String group) =>
-        !searching && group != filter && _isCollapsed(group);
+        !expandAll && group != filter && _isCollapsed(group);
 
     final rows = <Widget>[];
     for (final section in sections) {
@@ -600,8 +604,9 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Horizontal chips: all items, one per root group, and the ungrouped
-/// ones. Subgroups are reached from the list, under their root.
+/// Horizontal chips: all items, the expiring ones when there are any, one
+/// per root group, and the ungrouped ones. Subgroups are reached from the
+/// list, under their root.
 class GroupFilterBar extends StatelessWidget {
   const GroupFilterBar({
     super.key,
@@ -610,11 +615,15 @@ class GroupFilterBar extends StatelessWidget {
     required this.hasUngrouped,
     required this.selected,
     required this.onSelected,
+    this.hasExpiring = false,
   });
 
   final List<String> groups;
   final Color? Function(String group) colorOf;
   final bool hasUngrouped;
+
+  /// Some item is expired or about to expire: offer the *Scadenze* chip.
+  final bool hasExpiring;
   final VaultFilter selected;
   final ValueChanged<VaultFilter> onSelected;
 
@@ -642,6 +651,12 @@ class GroupFilterBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
         children: [
           chip(context.l10n.vaultAllGroups, const AllItems()),
+          if (hasExpiring)
+            chip(
+              context.l10n.vaultExpiring,
+              const ExpiringItems(),
+              icon: Icons.event_busy,
+            ),
           for (final g in groups)
             chip(
               g,

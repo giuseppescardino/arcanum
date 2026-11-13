@@ -333,5 +333,9 @@
   "expirySoonTooltip": "In scadenza",
   "editorExpiryLabel": "Scadenza",
   "editorExpiryHelper": "Facoltativa. La voce viene segnalata quando la data si avvicina.",
-  "editorExpiryClear": "Rimuovi scadenza"
+  "editorExpiryClear": "Rimuovi scadenza",
+  "vaultFavorites": "Preferiti",
+  "vaultExpiring": "Scadenze",
+  "vaultGroups": "Gruppi",
+  "vaultSelectItem": "Seleziona una voce per vederne i dettagli."
 }
