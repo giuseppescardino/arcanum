@@ -1,6 +1,6 @@
 # Vault UI redesign — design
 
-Status: draft 2026-11-13, awaiting approval.
+Status: approved and implemented 2026-11-13.
 
 ## Intent
 

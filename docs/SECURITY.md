@@ -59,6 +59,8 @@ The version byte is authenticated. The associated data (AAD) is built with `Aad`
 
 As a result, a ciphertext cannot be moved to another vault or item. Nor can it be replayed as a different revision or swapped with a ciphertext of another type.
 
+An item's optional expiry date (`expires_on`) is stored inside the encrypted item blob like every other field, and is omitted when unset, so the server cannot see which items expire or when. An older app version that rewrites an item drops the field, so update all devices together. The encrypted backup carries the expiry date; CSV export and import do not.
+
 ## Secret Key and Emergency Kit
 
 - 128 random bits generated at sign-up, shown as `PM1-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX` (base32).

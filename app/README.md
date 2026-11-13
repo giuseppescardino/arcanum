@@ -20,6 +20,21 @@ cargo install flutter_rust_bridge_codegen --version 2.13.0
 flutter_rust_bridge_codegen generate
 ```
 
+## Localization
+
+Texts live in `lib/l10n/app_it.arb` (Italian) and `lib/l10n/app_en.arb` (English). After editing them, regenerate the localization classes (the generated files are committed):
+
+```bash
+flutter gen-l10n
+```
+
+## Interface
+
+- **Item view:** opening an item shows it read-only; *Modifica* opens the editor and nothing is stored until *Salva*. Every item shows when it was last modified ("Modificata il …"), which changes on any stored change, sync included: it is not a "password changed" date.
+- **Expiry dates:** logins, secure notes and Wi-Fi items can have an optional expiry date (cards use their own MM/YY). Items expiring within 30 days, or already expired, are flagged in the list and in the item view, and a *Scadenze* filter appears while something is expiring.
+- **Layout:** windows at least 840 px wide show sidebar, list and item view side by side; narrower windows and phones keep the single column.
+- **Settings:** a settings screen replaces the vault's popup menu. Removing the Secret Key and signing out are in a separate danger zone.
+
 ## Development server
 
 Start PostgreSQL and `arcanum-server` locally on `127.0.0.1:8081` (from the repository root, with `deploy/.env` configured):
