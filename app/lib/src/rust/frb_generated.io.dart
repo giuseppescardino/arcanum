@@ -3,6 +3,7 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'api/bridge.dart';
 import 'api/tools.dart';
 import 'api/transfer.dart';
 import 'api/vault.dart';
@@ -74,6 +75,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WifiFields dco_decode_box_autoadd_wifi_fields(dynamic raw);
+
+  @protected
+  BridgeAppKey dco_decode_bridge_app_key(dynamic raw);
+
+  @protected
+  BridgePairing dco_decode_bridge_pairing(dynamic raw);
 
   @protected
   CardFields dco_decode_card_fields(dynamic raw);
@@ -228,6 +235,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WifiFields sse_decode_box_autoadd_wifi_fields(SseDeserializer deserializer);
+
+  @protected
+  BridgeAppKey sse_decode_bridge_app_key(SseDeserializer deserializer);
+
+  @protected
+  BridgePairing sse_decode_bridge_pairing(SseDeserializer deserializer);
 
   @protected
   CardFields sse_decode_card_fields(SseDeserializer deserializer);
@@ -406,6 +419,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     WifiFields self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_bridge_app_key(BridgeAppKey self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bridge_pairing(BridgePairing self, SseSerializer serializer);
 
   @protected
   void sse_encode_card_fields(CardFields self, SseSerializer serializer);

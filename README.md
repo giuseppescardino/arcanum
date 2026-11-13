@@ -5,7 +5,7 @@
 A zero-knowledge, cross-platform, self-hosted password manager. The vault is encrypted on the device; the sync server stores only ciphertext and never sees the master password, the Secret Key or item contents.
 
 - **Cryptography:** Argon2id + HKDF-SHA256 + XChaCha20-Poly1305, Secret Key and Emergency Kit, OPAQUE login.
-- **App:** Flutter for Android, iOS, macOS and Windows, with password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock and autofill on Android.
+- **App:** Flutter for Android, iOS, macOS and Windows, with password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock, autofill on Android and a browser extension for Chrome, Opera and Safari that works with the desktop app.
 - **Sync:** Rust + PostgreSQL server, deployed with Docker Compose and Caddy (automatic TLS), with daily age-encrypted backups.
 
 The threat model and cryptographic design are described in [docs/SECURITY.md](docs/SECURITY.md).
@@ -16,9 +16,10 @@ The threat model and cryptographic design are described in [docs/SECURITY.md](do
 
 | Folder | Contents |
 |---|---|
-| `core/` | Rust workspace: `arcanum-crypto` (primitives and key hierarchy), `arcanum-proto` (API types), `arcanum-vault` (local vault), `arcanum-sync` (sync client), `arcanum-tools` (generator, strength, TOTP), `arcanum-ffi` (Dart bindings via flutter_rust_bridge) |
+| `core/` | Rust workspace: `arcanum-crypto` (primitives and key hierarchy), `arcanum-proto` (API types), `arcanum-vault` (local vault), `arcanum-sync` (sync client), `arcanum-tools` (generator, strength, TOTP), `arcanum-bridge` (browser extension pairing and encryption), `arcanum-ffi` (Dart bindings via flutter_rust_bridge) |
 | `server/` | `arcanum-server`, the sync server (axum + PostgreSQL) — see [server/README.md](server/README.md) |
 | `app/` | Flutter app — see [app/README.md](app/README.md) |
+| `extension/` | Browser extension for Chrome, Opera and Safari — see [extension/README.md](extension/README.md) |
 | `deploy/` | Dockerfile, production and development Compose files, Caddy, backup and restore |
 | `docs/` | Security documentation |
 
@@ -44,6 +45,9 @@ cd server && cargo build && cd ../e2e && cargo test
 # App
 cd app && flutter pub get && flutter test
 cd app && flutter run
+
+# Browser extension
+cd extension && npm test
 ```
 
 ## Server

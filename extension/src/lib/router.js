@@ -1,0 +1,186 @@
+// Background message routing, free of browser APIs so it can be tested.
+// The page URL always comes from the browser (sender.tab or resolveTab),
+// never from the message.
+// Classic script (no import/export) so it loads in every browser's
+// background (importScripts), popup and tests; sets globalThis.Arcanum.
+
+(() => {
+globalThis.Arcanum ??= {};
+const { httpHost } = globalThis.Arcanum;
+
+const PENDING_TTL_MS = 120_000;
+
+/**
+ * client: BridgeClient; session: async {get,set,remove,keys} (memory only);
+ * resolveTab(tabId) -> {id, url} for messages from the popup;
+ * deliverFill(tabId, {host, username, password}) -> bool sends credentials
+ * to the tab's top frame, whose content script fills them only if its own
+ * host is still `host`.
+ */
+function createRouter({ client, session, now = Date.now, resolveTab, deliverFill, browserName = 'Browser' }) {
+  let pairing = null; // { code, status: 'waiting'|'done'|<error code> }
+
+  const pendingKey = (tabId) => `pending:${tabId}`;
+
+  const isExtensionPage = (sender) => /^(chrome|safari-web)-extension:\/\//.test(sender?.url ?? '');
+
+  /** Content scripts always act on their own tab; only extension pages
+   * (the popup) may name the tab to act on. */
+  async function tabOf(msg, sender) {
+    if (isExtensionPage(sender)) {
+      return msg.tabId !== undefined && resolveTab ? resolveTab(msg.tabId) : null;
+    }
+    return sender?.tab ?? null;
+  }
+
+  async function getPending(tabId) {
+    const p = await session.get(pendingKey(tabId));
+    if (!p) return null;
+    if (now() - p.at > PENDING_TTL_MS) {
+      await session.remove(pendingKey(tabId));
+      return null;
+    }
+    return p;
+  }
+
+  /** Forgets every pending login older than the TTL, whatever its tab. */
+  async function sweep() {
+    for (const k of (await session.keys?.()) ?? []) {
+      if (!k.startsWith('pending:')) continue;
+      const p = await session.get(k);
+      if (!p || now() - p.at > PENDING_TTL_MS) await session.remove(k);
+    }
+  }
+
+  async function check(url, username, password) {
+    try {
+      return await client.request({ op: 'check', url, username, password });
+    } catch (e) {
+      if (e.code === 'locked') return { state: 'unknown' };
+      throw e;
+    }
+  }
+
+  async function state() {
+    try {
+      await client.hello();
+    } catch {
+      return { state: 'not_running' };
+    }
+    if (!(await client.isPaired())) return { state: 'not_paired', pairing };
+    try {
+      const r = await client.request({ op: 'status' });
+      return { state: r.locked ? 'locked' : 'ready' };
+    } catch (e) {
+      return { state: e.code === 'not_paired' ? 'not_paired' : 'not_running', pairing };
+    }
+  }
+
+  function startPairing() {
+    return new Promise((resolve) => {
+      pairing = { code: null, status: 'waiting' };
+      client
+        .pair(browserName, (code) => {
+          pairing.code = code;
+          resolve({ pairing });
+        })
+        .then(() => {
+          pairing.status = 'done';
+        })
+        .catch((e) => {
+          pairing.status = e.code ?? 'error';
+          resolve({ pairing });
+        });
+    });
+  }
+
+  async function handle(msg, sender) {
+    switch (msg.kind) {
+      case 'state':
+        return state();
+      case 'pair':
+        return startPairing();
+      case 'pairing':
+        return { pairing };
+      case 'openApp':
+        return client.request({ op: 'open_app' });
+      case 'generate':
+        return client.request({ op: 'generate' });
+    }
+
+    const tab = await tabOf(msg, sender);
+    const url = tab?.url ?? '';
+    const host = httpHost(url);
+
+    switch (msg.kind) {
+      case 'list':
+        if (!host) return { logins: [] };
+        return client.request({ op: 'list', url });
+      case 'fill':
+        if (!host) return { error: 'domain_mismatch' };
+        return client.request({ op: 'fill', id: msg.id, url });
+      case 'fillTab': {
+        // From the popup: the password goes straight to the tab, bound to
+        // the host it was checked against, and never back to the popup.
+        if (!host || !tab) return { error: 'domain_mismatch' };
+        const c = await client.request({ op: 'fill', id: msg.id, url });
+        const filled = await deliverFill(tab.id, { host, username: c.username, password: c.password });
+        return { filled: Boolean(filled) };
+      }
+      case 'submitted': {
+        if (!host || !msg.password) return { pending: false };
+        const username = (msg.username ?? '').trim();
+        const r = await check(url, username, msg.password);
+        if (r.state === 'same') return { pending: false };
+        await session.set(pendingKey(tab.id), {
+          url,
+          host,
+          username,
+          password: msg.password,
+          state: r.state,
+          id: r.id ?? null,
+          at: now(),
+        });
+        return { pending: true };
+      }
+      case 'pending': {
+        const p = tab ? await getPending(tab.id) : null;
+        return { pending: p && { host: p.host, username: p.username, state: p.state } };
+      }
+      case 'dismiss':
+        if (tab) await session.remove(pendingKey(tab.id));
+        return {};
+      case 'save': {
+        const p = tab ? await getPending(tab.id) : null;
+        if (!p) return { saved: false };
+        let { state: st, id } = p;
+        if (st === 'unknown') {
+          const r = await client.request({ op: 'check', url: p.url, username: p.username, password: p.password });
+          st = r.state;
+          id = r.id ?? null;
+        }
+        if (st === 'update') {
+          await client.request({ op: 'update', id, url: p.url, password: p.password });
+        } else if (st === 'new') {
+          await client.request({ op: 'save', url: p.url, username: p.username, password: p.password });
+        }
+        await session.remove(pendingKey(tab.id));
+        return { saved: true };
+      }
+      default:
+        return { error: 'bad_request' };
+    }
+  }
+
+  return async function route(msg, sender) {
+    try {
+      await sweep();
+      return await handle(msg ?? {}, sender);
+    } catch (e) {
+      return { error: e?.code ?? 'error' };
+    }
+  };
+}
+
+Object.assign(globalThis.Arcanum, { PENDING_TTL_MS, createRouter });
+})();

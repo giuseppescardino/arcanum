@@ -1,0 +1,9 @@
+{
+  "name": "arcanum-extension",
+  "private": true,
+  "type": "module",
+  "description": "Arcanum browser extension (Chrome, Opera, Safari). No build step, no dependencies.",
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

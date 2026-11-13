@@ -1059,4 +1059,51 @@ class AppLocalizationsIt extends AppLocalizations {
   String vaultExpiresOn(String expiry) {
     return 'scad. $expiry';
   }
+
+  @override
+  String get browsersTitle => 'Browser collegati';
+
+  @override
+  String get browsersIntro =>
+      'Collega l\'estensione Arcanum per Chrome, Opera o Safari: compila e salva le password mentre l\'app è sbloccata.';
+
+  @override
+  String get browsersConnect => 'Collega browser';
+
+  @override
+  String get browsersWaiting =>
+      'In attesa del browser… Apri l\'estensione Arcanum e premi Collega entro 2 minuti.';
+
+  @override
+  String get browsersNone => 'Nessun browser collegato';
+
+  @override
+  String get browsersRevoke => 'Revoca';
+
+  @override
+  String browsersConnectedOn(String date) {
+    return 'Collegato il $date';
+  }
+
+  @override
+  String browsersPairTitle(String name) {
+    return 'Collegare $name?';
+  }
+
+  @override
+  String get browsersPairBody =>
+      'Digita il codice a 6 cifre mostrato dall\'estensione Arcanum nel browser. Se il browser non mostra un codice, rifiuta.';
+
+  @override
+  String get browsersReject => 'Rifiuta';
+
+  @override
+  String get browsersApprove => 'Collega';
+
+  @override
+  String get browsersPortsBusy =>
+      'Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.';
+
+  @override
+  String get browsersWrongCode => 'Codice errato';
 }

@@ -287,5 +287,18 @@
   "cardPin": "PIN",
   "vaultCopyCardNumber": "Copia numero carta",
   "vaultShowWifiQr": "Mostra QR Wi-Fi",
-  "vaultExpiresOn": "scad. {expiry}"
+  "vaultExpiresOn": "scad. {expiry}",
+  "browsersTitle": "Browser collegati",
+  "browsersIntro": "Collega l'estensione Arcanum per Chrome, Opera o Safari: compila e salva le password mentre l'app è sbloccata.",
+  "browsersConnect": "Collega browser",
+  "browsersWaiting": "In attesa del browser… Apri l'estensione Arcanum e premi Collega entro 2 minuti.",
+  "browsersNone": "Nessun browser collegato",
+  "browsersRevoke": "Revoca",
+  "browsersConnectedOn": "Collegato il {date}",
+  "browsersPairTitle": "Collegare {name}?",
+  "browsersPairBody": "Digita il codice a 6 cifre mostrato dall'estensione Arcanum nel browser. Se il browser non mostra un codice, rifiuta.",
+  "browsersReject": "Rifiuta",
+  "browsersApprove": "Collega",
+  "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.",
+  "browsersWrongCode": "Codice errato"
 }

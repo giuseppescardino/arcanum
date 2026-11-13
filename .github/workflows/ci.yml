@@ -1,5 +1,5 @@
 # CI for Arcanum: Rust core + sync server, Flutter app (Android APK, iOS,
-# macOS and Windows desktop). Every build is unsigned or ad-hoc signed: no
+# macOS and Windows desktop), browser extension (Chromium zip, Safari app). Every build is unsigned or ad-hoc signed: no
 # secrets, keys or certificates are needed.
 
 name: CI
@@ -157,6 +157,47 @@ jobs:
       - uses: actions/checkout@v7
       - name: docker build
         run: docker build -f deploy/Dockerfile -t arcanum-server:${{ github.sha }} .
+
+  # ------------------------------------------------------------ extension
+  extension:
+    name: Browser extension (test + Chromium zip)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      # No dependencies: node:test only. The vectors it checks are
+      # verified against the Rust core by the core job.
+      - run: npm test
+
+      # Zip of src/ for Chrome, Opera and Edge: unzip and "Load unpacked",
+      # or upload to a store as is.
+      - run: scripts/package.sh chromium "$RUNNER_TEMP/extension"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-chromium
+          path: ${{ runner.temp }}/extension
+
+  extension-safari:
+    name: Browser extension (Safari, ad-hoc signed)
+    runs-on: macos-latest
+    needs: extension
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v7
+      # No team in CI: ad-hoc signed, so Safari needs "Allow Unsigned
+      # Extensions" (Develop menu) to run it.
+      - run: scripts/package.sh safari "$RUNNER_TEMP/safari"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-safari
+          path: ${{ runner.temp }}/safari
 
   # ------------------------------------------------------------------ app
   app-test:

@@ -14,6 +14,7 @@ import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
 import 'about.dart';
+import 'browser_pairing.dart';
 import 'breach_check_screen.dart';
 import 'item_editor_screen.dart';
 import 'item_kind_sections.dart';
@@ -36,6 +37,7 @@ enum _MenuAction {
   sync,
   quickUnlock,
   autofill,
+  browsers,
   language,
   changePassword,
   breach,
@@ -316,6 +318,14 @@ class _VaultScreenState extends State<VaultScreen> {
         }
       case _MenuAction.autofill:
         await AndroidAutofill.openSettings();
+      case _MenuAction.browsers:
+        final bridge = BridgeScope.maybeOf(context);
+        if (bridge == null) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BrowserPairingScreen(server: bridge),
+          ),
+        );
       case _MenuAction.language:
         await showLanguageDialog(context);
       case _MenuAction.breach:
@@ -470,6 +480,14 @@ class _VaultScreenState extends State<VaultScreen> {
                       child: _MenuEntry(
                         icon: Icons.password,
                         label: context.l10n.vaultEnableAutofill,
+                      ),
+                    ),
+                  if (BridgeScope.maybeOf(context) != null)
+                    PopupMenuItem(
+                      value: _MenuAction.browsers,
+                      child: _MenuEntry(
+                        icon: Icons.extension_outlined,
+                        label: context.l10n.browsersTitle,
                       ),
                     ),
                   PopupMenuItem(

@@ -1063,4 +1063,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String vaultExpiresOn(String expiry) {
     return 'exp. $expiry';
   }
+
+  @override
+  String get browsersTitle => 'Connected browsers';
+
+  @override
+  String get browsersIntro =>
+      'Connect the Arcanum extension for Chrome, Opera or Safari: it fills and saves passwords while the app is unlocked.';
+
+  @override
+  String get browsersConnect => 'Connect browser';
+
+  @override
+  String get browsersWaiting =>
+      'Waiting for the browser… Open the Arcanum extension and press Connect within 2 minutes.';
+
+  @override
+  String get browsersNone => 'No connected browsers';
+
+  @override
+  String get browsersRevoke => 'Revoke';
+
+  @override
+  String browsersConnectedOn(String date) {
+    return 'Connected on $date';
+  }
+
+  @override
+  String browsersPairTitle(String name) {
+    return 'Connect $name?';
+  }
+
+  @override
+  String get browsersPairBody =>
+      'Type the 6-digit code shown by the browser\'s Arcanum extension. If the browser shows no code, reject.';
+
+  @override
+  String get browsersReject => 'Reject';
+
+  @override
+  String get browsersApprove => 'Connect';
+
+  @override
+  String get browsersPortsBusy =>
+      'The browser connection could not start: ports 47613–47615 are in use.';
+
+  @override
+  String get browsersWrongCode => 'Wrong code';
 }

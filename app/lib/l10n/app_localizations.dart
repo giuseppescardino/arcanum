@@ -1830,6 +1830,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'exp. {expiry}'**
   String vaultExpiresOn(String expiry);
+
+  /// No description provided for @browsersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected browsers'**
+  String get browsersTitle;
+
+  /// No description provided for @browsersIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Arcanum extension for Chrome, Opera or Safari: it fills and saves passwords while the app is unlocked.'**
+  String get browsersIntro;
+
+  /// No description provided for @browsersConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect browser'**
+  String get browsersConnect;
+
+  /// No description provided for @browsersWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the browser… Open the Arcanum extension and press Connect within 2 minutes.'**
+  String get browsersWaiting;
+
+  /// No description provided for @browsersNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No connected browsers'**
+  String get browsersNone;
+
+  /// No description provided for @browsersRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get browsersRevoke;
+
+  /// When a browser was paired
+  ///
+  /// In en, this message translates to:
+  /// **'Connected on {date}'**
+  String browsersConnectedOn(String date);
+
+  /// Pairing confirmation title
+  ///
+  /// In en, this message translates to:
+  /// **'Connect {name}?'**
+  String browsersPairTitle(String name);
+
+  /// No description provided for @browsersPairBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the 6-digit code shown by the browser\'s Arcanum extension. If the browser shows no code, reject.'**
+  String get browsersPairBody;
+
+  /// No description provided for @browsersReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get browsersReject;
+
+  /// No description provided for @browsersApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get browsersApprove;
+
+  /// No description provided for @browsersPortsBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser connection could not start: ports 47613–47615 are in use.'**
+  String get browsersPortsBusy;
+
+  /// No description provided for @browsersWrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong code'**
+  String get browsersWrongCode;
 }
 
 class _AppLocalizationsDelegate

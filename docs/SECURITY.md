@@ -122,7 +122,45 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
   - Verified on the emulator (Android 16, Chrome) with a login page: unlock, choice of the suggested credential, filling of email and password.
 - **Windows** (there is no system autofill API): `Ctrl+Alt+P` brings the vault to the front with search active; Enter copies the password of the first result, which is cleared from the clipboard after 30 seconds, and minimizes the window.
 - **iOS/macOS:** the AutoFill Credential Provider extension is not implemented yet, because it needs a Mac with Xcode.
-- **Browser extensions:** not implemented. An extension that talks to the running desktop app (native messaging) has no counterpart on mobile, where filling goes through the system autofill service instead.
+- **Browsers (Chrome, Opera, Safari):** through the Arcanum extension and the desktop app, described in the next section.
+
+## Browser extension
+
+The extension (`extension/`) fills saved logins, suggests generated passwords and offers to save new or changed ones. It holds **no vault data and no vault keys**: every credential comes from the running desktop app on macOS or Windows, and only while the vault is unlocked. Unlocking, sync and storage stay in the app and the Rust core.
+
+- **Transport:** the app listens on `127.0.0.1` only (ports 47613–47615), never on other interfaces. Native messaging is not used: a sandboxed macOS app cannot install its manifests into browser profiles, and a native host would still have to authenticate whoever launches it.
+- **No TLS, end-to-end encryption instead:** a certificate for a loopback address would have to be self-signed and trusted system-wide. Every request and response after pairing is **AES-256-GCM** under a per-browser 256-bit key, with a random 96-bit nonce. The associated data binds the direction (`pm/bridge-req/v1` or `pm/bridge-res/v1`) and the browser's id, so a request cannot be replayed as a response or redirected to another browser. Reading loopback traffic (which already needs root/admin) shows only ciphertext.
+- **Pairing** (`core/arcanum-bridge`):
+  - It starts only from the app ("Browser collegati" → "Collega browser"). That opens a 120-second window that accepts a single pending request; outside it, pairing requests are refused.
+  - Browser and app run an ephemeral **X25519** exchange. Both derive, with HKDF-SHA256 over a transcript hash of the two public keys, the key (`pm/bridge-key/v1`) and a 6-digit code (`pm/bridge-code/v1`).
+  - **Commit, then reveal:** the browser first sends only `SHA-256("pm/bridge-commit/v1" ‖ its public key ‖ 32 random bytes)`. It reveals the key and the nonce only after it has received the app's key, and the app checks them against the commitment. A man in the middle therefore has to fix its keys before it can see the other side's, and gets a matching code with probability 10⁻⁶. Without the commitment it could try about a million keys in seconds until the codes matched.
+  - **The code is typed, not compared:** the browser shows the code and the user types it into the app, which never displays it. It accepts three attempts, then rejects the pairing. A local process that starts a pairing before the real browser cannot get approved: the user has no code of its to type.
+  - The key is never shown or typed, so it cannot be brute-forced offline or online.
+  - X25519 was preferred to P-256 because the RustCrypto P-256 version compatible with this workspace would bring `crypto-bigint` 0.5 (RUSTSEC-2026-0387, non-constant-time) onto a live path.
+- **Replay:** each request carries a random id and a timestamp. The app rejects timestamps more than 60 seconds away and ids already seen. The extension discards a response whose id is not its request's.
+- **Web pages:**
+  - Pages can send requests to `127.0.0.1`, but the app refuses any `Origin` that is not a `chrome-extension://` or `safari-web-extension://` origin.
+  - It refuses any `Host` other than `127.0.0.1:<port>`, which stops DNS rebinding.
+  - A page cannot produce a valid ciphertext anyway: at most it learns that the app is running.
+  - No extension file is web-accessible. The extension's element (`<arcanum-ui>`) is added only to pages where it shows an icon or a banner, so a page can detect the extension only once it has a login form the user interacts with.
+- **Scripted events are ignored:**
+  - A submit, click or Enter counts only when the browser dispatched it (`isTrusted`) and the page has a recent user gesture (`navigator.userActivation`). A page cannot submit guesses to learn whether they match a saved password, nor queue an update with a password of its choice.
+  - Clicks on the extension's own icon, menu and banner must be trusted too, and the banner's host is styled inline with `!important` (re-asserted on change), so a page cannot hide it over a decoy button.
+  - Buttons inside a form never trigger a capture (its submit event does), so an eye toggle never saves a half-typed password.
+  - **Residual:** for a few seconds after a genuine click, a page script still has the gesture and could submit values of its choice. The result is only a banner the user must still confirm.
+- **Auto-lock:** only actions that follow a click in the extension's UI (`fill`, `save`, `update`) count as activity. Listing and checking, which a page can cause, do not postpone the vault's auto-lock.
+- **Port squatting:** another process on a port cannot decrypt requests and cannot complete a pairing. The extension only trusts a port that answers as Arcanum, re-probes when a reply is not the app's, and forgets its pairing only on `unknown_client` from a port that answers as Arcanum.
+- **Phishing:**
+  - The page URL always comes from the browser, never from the page. A content script always acts on its own tab, and only the popup may name the tab it acts on.
+  - Only logins whose saved URL matches that host, or a subdomain on a label boundary, are listed or filled, and `fill` and `update` are refused for any other site.
+  - Filling happens only on a click in the extension's own menu or popup, never on page load, and only in the top frame. The menu lives in a closed shadow root that the page cannot read.
+  - A fill started from the popup goes from the background straight to the tab's top frame, bound to the host it was checked against. If the tab has navigated meanwhile, the content script drops it, and the password never goes back to the popup.
+- **Saving:** a submitted username and password are kept in the browser's session storage (memory only) for at most 120 seconds. Expired entries are swept on every message, and a tab's entry is dropped when the tab closes. Only the background sends them to the app, encrypted.
+- **Keys:**
+  - On the app side, browser keys live in the system keychain.
+  - In the browser, the key's 32 bytes are kept in IndexedDB of the extension's own origin and imported as a **non-extractable** WebCrypto key for each request. Content scripts, which run in the page's renderer, can read `storage.local` but cannot open that database. The bytes are stored rather than a `CryptoKey` because Safari's background hangs when it structured-clones a `CryptoKey` into IndexedDB; Chrome writes a stored `CryptoKey`'s key material to disk unencrypted anyway, so on disk the protection is the same: the user's account and file permissions.
+  - "Revoca" in the app deletes the browser's key. Its next request gets `unknown_client`, and the extension forgets the pairing.
+- **Residual risk:** malware running as the user can use the extension's key through its profile and ask for credentials while the vault is unlocked. That is the "compromised device" case, already out of scope, and the same holds for any native-messaging design.
 
 ## Import and export
 

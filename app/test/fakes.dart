@@ -8,6 +8,8 @@ import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
 import 'package:arcanum/app/secret_key_store.dart';
 import 'package:arcanum/app/transfer.dart';
+import 'package:arcanum/browser/bridge_clients.dart';
+import 'package:arcanum/browser/bridge_crypto.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 
 const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
@@ -365,6 +367,7 @@ class MemorySecretKeyStore extends SecretKeyStore {
 
 ItemFields login(
   String title, {
+  String username = 'alice',
   String password = 'pw',
   bool favorite = false,
   String group = '',
@@ -372,7 +375,7 @@ ItemFields login(
 }) => ItemFields(
   kind: VaultItemKind.login,
   title: title,
-  username: 'alice',
+  username: username,
   password: password,
   urls: urls,
   notes: '',
@@ -460,4 +463,78 @@ class FakeFileDialogs implements FileDialogs {
     savedBytes = bytes;
     return true;
   }
+}
+
+/// Reversible stand-in for the bridge crypto: "ciphertext" is base64 of
+/// `client|direction|plaintext`, so tests can read and forge messages. Its
+/// commitment rule: the commitment must equal the nonce.
+class FakeBridgeCrypto implements BridgeCrypto {
+  static const code = '123456';
+
+  @override
+  BridgeAppKey pairBegin() => BridgeAppKey(
+    appPub: Uint8List.fromList(List.filled(32, 9)),
+    secret: Uint8List.fromList(List.filled(32, 1)),
+  );
+
+  @override
+  BridgePairing pairFinish(
+    BridgeAppKey appKey,
+    Uint8List extPub,
+    Uint8List nonce,
+    Uint8List commit,
+  ) {
+    if (extPub.length != 32 || base64.encode(commit) != base64.encode(nonce)) {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+    return BridgePairing(
+      key: Uint8List.fromList(List.filled(32, extPub[1])),
+      code: code,
+    );
+  }
+
+  static String seal(String client, String dir, String plaintext) =>
+      base64.encode(utf8.encode('$client|$dir|$plaintext'));
+
+  static String open(String client, String dir, String ct) {
+    final text = utf8.decode(base64.decode(ct));
+    final prefix = '$client|$dir|';
+    if (!text.startsWith(prefix)) {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+    return text.substring(prefix.length);
+  }
+
+  @override
+  String openRequest(Uint8List key, String client, String ciphertext) {
+    try {
+      return open(client, 'req', ciphertext);
+    } on FormatException {
+      throw const VaultFailure(
+        code: VaultFailureCode.invalidInput,
+        message: '',
+      );
+    }
+  }
+
+  @override
+  String sealResponse(Uint8List key, String client, String plaintext) =>
+      seal(client, 'res', plaintext);
+}
+
+class MemoryBridgeClientStore implements BridgeClientStore {
+  List<PairedBrowser> saved = [];
+
+  @override
+  Future<List<PairedBrowser>> load() async => List.of(saved);
+
+  @override
+  Future<void> save(List<PairedBrowser> browsers) async =>
+      saved = List.of(browsers);
 }
