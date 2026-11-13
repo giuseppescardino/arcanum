@@ -1,5 +1,6 @@
 # CI for Arcanum: Rust core + sync server, Flutter app
-# (Android APK, iOS, macOS and Windows desktop).
+# (Android APK, iOS, macOS and Windows desktop), browser extension
+# (Chromium zip, Safari app).
 #
 # Runs only when started by hand (Pipelines > Run pipeline).
 
@@ -119,7 +120,7 @@ stages:
             displayName: flutter test
 
       - job: Extension
-        displayName: Browser extension test
+        displayName: Browser extension (test + Chromium zip)
         pool:
           vmImage: ubuntu-latest
         steps:
@@ -129,6 +130,32 @@ stages:
           - bash: npm test
             workingDirectory: extension
             displayName: npm test
+
+          # Zip of src/ for Chrome, Opera and Edge: unzip and "Load
+          # unpacked", or upload to a store as is.
+          - bash: scripts/package.sh chromium "$(Build.ArtifactStagingDirectory)/extension"
+            workingDirectory: extension
+            displayName: Package for Chromium
+
+          - publish: $(Build.ArtifactStagingDirectory)/extension
+            artifact: extension-chromium
+            displayName: Publish Chromium extension
+
+      - job: ExtensionSafari
+        displayName: Browser extension (Safari, ad-hoc signed)
+        dependsOn: Extension
+        pool:
+          vmImage: macos-latest
+        steps:
+          # No team in CI: ad-hoc signed, so Safari needs "Allow Unsigned
+          # Extensions" (Develop menu) to run it.
+          - bash: scripts/package.sh safari "$(Build.ArtifactStagingDirectory)/safari"
+            workingDirectory: extension
+            displayName: Build Safari extension
+
+          - publish: $(Build.ArtifactStagingDirectory)/safari
+            artifact: extension-safari
+            displayName: Publish Safari extension
 
       - job: Android
         displayName: Android APK
