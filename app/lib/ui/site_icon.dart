@@ -40,7 +40,7 @@ class _SiteIconState extends State<SiteIcon> {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = CircleAvatar(child: Icon(widget.fallback));
+    final fallback = ItemAvatar(child: Icon(widget.fallback));
     final icon = _icon;
     if (icon == null) return fallback;
     return FutureBuilder<Uint8List?>(
@@ -48,10 +48,8 @@ class _SiteIconState extends State<SiteIcon> {
       builder: (context, snapshot) {
         final bytes = snapshot.data;
         if (bytes == null) return fallback;
-        return CircleAvatar(
-          backgroundColor: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest,
+        return ItemAvatar(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.memory(
@@ -66,6 +64,33 @@ class _SiteIconState extends State<SiteIcon> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 40 px rounded-square avatar of a vault item. [color] defaults to the
+/// theme's secondary container, like the circle avatar it replaces.
+class ItemAvatar extends StatelessWidget {
+  const ItemAvatar({super.key, required this.child, this.color});
+
+  final Widget child;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color ?? scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconTheme.merge(
+        data: IconThemeData(color: scheme.onSecondaryContainer),
+        child: child,
+      ),
     );
   }
 }

@@ -344,9 +344,9 @@ class _Body extends StatelessWidget {
       url: f.urls.firstOrNull,
       fallback: Icons.key,
     ),
-    VaultItemKind.wifi => const CircleAvatar(child: Icon(Icons.wifi)),
-    VaultItemKind.card => const CircleAvatar(child: Icon(Icons.credit_card)),
-    _ => const CircleAvatar(child: Icon(Icons.sticky_note_2_outlined)),
+    VaultItemKind.wifi => const ItemAvatar(child: Icon(Icons.wifi)),
+    VaultItemKind.card => const ItemAvatar(child: Icon(Icons.credit_card)),
+    _ => const ItemAvatar(child: Icon(Icons.sticky_note_2_outlined)),
   };
 }
 

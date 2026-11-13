@@ -4,6 +4,7 @@ import '../app/language_settings.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
+import '../ui/site_icon.dart' show ItemAvatar;
 import '../ui/theme.dart';
 import '../ui/unlock_screen.dart';
 import '../ui/widgets.dart';
@@ -211,7 +212,7 @@ class _AutofillPickerScreenState extends State<AutofillPickerScreen> {
   Widget _tile(VaultItem item) {
     final f = item.fields;
     return ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.key)),
+      leading: const ItemAvatar(child: Icon(Icons.key)),
       title: Text(f.title.isEmpty ? context.l10n.untitled : f.title),
       subtitle: f.username.isEmpty ? null : Text(f.username),
       onTap: () => _pick(item),
