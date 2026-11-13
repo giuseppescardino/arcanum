@@ -1,3 +1,4 @@
+import 'package:arcanum/ui/site_icon.dart';
 import 'package:arcanum/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +40,29 @@ void main() {
         t.colorScheme.secondaryContainer,
       );
       expect(t.dividerTheme.color, t.colorScheme.outlineVariant);
+    }
+  });
+
+  testWidgets('the avatar stands out from a selected row', (tester) async {
+    for (final b in Brightness.values) {
+      final t = appTheme(b, platform: TargetPlatform.windows);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: t,
+          home: const Scaffold(body: ItemAvatar(child: Icon(Icons.key))),
+        ),
+      );
+      final box =
+          tester
+                  .widget<Container>(
+                    find.descendant(
+                      of: find.byType(ItemAvatar),
+                      matching: find.byType(Container),
+                    ),
+                  )
+                  .decoration
+              as BoxDecoration;
+      expect(box.color, isNot(t.listTileTheme.selectedTileColor));
     }
   });
 }

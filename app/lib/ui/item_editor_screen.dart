@@ -152,11 +152,17 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
   Future<void> _pickExpiry() async {
     final today = DateTime.now();
     final current = parseExpiry(_expiresOn);
+    final first = DateTime(2000);
+    final last = DateTime(2100, 12, 31);
+    var initial = current ?? DateTime(today.year, today.month, today.day);
+    // A stored date from another client may be outside the picker's range.
+    if (initial.isBefore(first)) initial = first;
+    if (initial.isAfter(last)) initial = last;
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100, 12, 31),
-      initialDate: current ?? DateTime(today.year, today.month, today.day),
+      firstDate: first,
+      lastDate: last,
+      initialDate: initial,
     );
     if (picked != null) setState(() => _expiresOn = formatExpiry(picked));
   }
@@ -207,13 +213,22 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         labelText: context.l10n.editorExpiryLabel,
         helperText: context.l10n.editorExpiryHelper,
         prefixIcon: const Icon(Icons.event_outlined),
-        suffixIcon: _expiresOn == null
-            ? null
-            : IconButton(
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_expiresOn != null)
+              IconButton(
                 tooltip: context.l10n.editorExpiryClear,
                 icon: const Icon(Icons.close),
                 onPressed: () => setState(() => _expiresOn = null),
               ),
+            IconButton(
+              tooltip: context.l10n.editorExpiryLabel,
+              icon: const Icon(Icons.calendar_month_outlined),
+              onPressed: _pickExpiry,
+            ),
+          ],
+        ),
       ),
     );
   }

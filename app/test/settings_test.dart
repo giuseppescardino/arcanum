@@ -63,6 +63,8 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
+    tester.view.physicalSize = const Size(800, 1400);
+    addTearDown(tester.view.reset);
     await openSettings(tester);
     expect(find.byType(SettingsScreen), findsOneWidget);
 
@@ -73,8 +75,11 @@ void main() {
       'Aspetto',
       'Zona pericolosa',
     ]) {
-      await tester.scrollUntilVisible(find.text(s), 200);
-      expect(find.text(s), findsOneWidget);
+      await tester.scrollUntilVisible(find.text(s).first, 200);
+      expect(
+        find.text(s),
+        s == 'Sincronizzazione' ? findsWidgets : findsOneWidget,
+      );
     }
     final danger = tester.getTopLeft(find.text('Zona pericolosa')).dy;
     expect(

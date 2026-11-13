@@ -53,6 +53,9 @@ class _VaultScreenState extends State<VaultScreen> {
   }
 
   void _focusSearch() {
+    // Back to the vault first: the field is offstage under any other route.
+    // Unsaved editor drafts are dropped, as when the vault locks.
+    Navigator.of(context).popUntil((r) => r.isFirst);
     _search.selection = TextSelection(
       baseOffset: 0,
       extentOffset: _search.text.length,

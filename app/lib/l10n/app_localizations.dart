@@ -152,7 +152,7 @@ abstract class AppLocalizations {
   /// **'Reconnect'**
   String get reconnect;
 
-  /// Sync screen title and menu entry
+  /// Sync screen title and settings entry
   ///
   /// In en, this message translates to:
   /// **'Sync'**
@@ -272,7 +272,7 @@ abstract class AppLocalizations {
   /// **'Change master password'**
   String get vaultChangeMasterPassword;
 
-  /// Vault menu entry that opens the About dialog
+  /// Settings entry that opens the About dialog
   ///
   /// In en, this message translates to:
   /// **'About'**
@@ -290,7 +290,7 @@ abstract class AppLocalizations {
   /// **'Zero-knowledge password manager: your data is encrypted on this device before it is synced.'**
   String get aboutDescription;
 
-  /// Vault menu entry and title of the breached-password check
+  /// Settings entry and title of the breached-password check
   ///
   /// In en, this message translates to:
   /// **'Compromised passwords'**

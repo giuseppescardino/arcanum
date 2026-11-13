@@ -111,6 +111,37 @@ void main() {
       c.dispose();
     });
 
+    testWidgets('the calendar button opens the picker', (tester) async {
+      desktop(tester);
+      final c = await unlocked();
+      await tester.pumpWidget(ArcanumApp(controller: c));
+      await tester.tap(find.text('Nuovo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Scadenza'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      c.dispose();
+    });
+
+    testWidgets('an out-of-range stored expiry still opens the picker', (
+      tester,
+    ) async {
+      desktop(tester);
+      final c = await unlocked();
+      await c.save(login('Old', expiresOn: '1990-01-01'));
+      await tester.pumpWidget(ArcanumApp(controller: c));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Old'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Scadenza'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      c.dispose();
+    });
+
     testWidgets('a card item has no expiry field', (tester) async {
       desktop(tester);
       final c = await unlocked();

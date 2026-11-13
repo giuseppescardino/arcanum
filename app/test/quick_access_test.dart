@@ -5,6 +5,7 @@ import 'package:arcanum/app/quick_access.dart';
 import 'package:arcanum/app/tools.dart';
 import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/ui/app.dart';
+import 'package:arcanum/ui/settings_screen.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
@@ -62,4 +63,31 @@ void main() {
       expect(clipboard, '');
     });
   }
+
+  testWidgets('a search request closes screens on top of the vault', (
+    tester,
+  ) async {
+    useNarrowWindow(tester);
+    final controller = VaultController(
+      handle: FakeVaultHandle(),
+      secretKeys: MemorySecretKeyStore(),
+      quickUnlock: FakeQuickUnlockStore(available: false),
+    );
+    await controller.create('master-password');
+    controller.confirmEmergencyKit();
+    await tester.pumpWidget(ArcanumApp(controller: controller));
+
+    await tester.tap(find.byTooltip('Impostazioni'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
+
+    QuickAccess.searchRequests.value++;
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsNothing);
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.focusNode!.hasFocus, isTrue);
+
+    await tester.pumpWidget(const SizedBox());
+    controller.lock();
+  });
 }

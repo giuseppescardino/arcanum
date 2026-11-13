@@ -92,7 +92,7 @@ class SettingsScreen extends StatelessWidget {
                     onTap: AndroidAutofill.openSettings,
                   ),
                 const Divider(),
-                // The entry names its own group: a header would repeat it.
+                _SectionHeader(l10n.syncTitle),
                 ListTile(
                   leading: const Icon(Icons.sync),
                   title: Text(l10n.syncTitle),

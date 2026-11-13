@@ -57,7 +57,7 @@ function renderPairing(pairing) {
     start.disabled = false;
     error.textContent =
       p?.status === 'pairing_closed'
-        ? 'In Arcanum apri il menu → Browser collegati → Collega browser, poi premi di nuovo Collega.'
+        ? 'In Arcanum apri Impostazioni → Browser collegati → Collega browser, poi premi di nuovo Collega.'
         : p?.status === 'pairing_busy'
           ? "In Arcanum c'è già una richiesta di collegamento che non hai avviato tu? Premi Rifiuta nell'app, poi riprova."
           : 'Collegamento non riuscito.';

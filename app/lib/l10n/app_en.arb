@@ -20,7 +20,7 @@
   "reconnect": "Reconnect",
   "syncTitle": "Sync",
   "@syncTitle": {
-    "description": "Sync screen title and menu entry"
+    "description": "Sync screen title and settings entry"
   },
   "syncNow": "Sync now",
   "noGroup": "No group",
@@ -72,7 +72,7 @@
   "vaultChangeMasterPassword": "Change master password",
   "vaultAbout": "About",
   "@vaultAbout": {
-    "description": "Vault menu entry that opens the About dialog"
+    "description": "Settings entry that opens the About dialog"
   },
   "aboutVersion": "Version {version}",
   "@aboutVersion": {
@@ -90,7 +90,7 @@
   },
   "breachTitle": "Compromised passwords",
   "@breachTitle": {
-    "description": "Vault menu entry and title of the breached-password check"
+    "description": "Settings entry and title of the breached-password check"
   },
   "breachExplanation": "Arcanum compares your passwords with the Have I Been Pwned archive of passwords exposed in data breaches. Only the first 5 characters of each password's SHA-1 hash leave this device, over an encrypted connection: neither the password nor its full hash is ever sent. Results stay in memory and are forgotten when the vault locks.",
   "@breachExplanation": {
