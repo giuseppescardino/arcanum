@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/tools.dart';
 import 'package:arcanum/app/vault_controller.dart';
+import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/ui/app.dart';
+import 'package:arcanum/ui/vault_list.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
@@ -293,6 +295,30 @@ void main() {
     );
     expect(icon.color, const Color(0xFF1E88E5));
 
+    c.dispose();
+  });
+
+  test('filterItems applies filter and query together', () async {
+    final c = await unlockedWith([]);
+    await c.save(login('A', group: 'Work', favorite: true));
+    await c.save(login('B', group: 'Work/Clients'));
+    await c.save(login('C', expiresOn: '2020-01-01'));
+    final now = DateTime(2026, 11, 13);
+    List<String> titles(List<VaultItem> items) => [
+      for (final i in items) i.fields.title,
+    ];
+
+    expect(titles(filterItems(c, const AllItems(), '', now)), ['A', 'B', 'C']);
+    expect(titles(filterItems(c, const GroupItems('Work'), '', now)), [
+      'A',
+      'B',
+    ]);
+    expect(titles(filterItems(c, const GroupItems(''), '', now)), ['C']);
+    expect(titles(filterItems(c, const FavoriteItems(), '', now)), ['A']);
+    expect(titles(filterItems(c, const ExpiringItems(), '', now)), ['C']);
+    expect(titles(filterItems(c, const GroupItems('Work'), 'b', now)), ['B']);
+    expect(const GroupItems('Work'), const GroupItems('Work'));
+    expect(const AllItems(), isNot(const FavoriteItems()));
     c.dispose();
   });
 }
