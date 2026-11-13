@@ -14,6 +14,7 @@ import 'about.dart';
 import 'account_actions.dart';
 import 'breach_check_screen.dart';
 import 'browser_pairing.dart';
+import 'item_detail.dart';
 import 'item_editor_screen.dart';
 import 'language_picker.dart';
 import 'sync_screen.dart';
@@ -91,12 +92,20 @@ class _VaultScreenState extends State<VaultScreen> {
     await QuickAccess.hide();
   }
 
-  void _openEditor([VaultItem? item]) {
+  void _openItem(VaultItem item) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ItemDetailScreen(controller: _controller, itemId: item.id),
+      ),
+    );
+  }
+
+  void _newItem() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ItemEditorScreen(
           controller: _controller,
-          item: item,
           initialGroup: switch (_filter) {
             GroupItems(:final root) => root,
             _ => null,
@@ -362,7 +371,7 @@ class _VaultScreenState extends State<VaultScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: _openEditor,
+            onPressed: _newItem,
             icon: const Icon(Icons.add),
             label: Text(context.l10n.vaultNew),
           ),
@@ -377,7 +386,7 @@ class _VaultScreenState extends State<VaultScreen> {
                   controller: _controller,
                   filter: _filter,
                   query: _query,
-                  onOpen: _openEditor,
+                  onOpen: _openItem,
                   bottomPadding: 88,
                 ),
               ),

@@ -1909,6 +1909,18 @@ abstract class AppLocalizations {
   /// **'Wrong code'**
   String get browsersWrongCode;
 
+  /// No description provided for @itemEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get itemEdit;
+
+  /// No description provided for @itemUpdatedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {date}'**
+  String itemUpdatedOn(String date);
+
   /// No description provided for @itemExpiresOn.
   ///
   /// In en, this message translates to:

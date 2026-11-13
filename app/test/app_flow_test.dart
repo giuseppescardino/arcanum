@@ -80,7 +80,8 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('locking closes an open editor', (tester) async {
+  testWidgets('locking closes an open item view', (tester) async {
+    useNarrowWindow(tester);
     final controller = VaultController(
       handle: FakeVaultHandle(),
       secretKeys: MemorySecretKeyStore(),
@@ -97,6 +98,33 @@ void main() {
 
     controller.lock();
     await tester.pumpAndSettle();
+    expect(find.text('Modifica'), findsNothing);
+    expect(find.text('Sblocca il vault'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('locking closes the editor opened from the view', (tester) async {
+    useNarrowWindow(tester);
+    final controller = VaultController(
+      handle: FakeVaultHandle(),
+      secretKeys: MemorySecretKeyStore(),
+      quickUnlock: FakeQuickUnlockStore(available: false),
+    );
+    await controller.create('master-password');
+    controller.confirmEmergencyKit();
+    await controller.save(login('Bank', password: 'top-secret'));
+    await tester.pumpWidget(ArcanumApp(controller: controller));
+
+    await tester.tap(find.text('Bank'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Modifica'));
+    await tester.pumpAndSettle();
+    expect(find.text('Salva'), findsOneWidget);
+
+    controller.lock();
+    await tester.pumpAndSettle();
+    expect(find.text('Salva'), findsNothing);
     expect(find.text('Modifica'), findsNothing);
     expect(find.text('Sblocca il vault'), findsOneWidget);
 

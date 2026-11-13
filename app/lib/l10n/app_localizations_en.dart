@@ -1112,6 +1112,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get browsersWrongCode => 'Wrong code';
 
   @override
+  String get itemEdit => 'Edit';
+
+  @override
+  String itemUpdatedOn(String date) {
+    return 'Edited $date';
+  }
+
+  @override
   String itemExpiresOn(String date) {
     return 'Expires $date';
   }

@@ -101,6 +101,8 @@ void main() {
 
       await tester.tap(find.text('Sito'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Rimuovi scadenza'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Salva'));

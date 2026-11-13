@@ -18,6 +18,13 @@ const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
 /// In-memory stand-in for the Rust vault, so controller and widget tests
 /// run without the native library.
 class FakeVaultHandle implements VaultHandle {
+  /// [clock] stamps `updatedAt` on every write; defaults to a fixed instant.
+  FakeVaultHandle({DateTime Function()? clock})
+    : _clock = clock ?? (() => DateTime(2026, 11, 13, 9, 30));
+
+  final DateTime Function() _clock;
+  int get _now => _clock().millisecondsSinceEpoch;
+
   bool initialized = false;
   bool unlocked = false;
   String? _password;
@@ -222,7 +229,7 @@ class FakeVaultHandle implements VaultHandle {
   @override
   Future<VaultItem> addItem({required ItemFields fields}) async {
     _requireUnlocked();
-    final item = VaultItem(id: '${_nextId++}', updatedAt: 0, fields: fields);
+    final item = VaultItem(id: '${_nextId++}', updatedAt: _now, fields: fields);
     return _items[item.id] = item;
   }
 
@@ -235,7 +242,7 @@ class FakeVaultHandle implements VaultHandle {
     if (!_items.containsKey(id)) {
       throw const VaultFailure(code: VaultFailureCode.notFound, message: '');
     }
-    return _items[id] = VaultItem(id: id, updatedAt: 1, fields: fields);
+    return _items[id] = VaultItem(id: id, updatedAt: _now, fields: fields);
   }
 
   @override
@@ -266,7 +273,7 @@ class FakeVaultHandle implements VaultHandle {
       final rest = group.substring(from.length);
       _items[item.id] = VaultItem(
         id: item.id,
-        updatedAt: 1,
+        updatedAt: _now,
         fields: _withGroup(item.fields, to.isEmpty ? '' : '$to$rest'),
       );
       if (item.fields.kind == VaultItemKind.group) {

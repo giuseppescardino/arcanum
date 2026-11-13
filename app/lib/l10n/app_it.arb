@@ -301,6 +301,15 @@
   "browsersApprove": "Collega",
   "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.",
   "browsersWrongCode": "Codice errato",
+  "itemEdit": "Modifica",
+  "itemUpdatedOn": "Modificata il {date}",
+  "@itemUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "itemExpiresOn": "Scade il {date}",
   "@itemExpiresOn": {
     "placeholders": {

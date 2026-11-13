@@ -738,6 +738,15 @@
   "browsersApprove": "Connect",
   "browsersPortsBusy": "The browser connection could not start: ports 47613–47615 are in use.",
   "browsersWrongCode": "Wrong code",
+  "itemEdit": "Edit",
+  "itemUpdatedOn": "Edited {date}",
+  "@itemUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "itemExpiresOn": "Expires {date}",
   "@itemExpiresOn": {
     "placeholders": {

@@ -219,6 +219,8 @@ void main() {
       await pumpApp(tester, checker, [('Banca', 'qwerty')]);
       await tester.tap(find.text('Banca'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
       expect(api.asked, isEmpty); // nothing sent until asked
 
       await tester.tap(find.text('Controlla se è compromessa'));
@@ -238,6 +240,8 @@ void main() {
 
       await tester.tap(find.text('Posta'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
       expect(api.asked, ['unique-and-long']);
       expect(find.text('Non trovata nelle violazioni note'), findsOneWidget);
       await unmount(tester);
@@ -250,6 +254,8 @@ void main() {
       await checker.setEnabled(true);
       await pumpApp(tester, checker, [('Rete', 'offline')]);
       await tester.tap(find.text('Rete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Impossibile controllare'), findsOneWidget);
       expect(find.text('Non trovata nelle violazioni note'), findsNothing);
