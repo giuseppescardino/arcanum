@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../app/android_autofill.dart';
 import '../app/breach_check.dart';
 import '../app/clipboard.dart';
-import '../app/favicons.dart';
-import '../app/file_dialogs.dart';
-import '../app/messages.dart';
 import '../app/quick_access.dart';
 import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import '../src/rust/api/vault.dart';
-import 'about.dart';
-import 'account_actions.dart';
 import 'breach_check_screen.dart';
-import 'browser_pairing.dart';
 import 'item_detail.dart';
 import 'item_editor_screen.dart';
-import 'language_picker.dart';
-import 'sync_screen.dart';
-import 'transfer_dialogs.dart';
+import 'settings_screen.dart';
 import 'vault_chrome.dart';
 import 'vault_list.dart';
 
@@ -29,22 +20,6 @@ class VaultScreen extends StatefulWidget {
 
   @override
   State<VaultScreen> createState() => _VaultScreenState();
-}
-
-enum _MenuAction {
-  sync,
-  quickUnlock,
-  autofill,
-  browsers,
-  language,
-  changePassword,
-  breach,
-  import,
-  export,
-  siteIcons,
-  about,
-  forgetSecretKey,
-  signOut,
 }
 
 class _VaultScreenState extends State<VaultScreen> {
@@ -127,62 +102,17 @@ class _VaultScreenState extends State<VaultScreen> {
     );
   }
 
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(controller: _controller),
+      ),
+    );
+  }
+
   Color? _groupColor(String group) {
     final c = _controller.colorOfGroup(group);
     return c == null ? null : Color(c);
-  }
-
-  Future<void> _onMenu(_MenuAction action) async {
-    switch (action) {
-      case _MenuAction.sync:
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => SyncScreen(controller: _controller),
-          ),
-        );
-      case _MenuAction.quickUnlock:
-        try {
-          if (_controller.quickUnlockEnabled) {
-            await _controller.disableQuickUnlock();
-          } else {
-            await _controller.enableQuickUnlock();
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(failureMessage(e))));
-          }
-        }
-      case _MenuAction.autofill:
-        await AndroidAutofill.openSettings();
-      case _MenuAction.browsers:
-        final bridge = BridgeScope.maybeOf(context);
-        if (bridge == null) return;
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => BrowserPairingScreen(server: bridge),
-          ),
-        );
-      case _MenuAction.language:
-        await showLanguageDialog(context);
-      case _MenuAction.breach:
-        _openBreachCheck();
-      case _MenuAction.import:
-        await importFromFile(context, _controller);
-      case _MenuAction.export:
-        await exportToFile(context, _controller);
-      case _MenuAction.siteIcons:
-        final icons = FaviconScope.maybeOf(context);
-        await icons?.setEnabled(!icons.enabled);
-      case _MenuAction.about:
-        await showArcanumAbout(context);
-      case _MenuAction.changePassword:
-        await showChangePasswordDialog(context, _controller);
-      case _MenuAction.forgetSecretKey:
-        await forgetSecretKeyOnDevice(context, _controller);
-      case _MenuAction.signOut:
-        await signOutOfDevice(context, _controller);
-    }
   }
 
   @override
@@ -190,8 +120,6 @@ class _VaultScreenState extends State<VaultScreen> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
-        final breach = BreachScope.maybeOf(context);
-        final siteIcons = FaviconScope.maybeOf(context);
         final groups = _controller.rootGroups;
         // The filtered group may have been renamed or emptied elsewhere.
         if (_filter case GroupItems(:final root)
@@ -208,121 +136,10 @@ class _VaultScreenState extends State<VaultScreen> {
                 icon: const Icon(Icons.lock),
                 onPressed: _controller.lock,
               ),
-              PopupMenuButton<_MenuAction>(
-                onSelected: _onMenu,
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: _MenuAction.sync,
-                    child: VaultMenuEntry(
-                      icon: Icons.sync,
-                      label: context.l10n.syncTitle,
-                    ),
-                  ),
-                  if (_controller.quickUnlockAvailable)
-                    PopupMenuItem(
-                      value: _MenuAction.quickUnlock,
-                      child: VaultMenuEntry(
-                        icon: _controller.quickUnlockEnabled
-                            ? Icons.fingerprint_outlined
-                            : Icons.fingerprint,
-                        label: _controller.quickUnlockEnabled
-                            ? context.l10n.vaultDisableQuickUnlock(
-                                _controller.quickUnlock.methodName,
-                              )
-                            : context.l10n.vaultEnableQuickUnlock(
-                                _controller.quickUnlock.methodName,
-                              ),
-                      ),
-                    ),
-                  if (AndroidAutofill.supported)
-                    PopupMenuItem(
-                      value: _MenuAction.autofill,
-                      child: VaultMenuEntry(
-                        icon: Icons.password,
-                        label: context.l10n.vaultEnableAutofill,
-                      ),
-                    ),
-                  if (BridgeScope.maybeOf(context) != null)
-                    PopupMenuItem(
-                      value: _MenuAction.browsers,
-                      child: VaultMenuEntry(
-                        icon: Icons.extension_outlined,
-                        label: context.l10n.browsersTitle,
-                      ),
-                    ),
-                  PopupMenuItem(
-                    value: _MenuAction.language,
-                    child: VaultMenuEntry(
-                      icon: Icons.language,
-                      label: context.l10n.languageTitle,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _MenuAction.changePassword,
-                    child: VaultMenuEntry(
-                      icon: Icons.key,
-                      label: context.l10n.vaultChangeMasterPassword,
-                    ),
-                  ),
-                  if (breach != null)
-                    PopupMenuItem(
-                      value: _MenuAction.breach,
-                      child: VaultMenuEntry(
-                        icon: Icons.gpp_maybe_outlined,
-                        label: context.l10n.breachTitle,
-                      ),
-                    ),
-                  PopupMenuItem(
-                    value: _MenuAction.import,
-                    child: VaultMenuEntry(
-                      icon: Icons.file_download_outlined,
-                      label: context.l10n.vaultImport,
-                    ),
-                  ),
-                  if (fileDialogs.canSave)
-                    PopupMenuItem(
-                      value: _MenuAction.export,
-                      child: VaultMenuEntry(
-                        icon: Icons.file_upload_outlined,
-                        label: context.l10n.vaultExport,
-                      ),
-                    ),
-                  if (siteIcons != null)
-                    PopupMenuItem(
-                      value: _MenuAction.siteIcons,
-                      child: VaultMenuEntry(
-                        icon: siteIcons.enabled
-                            ? Icons.hide_image_outlined
-                            : Icons.image_outlined,
-                        label: siteIcons.enabled
-                            ? context.l10n.vaultHideSiteIcons
-                            : context.l10n.vaultShowSiteIcons,
-                      ),
-                    ),
-                  PopupMenuItem(
-                    value: _MenuAction.about,
-                    child: VaultMenuEntry(
-                      icon: Icons.info_outline,
-                      label: context.l10n.vaultAbout,
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: _MenuAction.forgetSecretKey,
-                    child: VaultMenuEntry(
-                      icon: Icons.key_off,
-                      label: context.l10n.vaultForgetSecretKey,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _MenuAction.signOut,
-                    child: VaultMenuEntry(
-                      icon: Icons.logout,
-                      label: context.l10n.vaultSignOut,
-                      destructive: true,
-                    ),
-                  ),
-                ],
+              IconButton(
+                tooltip: context.l10n.settingsTitle,
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: _openSettings,
               ),
             ],
             bottom: PreferredSize(

@@ -175,14 +175,14 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('menu toggles quick unlock', (tester) async {
+  testWidgets('settings toggle quick unlock', (tester) async {
     useNarrowWindow(tester);
     await createUnlocked();
     await tester.pumpWidget(ArcanumApp(controller: controller));
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Attiva sblocco con Test Biometrics'));
+    await tester.tap(find.text('Sblocco con Test Biometrics'));
     await tester.pumpAndSettle();
     expect(controller.quickUnlockEnabled, isTrue);
     // Unmount first: a locked vault would re-prompt and unlock again.

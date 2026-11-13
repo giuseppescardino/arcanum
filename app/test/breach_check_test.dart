@@ -9,6 +9,7 @@ import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/ui/app.dart';
 import 'package:arcanum/ui/breach_check_screen.dart';
+import 'package:arcanum/ui/settings_screen.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
@@ -175,7 +176,7 @@ void main() {
       ]);
       expect(find.byType(MaterialBanner), findsNothing); // not opted in
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byTooltip('Impostazioni'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Password compromesse'));
       await tester.pumpAndSettle();
@@ -202,6 +203,8 @@ void main() {
 
       // Back in the list, compromised items carry a warning icon.
       Navigator.of(tester.element(find.byType(BreachCheckScreen))).pop();
+      await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(SettingsScreen))).pop();
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.gpp_bad_outlined), findsNWidgets(2));
 

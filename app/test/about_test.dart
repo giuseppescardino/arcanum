@@ -33,11 +33,16 @@ void main() {
 
   tearDown(() => controller.dispose());
 
-  Future<void> openAbout(WidgetTester tester, String entry) async {
+  Future<void> openAbout(
+    WidgetTester tester,
+    String entry, {
+    String tooltip = 'Impostazioni',
+  }) async {
     useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller));
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip(tooltip));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text(entry), 200);
     expect(find.byIcon(Icons.info_outline), findsOneWidget);
     await tester.tap(find.text(entry));
     await tester.pumpAndSettle();
@@ -48,7 +53,7 @@ void main() {
     controller.lock(); // stop the auto-lock timer
   }
 
-  testWidgets('menu opens About with the runtime version', (tester) async {
+  testWidgets('settings open About with the runtime version', (tester) async {
     await openAbout(tester, 'Informazioni');
 
     expect(find.byType(AboutDialog), findsOneWidget);
@@ -71,7 +76,7 @@ void main() {
     addTearDown(
       () => tester.platformDispatcher.localesTestValue = const [Locale('it')],
     );
-    await openAbout(tester, 'About');
+    await openAbout(tester, 'About', tooltip: 'Settings');
 
     expect(find.text('Version 1.2.3 (45)'), findsOneWidget);
     expect(

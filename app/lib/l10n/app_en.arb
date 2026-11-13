@@ -59,17 +59,9 @@
     "description": "Main screen title"
   },
   "vaultLock": "Lock",
-  "vaultEnableQuickUnlock": "Enable unlock with {method}",
-  "@vaultEnableQuickUnlock": {
-    "description": "method is e.g. Face ID, Touch ID, fingerprint",
-    "placeholders": {
-      "method": {
-        "type": "String"
-      }
-    }
-  },
-  "vaultDisableQuickUnlock": "Disable unlock with {method}",
-  "@vaultDisableQuickUnlock": {
+  "settingsQuickUnlock": "Unlock with {method}",
+  "@settingsQuickUnlock": {
+    "description": "Switch label in settings; method is e.g. Face ID, Touch ID, fingerprint",
     "placeholders": {
       "method": {
         "type": "String"
@@ -548,8 +540,12 @@
   },
   "vaultImport": "Import…",
   "vaultExport": "Export…",
-  "vaultShowSiteIcons": "Show site icons",
-  "vaultHideSiteIcons": "Hide site icons",
+  "settingsTitle": "Settings",
+  "settingsSecurity": "Security",
+  "settingsData": "Data",
+  "settingsAppearance": "Appearance",
+  "settingsDangerZone": "Danger zone",
+  "settingsSiteIcons": "Site icons",
   "vaultGroupPathHint": "Use / for subgroups, e.g. Work/Clients",
   "exportTitle": "Export items",
   "exportFormatBackup": "Encrypted backup",

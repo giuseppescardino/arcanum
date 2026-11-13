@@ -66,7 +66,7 @@ void main() {
     expect(asked, hasLength(3));
   });
 
-  testWidgets('a login shows its site icon; the menu turns icons off', (
+  testWidgets('a login shows its site icon; the settings turn icons off', (
     tester,
   ) async {
     useNarrowWindow(tester);
@@ -97,9 +97,13 @@ void main() {
     expect(find.byType(Image), findsOneWidget);
     expect(find.byIcon(Icons.key), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Nascondi icone dei siti'));
+    await tester.scrollUntilVisible(find.text('Icone dei siti'), 200);
+    await tester.tap(find.text('Icone dei siti'));
+    await tester.pumpAndSettle();
+    expect(cache.enabled, isFalse);
+    Navigator.of(tester.element(find.byType(SwitchListTile))).pop();
     await tester.pumpAndSettle();
 
     expect(cache.enabled, isFalse);

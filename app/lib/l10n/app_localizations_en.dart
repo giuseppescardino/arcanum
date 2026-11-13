@@ -94,13 +94,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultLock => 'Lock';
 
   @override
-  String vaultEnableQuickUnlock(String method) {
-    return 'Enable unlock with $method';
-  }
-
-  @override
-  String vaultDisableQuickUnlock(String method) {
-    return 'Disable unlock with $method';
+  String settingsQuickUnlock(String method) {
+    return 'Unlock with $method';
   }
 
   @override
@@ -774,10 +769,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultExport => 'Export…';
 
   @override
-  String get vaultShowSiteIcons => 'Show site icons';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get vaultHideSiteIcons => 'Hide site icons';
+  String get settingsSecurity => 'Security';
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsDangerZone => 'Danger zone';
+
+  @override
+  String get settingsSiteIcons => 'Site icons';
 
   @override
   String get vaultGroupPathHint => 'Use / for subgroups, e.g. Work/Clients';

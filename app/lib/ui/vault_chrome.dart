@@ -5,34 +5,6 @@ import '../app/vault_controller.dart';
 import '../l10n/l10n.dart';
 import 'sync_screen.dart';
 
-/// Popup menu row with a leading icon; [destructive] tints it red.
-class VaultMenuEntry extends StatelessWidget {
-  const VaultMenuEntry({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = destructive ? Theme.of(context).colorScheme.error : null;
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(label, style: TextStyle(color: color)),
-        ),
-      ],
-    );
-  }
-}
-
 /// Shows sync state; tap to sync now (or reconnect if signed out).
 class VaultSyncButton extends StatelessWidget {
   const VaultSyncButton({super.key, required this.controller});

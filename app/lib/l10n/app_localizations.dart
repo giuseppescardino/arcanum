@@ -254,17 +254,11 @@ abstract class AppLocalizations {
   /// **'Lock'**
   String get vaultLock;
 
-  /// method is e.g. Face ID, Touch ID, fingerprint
+  /// Switch label in settings; method is e.g. Face ID, Touch ID, fingerprint
   ///
   /// In en, this message translates to:
-  /// **'Enable unlock with {method}'**
-  String vaultEnableQuickUnlock(String method);
-
-  /// No description provided for @vaultDisableQuickUnlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Disable unlock with {method}'**
-  String vaultDisableQuickUnlock(String method);
+  /// **'Unlock with {method}'**
+  String settingsQuickUnlock(String method);
 
   /// No description provided for @vaultEnableAutofill.
   ///
@@ -1369,17 +1363,41 @@ abstract class AppLocalizations {
   /// **'Export…'**
   String get vaultExport;
 
-  /// No description provided for @vaultShowSiteIcons.
+  /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Show site icons'**
-  String get vaultShowSiteIcons;
+  /// **'Settings'**
+  String get settingsTitle;
 
-  /// No description provided for @vaultHideSiteIcons.
+  /// No description provided for @settingsSecurity.
   ///
   /// In en, this message translates to:
-  /// **'Hide site icons'**
-  String get vaultHideSiteIcons;
+  /// **'Security'**
+  String get settingsSecurity;
+
+  /// No description provided for @settingsData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsData;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsDangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get settingsDangerZone;
+
+  /// No description provided for @settingsSiteIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Site icons'**
+  String get settingsSiteIcons;
 
   /// No description provided for @vaultGroupPathHint.
   ///
