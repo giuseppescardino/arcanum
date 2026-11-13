@@ -94,16 +94,38 @@ class _PopWhenShown extends StatefulWidget {
 }
 
 class _PopWhenShownState extends State<_PopWhenShown> {
+  Animation<double>? _above;
+  bool _popped = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final route = ModalRoute.of(context);
-      // Not current: a route above is still closing, or this one is gone.
-      if (route == null || !route.isCurrent) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  /// Pops once this route is the current one. While a route above (the
+  /// editor) is open, waits until it is gone, then tries again.
+  void _check() {
+    if (!mounted || _popped) return;
+    final route = ModalRoute.of(context);
+    if (route == null) return;
+    if (route.isCurrent) {
+      _popped = true;
       Navigator.of(context).pop();
-    });
+    } else {
+      _above ??= route.secondaryAnimation?..addStatusListener(_onAboveStatus);
+    }
+  }
+
+  void _onAboveStatus(AnimationStatus status) {
+    if (status != AnimationStatus.dismissed) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  @override
+  void dispose() {
+    _above?.removeStatusListener(_onAboveStatus);
+    super.dispose();
   }
 
   @override

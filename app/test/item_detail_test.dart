@@ -5,7 +5,9 @@ import 'package:arcanum/app/cards.dart';
 import 'package:arcanum/app/tools.dart';
 import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
+import 'package:arcanum/l10n/app_localizations.dart';
 import 'package:arcanum/ui/app.dart';
+import 'package:arcanum/ui/item_detail.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
@@ -17,10 +19,7 @@ void main() {
   late VaultController controller;
   String? clipboard;
 
-  Future<void> pumpApp(
-    WidgetTester tester,
-    List<ItemFields> items,
-  ) async {
+  Future<void> pumpApp(WidgetTester tester, List<ItemFields> items) async {
     useNarrowWindow(tester);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -140,6 +139,65 @@ void main() {
 
     expect(find.text('Modifica'), findsNothing);
     expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets(
+    'an item removed under the open editor closes the view after it',
+    (tester) async {
+      await openBank(tester);
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => controller.delete(controller.items.single.id),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Salva'), findsOneWidget); // editor still open
+
+      Navigator.of(tester.element(find.text('Salva'))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Modifica'), findsNothing);
+      expect(find.textContaining('Il vault è vuoto'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await unmount(tester);
+    },
+  );
+
+  testWidgets('reveal state resets when the shown item changes', (
+    tester,
+  ) async {
+    await pumpApp(tester, [
+      login('One', password: 'first-pw'),
+      login('Two', password: 'second-pw'),
+    ]);
+    final ids = [for (final i in controller.items) i.id];
+    final id = ValueNotifier(ids[0]);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('it'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ValueListenableBuilder(
+            valueListenable: id,
+            builder: (_, value, _) => ItemDetailView(
+              controller: controller,
+              itemId: value,
+              onEdit: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byTooltip('Mostra'));
+    await tester.pump();
+    expect(find.text('first-pw'), findsOneWidget);
+
+    id.value = ids[1];
+    await tester.pump();
+    expect(find.text('first-pw'), findsNothing);
+    expect(find.text('second-pw'), findsNothing); // masked again
     await unmount(tester);
   });
 
