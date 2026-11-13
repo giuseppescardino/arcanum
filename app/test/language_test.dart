@@ -7,6 +7,7 @@ import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/ui/app.dart';
 
 import 'fakes.dart';
+import 'window.dart';
 
 Future<VaultController> _controller() async {
   final controller = VaultController(
@@ -27,6 +28,7 @@ void main() {
   testWidgets('the picked language is applied and saved', (tester) async {
     final store = MemoryLanguageStore();
     final language = LanguageSettings(store: store);
+    useNarrowWindow(tester);
     await tester.pumpWidget(
       ArcanumApp(controller: await _controller(), language: language),
     );
@@ -60,6 +62,7 @@ void main() {
       store: MemoryLanguageStore()..value = 'en',
     );
     await language.load();
+    useNarrowWindow(tester);
     await tester.pumpWidget(
       ArcanumApp(controller: await _controller(), language: language),
     );

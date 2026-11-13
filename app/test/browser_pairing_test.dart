@@ -12,6 +12,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   late VaultController controller;
@@ -50,6 +51,7 @@ void main() {
       controller.confirmEmergencyKit();
       await server.start();
     });
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller, bridge: server));
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
@@ -168,6 +170,7 @@ void main() {
       await controller.create('master-password');
       controller.confirmEmergencyKit();
     });
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller));
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
