@@ -18,7 +18,7 @@
 - Expiry is `YYYY-MM-DD`, no time, no time zone; JSON key `expires_on`; omitted when unset.
 - "Expiring" window: today through **30 days** ahead, inclusive. "Expired": today is after the date. Compared on local calendar dates.
 - Card expiry `MM/YY` means the last day of that month in `20YY`.
-- Dates are shown with `MaterialLocalizations.of(context).formatShortDate`.
+- Dates are shown with `MaterialLocalizations.of(context).formatCompactDate`.
 - Nothing is stored without *Salva* (or the delete confirmation). The item view has no control that writes.
 - UI copy: Italian in `app/lib/l10n/app_it.arb`, English in `app_en.arb`, keys and strings exactly as in the spec's Copy table. Regenerate with `flutter gen-l10n` (run in `app/`); generated files are committed.
 - After changing `core/arcanum-ffi/src/api/`, regenerate bindings with `flutter_rust_bridge_codegen generate` (run in `app/`); generated files are committed.
@@ -209,7 +209,7 @@ testWidgets('rows flag expired and expiring items', (tester) async {
 
 - [ ] **Step 4: Add the l10n keys** (spec Copy table) and run `flutter gen-l10n`.
 
-- [ ] **Step 5: Editor field.** In `_ItemEditorScreenState` add `String? _expiresOn` (from `f?.expiresOn`), include it in `_fields()` as `expiresOn: _kind == VaultItemKind.card ? null : _expiresOn`. Below the notes field's predecessor (just above `MarkdownNotesField`) and only when `_kind != VaultItemKind.card`, add a read-only `TextFormField` labelled `editorExpiryLabel` with helper `editorExpiryHelper`, showing the date via `formatShortDate`; `onTap` opens `showDatePicker(firstDate: DateTime(2000), lastDate: DateTime(2100, 12, 31), initialDate: current ?? today)`; when a date is set, a suffix `IconButton` with tooltip `editorExpiryClear` clears it.
+- [ ] **Step 5: Editor field.** In `_ItemEditorScreenState` add `String? _expiresOn` (from `f?.expiresOn`), include it in `_fields()` as `expiresOn: _kind == VaultItemKind.card ? null : _expiresOn`. Below the notes field's predecessor (just above `MarkdownNotesField`) and only when `_kind != VaultItemKind.card`, add a read-only `TextFormField` labelled `editorExpiryLabel` with helper `editorExpiryHelper`, showing the date via `formatCompactDate`; `onTap` opens `showDatePicker(firstDate: DateTime(2000), lastDate: DateTime(2100, 12, 31), initialDate: current ?? today)`; when a date is set, a suffix `IconButton` with tooltip `editorExpiryClear` clears it.
 
 - [ ] **Step 6: Row badge.** `_ItemTile` gets `required ExpiryState expiry`; next to the existing compromised icon it shows `Icons.event_busy` in `colorScheme.error` with tooltip `expiryExpiredTooltip` for `expired`, `Icons.schedule` in `colorScheme.tertiary` with tooltip `expirySoonTooltip` for `soon`. `_buildList` passes `expiryState(item.fields, DateTime.now())`.
 
@@ -411,7 +411,7 @@ testWidgets('sign out still asks for confirmation', (tester) async {
 });
 
 testWidgets('the vault screen has no popup menu', (tester) async {
-  expect(find.byType(PopupMenuButton<Object>), findsNothing); // no overflow menu in the app bar
+  expect(find.descendant(of: find.byType(AppBar), matching: find.byWidgetPredicate((w) => w is PopupMenuButton)), findsNothing);
 });
 ```
 

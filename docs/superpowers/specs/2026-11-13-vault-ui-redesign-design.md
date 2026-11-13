@@ -75,7 +75,7 @@ The user picked the three-column layout for desktop, asked that mobile keep its 
 
 - Shown from the existing `VaultItem.updatedAt`; no core change.
 - It moves on **any** stored change to the item: an edit, a favorite toggle, a group rename that moves the item, and a sync that brings in a newer version (the winning version's timestamp). It is therefore "item last modified", not "password last changed". A password-specific date would need a new field maintained by the core and is left out.
-- Format: the locale's short date (`MaterialLocalizations.formatShortDate`): `13/11/2026` in Italian.
+- Format: the locale's short date (`MaterialLocalizations.formatCompactDate`): `13/11/2026` in Italian.
 
 ### Expiry
 
