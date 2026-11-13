@@ -12,6 +12,7 @@ import 'package:arcanum/ui/breach_check_screen.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 /// Known counts; 'offline' fails like a network error.
 class FakeBreachApi implements BreachApi {
@@ -138,9 +139,7 @@ void main() {
       BreachChecker checker,
       List<(String, String)> items,
     ) async {
-      tester.view.physicalSize = const Size(1200, 1000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+      useNarrowWindow(tester, height: 1000);
       controller = VaultController(
         handle: FakeVaultHandle(),
         secretKeys: MemorySecretKeyStore(),

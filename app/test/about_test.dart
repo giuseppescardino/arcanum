@@ -7,6 +7,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   late VaultController controller;
@@ -33,9 +34,7 @@ void main() {
   tearDown(() => controller.dispose());
 
   Future<void> openAbout(WidgetTester tester, String entry) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller));
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();

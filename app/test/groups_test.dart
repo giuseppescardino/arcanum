@@ -7,6 +7,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   setUp(() => tools = FakeTools());
@@ -26,9 +27,7 @@ void main() {
   }
 
   void desktop(WidgetTester tester) {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester);
   }
 
   Finder header(String name) => find.widgetWithText(ListTile, name);

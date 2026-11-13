@@ -7,6 +7,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   late FakeVaultHandle handle;
@@ -175,9 +176,7 @@ void main() {
   });
 
   testWidgets('menu toggles quick unlock', (tester) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester);
     await createUnlocked();
     await tester.pumpWidget(ArcanumApp(controller: controller));
 

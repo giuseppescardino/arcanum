@@ -8,6 +8,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 const _helper =
     'Facoltativa. La voce viene segnalata quando la data si avvicina.';
@@ -77,9 +78,7 @@ void main() {
     }
 
     void desktop(WidgetTester tester) {
-      tester.view.physicalSize = const Size(1200, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+      useNarrowWindow(tester);
     }
 
     testWidgets('the editor sets and clears the expiry', (tester) async {

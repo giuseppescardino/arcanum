@@ -10,6 +10,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 /// 1x1 transparent PNG.
 final _png = base64Decode(
@@ -68,9 +69,7 @@ void main() {
   testWidgets('a login shows its site icon; the menu turns icons off', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester);
     final controller = VaultController(
       handle: FakeVaultHandle(),
       secretKeys: MemorySecretKeyStore(),
