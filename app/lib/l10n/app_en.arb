@@ -737,5 +737,26 @@
   "browsersReject": "Reject",
   "browsersApprove": "Connect",
   "browsersPortsBusy": "The browser connection could not start: ports 47613–47615 are in use.",
-  "browsersWrongCode": "Wrong code"
+  "browsersWrongCode": "Wrong code",
+  "itemExpiresOn": "Expires {date}",
+  "@itemExpiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiredOn": "Expired {date}",
+  "@itemExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryExpiredTooltip": "Expired",
+  "expirySoonTooltip": "Expiring soon",
+  "editorExpiryLabel": "Expiry date",
+  "editorExpiryHelper": "Optional. The item is flagged as the date approaches.",
+  "editorExpiryClear": "Clear expiry date"
 }

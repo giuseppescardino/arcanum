@@ -4,6 +4,7 @@ import '../app/android_autofill.dart';
 import '../app/breach_check.dart';
 import '../app/cards.dart';
 import '../app/clipboard.dart';
+import '../app/expiry.dart';
 import '../app/favicons.dart';
 import '../app/file_dialogs.dart';
 import '../app/groups.dart';
@@ -287,6 +288,7 @@ class _VaultScreenState extends State<VaultScreen> {
             item: item,
             depth: depth,
             compromised: (breach?.countFor(item.fields.password) ?? 0) > 0,
+            expiry: expiryState(item.fields, DateTime.now()),
             onTap: () => _openEditor(item),
           ),
         );
@@ -1019,6 +1021,7 @@ class _ItemTile extends StatelessWidget {
   const _ItemTile({
     required this.item,
     required this.onTap,
+    required this.expiry,
     this.depth = 0,
     this.compromised = false,
   });
@@ -1031,6 +1034,9 @@ class _ItemTile extends StatelessWidget {
 
   /// The password was found in a breach by the last check.
   final bool compromised;
+
+  /// Expired or about to expire (see `expiry.dart`).
+  final ExpiryState expiry;
 
   @override
   Widget build(BuildContext context) {
@@ -1087,6 +1093,23 @@ class _ItemTile extends StatelessWidget {
                 Icons.gpp_bad_outlined,
                 size: 16,
                 color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
+          if (expiry == ExpiryState.expired || expiry == ExpiryState.soon) ...[
+            const SizedBox(width: 6),
+            Tooltip(
+              message: expiry == ExpiryState.expired
+                  ? context.l10n.expiryExpiredTooltip
+                  : context.l10n.expirySoonTooltip,
+              child: Icon(
+                expiry == ExpiryState.expired
+                    ? Icons.event_busy
+                    : Icons.schedule,
+                size: 16,
+                color: expiry == ExpiryState.expired
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.tertiary,
               ),
             ),
           ],

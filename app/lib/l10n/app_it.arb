@@ -300,5 +300,26 @@
   "browsersReject": "Rifiuta",
   "browsersApprove": "Collega",
   "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.",
-  "browsersWrongCode": "Codice errato"
+  "browsersWrongCode": "Codice errato",
+  "itemExpiresOn": "Scade il {date}",
+  "@itemExpiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiredOn": "Scaduta il {date}",
+  "@itemExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryExpiredTooltip": "Scaduta",
+  "expirySoonTooltip": "In scadenza",
+  "editorExpiryLabel": "Scadenza",
+  "editorExpiryHelper": "Facoltativa. La voce viene segnalata quando la data si avvicina.",
+  "editorExpiryClear": "Rimuovi scadenza"
 }

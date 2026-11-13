@@ -1106,4 +1106,30 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get browsersWrongCode => 'Codice errato';
+
+  @override
+  String itemExpiresOn(String date) {
+    return 'Scade il $date';
+  }
+
+  @override
+  String itemExpiredOn(String date) {
+    return 'Scaduta il $date';
+  }
+
+  @override
+  String get expiryExpiredTooltip => 'Scaduta';
+
+  @override
+  String get expirySoonTooltip => 'In scadenza';
+
+  @override
+  String get editorExpiryLabel => 'Scadenza';
+
+  @override
+  String get editorExpiryHelper =>
+      'Facoltativa. La voce viene segnalata quando la data si avvicina.';
+
+  @override
+  String get editorExpiryClear => 'Rimuovi scadenza';
 }

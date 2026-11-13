@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/breach_check.dart';
 import '../app/clipboard.dart';
+import '../app/expiry.dart';
 import '../app/messages.dart';
 import '../app/tools.dart';
 import '../app/vault_controller.dart';
@@ -38,6 +39,9 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   late VaultItemKind _kind;
   late bool _favorite;
+
+  /// ISO `YYYY-MM-DD`, or null when the item has no expiry.
+  String? _expiresOn;
   late final TextEditingController _title;
   late final TextEditingController _username;
   late final TextEditingController _password;
@@ -67,6 +71,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     final f = widget.item?.fields;
     _kind = f?.kind ?? VaultItemKind.login;
     _favorite = f?.favorite ?? false;
+    _expiresOn = f?.expiresOn;
     _title = TextEditingController(text: f?.title);
     _username = TextEditingController(text: f?.username);
     _password = TextEditingController(text: f?.password);
@@ -125,6 +130,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       color: null,
       wifi: isWifi ? wifi : null,
       card: _kind == VaultItemKind.card ? _card.toFields() : null,
+      expiresOn: _kind == VaultItemKind.card ? null : _expiresOn,
     );
   }
 
@@ -141,6 +147,18 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _pickExpiry() async {
+    final today = DateTime.now();
+    final current = parseExpiry(_expiresOn);
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100, 12, 31),
+      initialDate: current ?? DateTime(today.year, today.month, today.day),
+    );
+    if (picked != null) setState(() => _expiresOn = formatExpiry(picked));
   }
 
   Future<void> _generate() async {
@@ -174,6 +192,30 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     if (ok == true) {
       await _run(() => widget.controller.delete(widget.item!.id));
     }
+  }
+
+  Widget _expiryField(BuildContext context) {
+    final day = parseExpiry(_expiresOn);
+    return TextFormField(
+      key: ValueKey('expiry-$_expiresOn'),
+      readOnly: true,
+      initialValue: day == null
+          ? ''
+          : MaterialLocalizations.of(context).formatCompactDate(day),
+      onTap: _pickExpiry,
+      decoration: InputDecoration(
+        labelText: context.l10n.editorExpiryLabel,
+        helperText: context.l10n.editorExpiryHelper,
+        prefixIcon: const Icon(Icons.event_outlined),
+        suffixIcon: _expiresOn == null
+            ? null
+            : IconButton(
+                tooltip: context.l10n.editorExpiryClear,
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => _expiresOn = null),
+              ),
+      ),
+    );
   }
 
   @override
@@ -379,6 +421,10 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                 if (_kind == VaultItemKind.card) ...[
                   const SizedBox(height: 16),
                   CardSection(draft: _card),
+                ],
+                if (_kind != VaultItemKind.card) ...[
+                  const SizedBox(height: 16),
+                  _expiryField(context),
                 ],
                 const SizedBox(height: 16),
                 MarkdownNotesField(

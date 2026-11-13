@@ -1908,6 +1908,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wrong code'**
   String get browsersWrongCode;
+
+  /// No description provided for @itemExpiresOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String itemExpiresOn(String date);
+
+  /// No description provided for @itemExpiredOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {date}'**
+  String itemExpiredOn(String date);
+
+  /// No description provided for @expiryExpiredTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expiryExpiredTooltip;
+
+  /// No description provided for @expirySoonTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiring soon'**
+  String get expirySoonTooltip;
+
+  /// No description provided for @editorExpiryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry date'**
+  String get editorExpiryLabel;
+
+  /// No description provided for @editorExpiryHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. The item is flagged as the date approaches.'**
+  String get editorExpiryHelper;
+
+  /// No description provided for @editorExpiryClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear expiry date'**
+  String get editorExpiryClear;
 }
 
 class _AppLocalizationsDelegate

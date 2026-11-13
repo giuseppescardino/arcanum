@@ -1110,4 +1110,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browsersWrongCode => 'Wrong code';
+
+  @override
+  String itemExpiresOn(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String itemExpiredOn(String date) {
+    return 'Expired $date';
+  }
+
+  @override
+  String get expiryExpiredTooltip => 'Expired';
+
+  @override
+  String get expirySoonTooltip => 'Expiring soon';
+
+  @override
+  String get editorExpiryLabel => 'Expiry date';
+
+  @override
+  String get editorExpiryHelper =>
+      'Optional. The item is flagged as the date approaches.';
+
+  @override
+  String get editorExpiryClear => 'Clear expiry date';
 }
