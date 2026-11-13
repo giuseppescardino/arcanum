@@ -290,7 +290,7 @@ void main() {
     final icon = tester.widget<Icon>(
       find.descendant(
         of: header('Lavoro'),
-        matching: find.byIcon(Icons.folder),
+        matching: find.byIcon(Icons.folder_outlined),
       ),
     );
     expect(icon.color, const Color(0xFF1E88E5));

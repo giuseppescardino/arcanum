@@ -288,7 +288,7 @@ class _VaultListState extends State<VaultList> {
       }
     }
     return ListView(
-      padding: EdgeInsets.only(bottom: widget.bottomPadding),
+      padding: EdgeInsets.fromLTRB(8, 4, 8, 8 + widget.bottomPadding),
       children: rows,
     );
   }
@@ -312,7 +312,7 @@ class _Section {
 
 /// Each level of nesting moves a row this much further in.
 EdgeInsetsGeometry _indent(int depth) =>
-    EdgeInsetsDirectional.only(start: 16 + 20.0 * depth, end: 24);
+    EdgeInsetsDirectional.only(start: 8 + 20.0 * depth, end: 4);
 
 enum _GroupAction { rename, color, delete }
 
@@ -348,26 +348,31 @@ class _GroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     return ListTile(
       dense: true,
+      visualDensity: const VisualDensity(vertical: -3),
       contentPadding: _indent(depth),
       onTap: onToggle,
       leading: Icon(
         collapsed ? Icons.chevron_right : Icons.expand_more,
-        color: color,
+        size: 18,
+        color: muted,
       ),
       title: Row(
         children: [
-          if (color != null) ...[
-            Icon(Icons.folder, size: 18, color: color),
-            const SizedBox(width: 8),
-          ],
+          Icon(
+            collapsed ? Icons.folder_outlined : Icons.folder_open_outlined,
+            size: 16,
+            color: color ?? muted,
+          ),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
               name.isEmpty ? context.l10n.noGroup : name,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: color ?? theme.colorScheme.primary,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ),
@@ -376,10 +381,15 @@ class _GroupHeader extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$count', style: theme.textTheme.labelMedium),
+          Text(
+            '$count',
+            style: theme.textTheme.labelMedium?.copyWith(color: muted),
+          ),
           if (onRename != null)
             PopupMenuButton<_GroupAction>(
               tooltip: context.l10n.vaultGroupActions,
+              iconSize: 18,
+              icon: Icon(Icons.more_horiz, color: muted),
               onSelected: (a) => switch (a) {
                 _GroupAction.rename => onRename!(),
                 _GroupAction.color => onColor!(),
@@ -402,7 +412,7 @@ class _GroupHeader extends StatelessWidget {
               ],
             )
           else
-            const SizedBox(width: 48),
+            const SizedBox(width: 40),
         ],
       ),
     );
@@ -478,7 +488,7 @@ class _ItemTile extends StatelessWidget {
           ),
           if (f.favorite) ...[
             const SizedBox(width: 6),
-            const Icon(Icons.star, size: 16),
+            Icon(Icons.star_rounded, size: 16, color: Colors.amber.shade600),
           ],
           if (compromised) ...[
             const SizedBox(width: 6),
@@ -546,7 +556,7 @@ class _ItemTile extends StatelessWidget {
                 if (f.password.isNotEmpty)
                   IconButton(
                     tooltip: context.l10n.vaultCopyPassword,
-                    icon: const Icon(Icons.copy),
+                    icon: const Icon(Icons.content_copy_outlined),
                     onPressed: () => copySecret(
                       context,
                       f.password,

@@ -43,6 +43,35 @@ void main() {
     }
   });
 
+  test('surfaces are neutral gray, not tinted by the accent', () {
+    bool gray(Color c) => (c.r - c.g).abs() < 0.02 && (c.g - c.b).abs() < 0.03;
+    for (final b in Brightness.values) {
+      final s = appTheme(b, platform: TargetPlatform.windows).colorScheme;
+      for (final c in [
+        s.surface,
+        s.surfaceContainerLow,
+        s.surfaceContainerHighest,
+        s.outlineVariant,
+        s.onSurface,
+      ]) {
+        expect(gray(c), isTrue, reason: '$b $c');
+      }
+      expect(s.surfaceContainerLow, isNot(s.surface));
+    }
+  });
+
+  test('desktop text is one step smaller than touch text', () {
+    final desktop = appTheme(
+      Brightness.light,
+      platform: TargetPlatform.windows,
+    );
+    final phone = appTheme(Brightness.light, platform: TargetPlatform.android);
+    expect(desktop.textTheme.bodyLarge!.fontSize, 14);
+    expect(desktop.textTheme.titleLarge!.fontWeight, FontWeight.w600);
+    // Phones keep Material's own size, resolved from the typography.
+    expect(phone.textTheme.bodyLarge!.fontSize, isNot(14));
+  });
+
   testWidgets('the avatar stands out from a selected row', (tester) async {
     for (final b in Brightness.values) {
       final t = appTheme(b, platform: TargetPlatform.windows);

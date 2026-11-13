@@ -192,7 +192,7 @@ class _VaultScreenState extends State<VaultScreen> {
                 QuickAccess.shortcutLabel,
               )
             : context.l10n.vaultSearchHint,
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(Icons.search, size: 20),
         isDense: true,
         suffixIcon: _query.isEmpty
             ? null
@@ -287,18 +287,18 @@ class _VaultScreenState extends State<VaultScreen> {
         title: Text(l10n.vaultTitle),
         actions: [
           if (_controller.linked) VaultSyncButton(controller: _controller),
-          TextButton.icon(
+          OutlinedButton.icon(
             onPressed: _controller.lock,
-            icon: const Icon(Icons.lock_outline),
+            icon: const Icon(Icons.lock_outline, size: 18),
             label: Text(l10n.vaultLock),
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: _newItem,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, size: 18),
             label: Text(l10n.vaultNew),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
         ],
       ),
       body: Row(
@@ -322,7 +322,7 @@ class _VaultScreenState extends State<VaultScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: _searchField(),
                 ),
                 _banners(),
@@ -364,15 +364,25 @@ class _SelectHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.shield_outlined,
+              size: 40,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(color: muted),
+            ),
+          ],
         ),
       ),
     );

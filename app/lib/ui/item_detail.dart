@@ -159,16 +159,131 @@ class _Body extends StatelessWidget {
       _ => muted,
     };
 
-    return Center(
+    final fields = <Widget>[
+      if (isLogin && f.username.isNotEmpty)
+        _FieldRow(
+          key: ValueKey('$id/username'),
+          label: l10n.editorUsernameLabel,
+          value: f.username,
+          copyLabel: l10n.username,
+        ),
+      if (isLogin && f.password.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _FieldRow(
+              key: ValueKey('$id/password'),
+              label: l10n.password,
+              value: f.password,
+              secret: true,
+              copyLabel: l10n.password,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StrengthMeter(password: f.password),
+                  BreachStatus(password: f.password),
+                ],
+              ),
+            ),
+          ],
+        ),
+      if (isLogin && f.urls.isNotEmpty)
+        _FieldRow(
+          key: ValueKey('$id/urls'),
+          label: l10n.editorWebsites,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [for (final url in f.urls) _Link(url: url)],
+          ),
+        ),
+      if (isLogin && totp != null && tools.isValidTotp(totp))
+        _FieldRow(
+          key: ValueKey('$id/totp'),
+          label: l10n.editorTotpLabel,
+          child: TotpView(secret: totp),
+        ),
+      if (wifi != null) ...[
+        _FieldRow(
+          key: ValueKey('$id/ssid'),
+          label: l10n.wifiSsid,
+          value: wifi.ssid,
+          copyLabel: l10n.wifiSsid,
+        ),
+        _FieldRow(
+          key: ValueKey('$id/security'),
+          label: l10n.wifiSecurity,
+          value: switch (wifi.security) {
+            WifiSecurityKind.wpa => l10n.wifiSecurityWpa,
+            WifiSecurityKind.wep => l10n.wifiSecurityWep,
+            WifiSecurityKind.none => l10n.wifiSecurityNone,
+          },
+          note: wifi.hidden ? l10n.wifiHidden : null,
+        ),
+        if (wifi.security != WifiSecurityKind.none && f.password.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/password'),
+            label: l10n.password,
+            value: f.password,
+            secret: true,
+            copyLabel: l10n.password,
+          ),
+      ],
+      if (card != null) ...[
+        if (card.holder.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/holder'),
+            label: l10n.cardHolder,
+            value: card.holder,
+          ),
+        if (card.number.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/number'),
+            label: l10n.cardNumber,
+            value: card.number,
+            secret: true,
+            masked: maskCardNumber(card.number),
+            revealed: formatCardNumber(card.number),
+            copyLabel: l10n.cardNumber,
+          ),
+        if (card.expiry.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/expiry'),
+            label: l10n.cardExpiry,
+            value: card.expiry,
+          ),
+        if (card.cvv.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/cvv'),
+            label: l10n.cardCvv,
+            value: card.cvv,
+            secret: true,
+            copyLabel: l10n.cardCvv,
+          ),
+        if (card.pin.isNotEmpty)
+          _FieldRow(
+            key: ValueKey('$id/pin'),
+            label: l10n.cardPin,
+            value: card.pin,
+            secret: true,
+            copyLabel: l10n.cardPin,
+          ),
+      ],
+    ];
+
+    return Align(
+      alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640),
+        constraints: const BoxConstraints(maxWidth: 680),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
           children: [
             Row(
               children: [
                 _leadingIcon(f),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,86 +291,60 @@ class _Body extends StatelessWidget {
                       Text(
                         f.title.isEmpty ? l10n.untitled : f.title,
                         style: theme.textTheme.titleLarge,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (f.group.isNotEmpty)
-                        Text(f.group, style: small?.copyWith(color: muted)),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.folder_outlined,
+                                size: 14,
+                                color: muted,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  f.group,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: small?.copyWith(color: muted),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                FilledButton.tonalIcon(
+                OutlinedButton.icon(
                   onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
                   label: Text(l10n.itemEdit),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            if (isLogin && f.username.isNotEmpty)
-              _FieldRow(
-                key: ValueKey('$id/username'),
-                label: l10n.editorUsernameLabel,
-                value: f.username,
-                copyLabel: l10n.username,
-              ),
-            if (isLogin && f.password.isNotEmpty) ...[
-              _FieldRow(
-                key: ValueKey('$id/password'),
-                label: l10n.password,
-                value: f.password,
-                secret: true,
-                copyLabel: l10n.password,
-              ),
-              StrengthMeter(password: f.password),
-              BreachStatus(password: f.password),
-              const SizedBox(height: 8),
-            ],
-            if (isLogin && f.urls.isNotEmpty)
-              _FieldRow(
-                key: ValueKey('$id/urls'),
-                label: l10n.editorWebsites,
+            const SizedBox(height: 20),
+            if (fields.isNotEmpty)
+              Card(
+                clipBehavior: Clip.antiAlias,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [for (final url in f.urls) _Link(url: url)],
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < fields.length; i++) ...[
+                      if (i > 0) const Divider(indent: 16, endIndent: 16),
+                      fields[i],
+                    ],
+                  ],
                 ),
-              ),
-            if (isLogin && totp != null && tools.isValidTotp(totp))
-              _FieldRow(
-                key: ValueKey('$id/totp'),
-                label: l10n.editorTotpLabel,
-                child: TotpView(secret: totp),
               ),
             if (wifi != null) ...[
-              _FieldRow(
-                key: ValueKey('$id/ssid'),
-                label: l10n.wifiSsid,
-                value: wifi.ssid,
-                copyLabel: l10n.wifiSsid,
-              ),
-              _FieldRow(
-                key: ValueKey('$id/security'),
-                label: l10n.wifiSecurity,
-                value: switch (wifi.security) {
-                  WifiSecurityKind.wpa => l10n.wifiSecurityWpa,
-                  WifiSecurityKind.wep => l10n.wifiSecurityWep,
-                  WifiSecurityKind.none => l10n.wifiSecurityNone,
-                },
-              ),
-              if (wifi.hidden)
-                Text(l10n.wifiHidden, style: small?.copyWith(color: muted)),
-              if (wifi.security != WifiSecurityKind.none &&
-                  f.password.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/password'),
-                  label: l10n.password,
-                  value: f.password,
-                  secret: true,
-                  copyLabel: l10n.password,
-                ),
+              const SizedBox(height: 12),
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: FilledButton.tonalIcon(
-                  icon: const Icon(Icons.qr_code_2),
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.qr_code_2, size: 18),
                   label: Text(l10n.wifiShowQr),
                   onPressed: () => showWifiQr(
                     context,
@@ -266,72 +355,42 @@ class _Body extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
             ],
-            if (card != null) ...[
-              if (card.holder.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/holder'),
-                  label: l10n.cardHolder,
-                  value: card.holder,
+            if (f.notes.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: _FieldRow(
+                  key: ValueKey('$id/notes'),
+                  label: l10n.editorNotes,
+                  child: MarkdownNotesView(text: f.notes),
                 ),
-              if (card.number.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/number'),
-                  label: l10n.cardNumber,
-                  value: card.number,
-                  secret: true,
-                  masked: maskCardNumber(card.number),
-                  revealed: formatCardNumber(card.number),
-                  copyLabel: l10n.cardNumber,
-                ),
-              if (card.expiry.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/expiry'),
-                  label: l10n.cardExpiry,
-                  value: card.expiry,
-                ),
-              if (card.cvv.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/cvv'),
-                  label: l10n.cardCvv,
-                  value: card.cvv,
-                  secret: true,
-                  copyLabel: l10n.cardCvv,
-                ),
-              if (card.pin.isNotEmpty)
-                _FieldRow(
-                  key: ValueKey('$id/pin'),
-                  label: l10n.cardPin,
-                  value: card.pin,
-                  secret: true,
-                  copyLabel: l10n.cardPin,
-                ),
+              ),
             ],
-            if (f.notes.isNotEmpty)
-              _FieldRow(
-                key: ValueKey('$id/notes'),
-                label: l10n.editorNotes,
-                child: MarkdownNotesView(text: f.notes),
-              ),
-            const Divider(height: 32),
-            if (expiry != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  state == ExpiryState.expired
-                      ? l10n.itemExpiredOn(dates.formatCompactDate(expiry))
-                      : l10n.itemExpiresOn(dates.formatCompactDate(expiry)),
-                  style: small?.copyWith(color: expiryColor),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              children: [
+                if (expiry != null)
+                  _Meta(
+                    icon: state == ExpiryState.expired
+                        ? Icons.event_busy_outlined
+                        : Icons.event_outlined,
+                    color: expiryColor,
+                    text: state == ExpiryState.expired
+                        ? l10n.itemExpiredOn(dates.formatCompactDate(expiry))
+                        : l10n.itemExpiresOn(dates.formatCompactDate(expiry)),
+                  ),
+                _Meta(
+                  icon: Icons.history,
+                  color: muted,
+                  text: l10n.itemUpdatedOn(
+                    dates.formatCompactDate(
+                      DateTime.fromMillisecondsSinceEpoch(item.updatedAt),
+                    ),
+                  ),
                 ),
-              ),
-            Text(
-              l10n.itemUpdatedOn(
-                dates.formatCompactDate(
-                  DateTime.fromMillisecondsSinceEpoch(item.updatedAt),
-                ),
-              ),
-              style: small?.copyWith(color: muted),
+              ],
             ),
           ],
         ),
@@ -363,6 +422,7 @@ class _FieldRow extends StatefulWidget {
     this.masked = _mask,
     this.revealed,
     this.copyLabel,
+    this.note,
   });
 
   final String label;
@@ -383,6 +443,9 @@ class _FieldRow extends StatefulWidget {
   /// Names the value in the copy confirmation; no copy button without it.
   final String? copyLabel;
 
+  /// Small muted line under the value.
+  final String? note;
+
   @override
   State<_FieldRow> createState() => _FieldRowState();
 }
@@ -399,9 +462,8 @@ class _FieldRowState extends State<_FieldRow> {
         ? (_revealed ? widget.revealed ?? value : widget.masked)
         : value;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Column(
@@ -413,7 +475,7 @@ class _FieldRowState extends State<_FieldRow> {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 widget.child ??
                     SelectableText(
                       shown,
@@ -423,24 +485,59 @@ class _FieldRowState extends State<_FieldRow> {
                             )
                           : theme.textTheme.bodyLarge,
                     ),
+                if (widget.note != null)
+                  Text(
+                    widget.note!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
           ),
           if (widget.secret)
             IconButton(
               tooltip: _revealed ? l10n.hide : l10n.show,
-              icon: Icon(_revealed ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(
+                _revealed
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
               onPressed: () => setState(() => _revealed = !_revealed),
             ),
           if (widget.copyLabel != null)
             IconButton(
               tooltip: l10n.copy,
-              icon: const Icon(Icons.copy),
+              icon: const Icon(Icons.content_copy_outlined),
               onPressed: () =>
                   copySecret(context, value, label: widget.copyLabel!),
             ),
         ],
       ),
+    );
+  }
+}
+
+/// A line of metadata under the fields: icon and muted text.
+class _Meta extends StatelessWidget {
+  const _Meta({required this.icon, required this.color, required this.text});
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
     );
   }
 }
@@ -471,8 +568,6 @@ class _Link extends StatelessWidget {
           url,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.primary,
-            decoration: TextDecoration.underline,
-            decorationColor: theme.colorScheme.primary,
           ),
         ),
       ),

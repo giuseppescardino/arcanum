@@ -5,6 +5,7 @@ import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/ui/app.dart';
 import 'package:arcanum/ui/vault_list.dart';
+import 'package:arcanum/ui/vault_sidebar.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
@@ -78,18 +79,18 @@ void main() {
     useWideWindow(tester);
     await pumpApp(tester);
     String countOf(String label) {
-      final tile = tester.widget<ListTile>(
+      final entry = tester.widget<SidebarEntry>(
         find
             .ancestor(
               of: find.descendant(
                 of: find.byKey(const Key('vaultSidebar')),
                 matching: find.text(label),
               ),
-              matching: find.byType(ListTile),
+              matching: find.byType(SidebarEntry),
             )
             .first,
       );
-      return (tile.trailing! as Text).data!;
+      return '${entry.count}';
     }
 
     expect(countOf('Tutti'), '3');
@@ -113,7 +114,7 @@ void main() {
     expect(find.text('Old'), findsOneWidget);
     expect(find.text('Mail'), findsNothing);
 
-    await tester.tap(find.widgetWithText(ListTile, 'Work'));
+    await tester.tap(find.widgetWithText(SidebarEntry, 'Work'));
     await tester.pumpAndSettle();
     expect(find.text('Bank'), findsOneWidget);
     expect(find.text('Old'), findsNothing);
