@@ -74,6 +74,13 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# hotkey_manager_linux 0.2.0 trips clang's -Wsometimes-uninitialized
+# (identifier/keystring in hotkey_manager_linux_plugin.cc); third-party
+# code, so keep its warnings but don't fail the build on them.
+if(TARGET hotkey_manager_linux_plugin)
+  target_compile_options(hotkey_manager_linux_plugin PRIVATE -Wno-error)
+endif()
+
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build
