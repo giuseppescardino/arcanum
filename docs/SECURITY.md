@@ -121,7 +121,7 @@ An item's optional expiry date (`expires_on`) is stored inside the encrypted ite
   - Only credentials with a saved URL on the same domain, or on a subdomain of it with a label boundary, are "suggested": `evil-example.com` does not match `example.com`. For native apps the meaningful parts of the package name count.
   - Filling a site for which the credential is not saved requires an explicit confirmation: this is the defense against phishing.
   - The app's own screens are never filled.
-  - It is enabled from Android Settings → Passwords & autofill, or from the "Attiva compilazione automatica" (Enable autofill) entry in the app menu. In Chrome you also have to pick *Settings → Autofill services → Autofill using another service*.
+  - It is enabled from Android Settings → Passwords & autofill, or from the "Attiva compilazione automatica" (Enable autofill) entry in the settings screen (*Impostazioni*). In Chrome you also have to pick *Settings → Autofill services → Autofill using another service*.
   - Verified on the emulator (Android 16, Chrome) with a login page: unlock, choice of the suggested credential, filling of email and password.
 - **Windows and Linux** (there is no system autofill API): `Ctrl+Alt+P` brings the vault to the front with search active; Enter copies the password of the first result, which is cleared from the clipboard after 30 seconds, and minimizes the window. On Linux the global shortcut needs X11 (keybinder); under Wayland it is not registered and the app works without it.
 - **iOS/macOS:** the AutoFill Credential Provider extension is not implemented yet, because it needs a Mac with Xcode.
@@ -179,7 +179,7 @@ The extension (`extension/`) fills saved logins, suggests generated passwords an
 - **Source:** for a login with a URL, the app asks the site itself for `https://<host>/favicon.ico`. No third-party icon service is involved, so nobody else learns the list of sites; each site sees one request from the device's IP address, the same it sees when the user visits it.
 - **Limits:** HTTPS only; redirects are followed only within the same site; at most 256 KiB; the body must start like an image (ICO, PNG, JPEG, GIF, BMP, WebP). IP addresses and single-label hosts (`localhost`, intranet names) are never asked.
 - **No disk cache:** icons live in memory and are dropped when the vault locks. A cache on disk would tell anyone who can read the disk which sites are in the vault, which the encrypted database does not.
-- **Opt-out:** "Nascondi icone dei siti" (Hide site icons) in the app menu stops every request.
+- **Opt-out:** Turning off "Icone dei siti" (Site icons) in the settings screen (*Impostazioni*) stops every request.
 
 ## Generator and TOTP
 
