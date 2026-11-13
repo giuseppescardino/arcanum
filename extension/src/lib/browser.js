@@ -26,11 +26,15 @@ function storageArea(area) {
 }
 
 /**
- * {get,set,remove} over IndexedDB in the extension's own origin. Values are
- * structured-cloned, so a non-extractable CryptoKey stays non-extractable;
- * content scripts run in the page's origin and cannot open this database.
+ * {get,set,remove} over IndexedDB in the extension's own origin. Content
+ * scripts run in the page's origin and cannot open this database.
  */
-function idbStore(name = 'arcanum') {
+function idbStore(name = 'arcanum-keys') {
+  // The first releases kept a CryptoKey in 'arcanum'; Safari cannot read it
+  // back from the background. Deleting needs no read.
+  try {
+    indexedDB.deleteDatabase('arcanum');
+  } catch {}
   const db = new Promise((resolve, reject) => {
     const req = indexedDB.open(name, 1);
     req.onupgradeneeded = () => req.result.createObjectStore('kv');

@@ -58,7 +58,7 @@ cd extension && npm test
 cd core && UPDATE_VECTORS=1 cargo test -p arcanum-bridge --test vectors
 ```
 
-After editing files under `src/`, press **Reload** on the extension's card: the background keeps its imported scripts cached until the extension reloads.
+After editing files under `src/`, press **Reload** on the extension's card: the background keeps its imported scripts cached until the extension reloads. In Safari, quit Safari (⌘Q) before rebuilding the wrapper and reopen it afterwards: rebuilding replaces the bundle under the running extension, and Safari then stops loading its background ("Connessione…" in the popup, an empty inline menu) until it restarts.
 
 To try fill and save by hand, serve the sample pages and open `http://localhost:8765/login.html` or `signup.html`:
 

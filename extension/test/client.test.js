@@ -30,7 +30,7 @@ function fakeFetch(handlers) {
 const arcanumHello = async (b) => (b.type === 'hello' ? { json: { app: 'arcanum', protocol: 1, pairing: false } } : { status: 400, json: { error: 'bad_request' } });
 
 const KEY = new Uint8Array(32).fill(4);
-const paired = async () => new MemoryStorage({ pairing: { client: 'c1', key: await importKey(KEY) } });
+const paired = async () => new MemoryStorage({ pairing: { client: 'c1', key: KEY.slice() } });
 
 /** A fake app on `port` that decrypts with KEY and answers with `reply(body)`. */
 function fakeApp(reply, { echoId = true } = {}) {
@@ -145,9 +145,10 @@ test('pairing: commits, reveals, shows the code and stores the key once approved
   assert.deepEqual(order.filter((t) => t !== 'hello').slice(0, 3), ['pair_start', 'pair_reveal', 'pair_status']);
   assert.equal(shown, derived.code);
   assert.equal(storage.data.pairing.client, 'c9');
-  // The key is kept as a non-extractable CryptoKey, never as bytes.
-  assert.ok(storage.data.pairing.key instanceof CryptoKey);
-  assert.equal(storage.data.pairing.key.extractable, false);
+  // Stored as plain bytes: Safari hangs structured-cloning a CryptoKey
+  // into IndexedDB from the background. Imported non-extractable on use.
+  assert.ok(storage.data.pairing.key instanceof Uint8Array);
+  assert.deepEqual([...storage.data.pairing.key], [...derived.keyRaw]);
 });
 
 test('a refused reveal ends the pairing', async () => {

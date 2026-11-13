@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Arcanum",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Compila, genera e salva le password con il tuo vault Arcanum.",
   "minimum_chrome_version": "133",
   "permissions": [

@@ -26,8 +26,10 @@ const randomId = () => {
 /**
  * storage: async key/value { get(k), set(k, v), remove(k) } holding `port`.
  * keyStore: the same interface holding `pairing` ({ client, key }), where
- * key is a non-extractable CryptoKey; in the extension it is IndexedDB of
- * the extension's own origin, which content scripts cannot open.
+ * key is the 32 key bytes; in the extension it is IndexedDB of the
+ * extension's own origin, which content scripts cannot open. Bytes, not a
+ * CryptoKey: Safari's background hangs structured-cloning a CryptoKey into
+ * IndexedDB. Each request imports them as a non-extractable key.
  */
 class BridgeClient {
   constructor({ fetch = globalThis.fetch.bind(globalThis), storage, keyStore, now = Date.now, sleep, randomId: rid = randomId }) {
@@ -131,14 +133,13 @@ class BridgeClient {
       nonce: toB64(nonce),
     });
     if (reveal.status !== 200) throw new BridgeError('pairing_rejected');
-    const { keyRaw, key, code } = await derive(kp.privateKey, kp.publicRaw, appPub, appPub);
+    const { keyRaw, code } = await derive(kp.privateKey, kp.publicRaw, appPub, appPub);
     onCode(code);
     const deadline = this.now() + PAIRING_TIMEOUT_MS;
     while (this.now() <= deadline) {
       const r = await this._send({ type: 'pair_status', pairing: start.json.pairing });
       if (r.json.state === 'approved') {
-        keyRaw.fill(0);
-        await this.keyStore.set('pairing', { client: r.json.client, key });
+        await this.keyStore.set('pairing', { client: r.json.client, key: keyRaw });
         return;
       }
       if (r.json.state !== 'pending') throw new BridgeError('pairing_rejected');
@@ -151,7 +152,8 @@ class BridgeClient {
   async request(body) {
     const pairing = await this.keyStore.get('pairing');
     if (!pairing) throw new BridgeError('not_paired');
-    const { client, key } = pairing;
+    const { client } = pairing;
+    const key = await importKey(pairing.key);
     const id = this.randomId();
     const ct = await seal(key, client, 'req', JSON.stringify({ id, ts: this.now(), body }));
     const msg = { type: 'msg', client, ct };

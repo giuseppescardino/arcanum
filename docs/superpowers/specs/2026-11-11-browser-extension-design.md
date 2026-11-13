@@ -62,7 +62,7 @@ key    = HKDF-SHA256(salt = th, ikm = shared, info = "pm/bridge-key/v1", 32 B)
 code   = HKDF-SHA256(salt = th, ikm = shared, info = "pm/bridge-code/v1", 4 B) as big-endian u32 mod 1 000 000, 6 digits
 ```
 
-The browser commits to its key before it learns the app's, so a man in the middle cannot search keys for a matching code. The browser shows the code and the user **types it into the app**, which never displays it; three wrong codes reject the pairing. Rejecting, closing the dialog or waiting 120 s ends the pairing. The pairing window (opened by "Collega browser") lasts 120 s and accepts a single pending pairing. When approved, the app generates a random 16-byte `client` id (base64url) and stores `{client, name, key, created}` in the keychain. The extension stores `{client, key}` with the key as a non-extractable WebCrypto key in IndexedDB of its own origin.
+The browser commits to its key before it learns the app's, so a man in the middle cannot search keys for a matching code. The browser shows the code and the user **types it into the app**, which never displays it; three wrong codes reject the pairing. Rejecting, closing the dialog or waiting 120 s ends the pairing. The pairing window (opened by "Collega browser") lasts 120 s and accepts a single pending pairing. When approved, the app generates a random 16-byte `client` id (base64url) and stores `{client, name, key, created}` in the keychain. The extension stores `{client, key}` with the key's bytes in IndexedDB of its own origin (not a `CryptoKey`: Safari's background hangs storing one) and imports them as a non-extractable WebCrypto key for each request.
 
 ### Encrypted messages
 

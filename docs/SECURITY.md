@@ -158,7 +158,7 @@ The extension (`extension/`) fills saved logins, suggests generated passwords an
 - **Saving:** a submitted username and password are kept in the browser's session storage (memory only) for at most 120 seconds. Expired entries are swept on every message, and a tab's entry is dropped when the tab closes. Only the background sends them to the app, encrypted.
 - **Keys:**
   - On the app side, browser keys live in the system keychain.
-  - In the browser, the key is a **non-extractable** WebCrypto key in IndexedDB of the extension's own origin. Content scripts, which run in the page's renderer, can read `storage.local` but cannot open that database, and no script can export the key's bytes.
+  - In the browser, the key's 32 bytes are kept in IndexedDB of the extension's own origin and imported as a **non-extractable** WebCrypto key for each request. Content scripts, which run in the page's renderer, can read `storage.local` but cannot open that database. The bytes are stored rather than a `CryptoKey` because Safari's background hangs when it structured-clones a `CryptoKey` into IndexedDB; Chrome writes a stored `CryptoKey`'s key material to disk unencrypted anyway, so on disk the protection is the same: the user's account and file permissions.
   - "Revoca" in the app deletes the browser's key. Its next request gets `unknown_client`, and the extension forgets the pairing.
 - **Residual risk:** malware running as the user can use the extension's key through its profile and ask for credentials while the vault is unlocked. That is the "compromised device" case, already out of scope, and the same holds for any native-messaging design.
 
