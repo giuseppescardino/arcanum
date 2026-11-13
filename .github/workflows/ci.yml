@@ -50,6 +50,35 @@ jobs:
     defaults:
       run:
         working-directory: server
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+
+      - name: cargo fmt
+        run: cargo fmt --check
+      - name: cargo clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: cargo test
+        run: cargo test --locked
+      - name: cargo build --release
+        run: cargo build --release --locked
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: arcanum-server-linux-x64
+          path: server/target/release/arcanum-server
+
+  # The end-to-end tests are a workspace of their own (e2e/): they run the
+  # server binary and the core sync client, which can't share a lockfile
+  # (sqlx and rusqlite pin different libsqlite3-sys versions).
+  e2e:
+    name: End-to-end (server + PostgreSQL + sync client)
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16
@@ -72,21 +101,21 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: server
-
+          workspaces: |
+            server
+            e2e
+      - name: cargo build (server binary)
+        working-directory: server
+        run: cargo build --locked
       - name: cargo fmt
+        working-directory: e2e
         run: cargo fmt --check
       - name: cargo clippy
+        working-directory: e2e
         run: cargo clippy --all-targets --locked -- -D warnings
-      - name: cargo test (with PostgreSQL)
+      - name: cargo test
+        working-directory: e2e
         run: cargo test --locked
-      - name: cargo build --release
-        run: cargo build --release --locked
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: arcanum-server-linux-x64
-          path: server/target/release/arcanum-server
 
   supply-chain:
     name: Dependencies (cargo audit + cargo deny)
@@ -94,7 +123,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        workspace: [core, server]
+        workspace: [core, server, e2e]
+        include:
+          - workspace: server
+            # Only in the lockfile via sqlx-sqlite, never compiled (the
+            # server is Postgres only); core and e2e use the fixed version.
+            # Remove once sqlx accepts libsqlite3-sys >= 0.39.
+            audit-ignore: --ignore RUSTSEC-2026-0459
     defaults:
       run:
         working-directory: ${{ matrix.workspace }}
@@ -111,8 +146,9 @@ jobs:
       # - RUSTSEC-2026-0387 (crypto-bigint): see deny.toml.
       # - RUSTSEC-2023-0071 (rsa): only in sqlx-mysql, listed in the
       #   lockfile but not compiled (Postgres only).
+      # - Per workspace: see `audit-ignore` in the matrix.
       - name: cargo audit
-        run: cargo audit --ignore RUSTSEC-2026-0387 --ignore RUSTSEC-2023-0071
+        run: cargo audit --ignore RUSTSEC-2026-0387 --ignore RUSTSEC-2023-0071 ${{ matrix.audit-ignore }}
 
   docker:
     name: Docker image
