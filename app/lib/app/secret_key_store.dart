@@ -1,8 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Keeps the Secret Key in the platform keychain (Keychain on Apple,
-/// Keystore-backed storage on Android, DPAPI on Windows), so the user only
-/// types it once per device. Never synced to iCloud Keychain.
+/// Keystore-backed storage on Android, DPAPI on Windows, the Secret Service
+/// via libsecret on Linux), so the user only types it once per device. Never synced to iCloud Keychain.
 class SecretKeyStore {
   SecretKeyStore([FlutterSecureStorage? storage])
     : _storage =

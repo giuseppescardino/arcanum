@@ -6,7 +6,7 @@ Extension for Chrome, Opera and Safari that, while you browse:
 - **suggests** a generated password in sign-up and change-password forms, filling both the password and its confirmation;
 - **saves** new logins, or updates a changed password, after you submit a form (banner "Salvare in Arcanum…?" / "Aggiornare…?").
 
-It holds no vault data and no keys: it asks the **Arcanum desktop app** (macOS or Windows), which must be running and unlocked. The design and threat model are in [docs/SECURITY.md](../docs/SECURITY.md#browser-extension) and [the design spec](../docs/superpowers/specs/2026-11-11-browser-extension-design.md).
+It holds no vault data and no keys: it asks the **Arcanum desktop app** (macOS, Windows or Linux), which must be running and unlocked. The design and threat model are in [docs/SECURITY.md](../docs/SECURITY.md#browser-extension) and [the design spec](../docs/superpowers/specs/2026-11-11-browser-extension-design.md).
 
 Requirements: Chrome or Opera 133+ (X25519 in WebCrypto), Safari 17+.
 
@@ -53,7 +53,7 @@ Both pipelines (GitHub Actions `ci.yml`, Azure `azure-pipelines.yml`) run them a
 - **Chrome / Opera / Edge**: unzip, then **Load unpacked** on the unzipped folder (Developer mode). The same zip is what the Chrome Web Store, Opera Add-ons and Edge Add-ons take.
 - **Safari**: unzip, open `Arcanum Safari.app` once, then follow steps 3–4 of the Safari install above. The app is ad-hoc signed, so Safari runs it only with **Allow Unsigned Extensions**; without it you need a Developer ID signature and notarization.
 
-The extension needs the Arcanum desktop app, which runs on macOS and Windows.
+The extension needs the Arcanum desktop app, which runs on macOS, Windows and Linux.
 
 ## Connect to the app
 

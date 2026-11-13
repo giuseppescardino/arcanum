@@ -50,6 +50,16 @@ flutter test
 flutter test integration_test -d <device-id>
 ```
 
+## Linux
+
+Build dependencies (Debian/Ubuntu names): `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libkeybinder-3.0-dev`.
+
+```bash
+flutter build linux --release      # bundle in build/linux/<arch>/release/bundle
+```
+
+At runtime the app needs GTK 3, libsecret and keybinder, plus a running Secret Service (GNOME Keyring, KWallet, KeePassXC...), where it keeps the Secret Key. From the extracted bundle (the CI artifact `Arcanum-linux-x64.tar.gz`), `./install.sh` installs it for the current user in `~/.local` with a menu entry; `./install.sh --uninstall` removes it. Quick unlock is not available on Linux, and the `Ctrl+Alt+P` global shortcut works only under X11.
+
 ## Signing
 
 The project contains no signing identity. To install on an iOS/macOS device you need your own Apple team: the keychain access group used by quick unlock requires a valid one. Copy `signing.local.xcconfig.example` to `signing.local.xcconfig` (ignored by git) and set `DEVELOPMENT_TEAM` to your Team ID; both the iOS and macOS projects include it, so `flutter build` and `flutter run` sign with that team.

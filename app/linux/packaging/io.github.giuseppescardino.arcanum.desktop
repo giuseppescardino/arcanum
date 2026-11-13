@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Arcanum
+GenericName=Password manager
+Comment=Zero-knowledge password manager
+Exec=arcanum
+Icon=io.github.giuseppescardino.arcanum
+Terminal=false
+Categories=Utility;Security;
+Keywords=password;vault;totp;
+StartupWMClass=io.github.giuseppescardino.arcanum
