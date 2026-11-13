@@ -5,7 +5,7 @@
 A zero-knowledge, cross-platform, self-hosted password manager. The vault is encrypted on the device; the sync server stores only ciphertext and never sees the master password, the Secret Key or item contents.
 
 - **Cryptography:** Argon2id + HKDF-SHA256 + XChaCha20-Poly1305, Secret Key and Emergency Kit, OPAQUE login.
-- **App:** Flutter for Android, iOS, macOS and Windows, with password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock, autofill on Android and a browser extension for Chrome, Opera and Safari that works with the desktop app.
+- **App:** Flutter for Android, iOS, macOS, Windows and Linux, with password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock, autofill on Android and a browser extension for Chrome, Opera and Safari that works with the desktop app.
 - **Sync:** Rust + PostgreSQL server, deployed with Docker Compose and Caddy (automatic TLS), with daily age-encrypted backups.
 
 The threat model and cryptographic design are described in [docs/SECURITY.md](docs/SECURITY.md).
@@ -28,7 +28,7 @@ The threat model and cryptographic design are described in [docs/SECURITY.md](do
 - Stable Rust (`rustup`), plus the mobile targets you need
 - Flutter (version pinned in `.github/workflows/ci.yml`)
 - Docker, for the server and the end-to-end tests
-- Xcode + CocoaPods for iOS/macOS, Android SDK + JDK 17 for Android, Visual Studio for Windows
+- Xcode + CocoaPods for iOS/macOS, Android SDK + JDK 17 for Android, Visual Studio for Windows; on Linux `clang`, `cmake`, `ninja-build`, `pkg-config` and the `libgtk-3-dev`, `libsecret-1-dev` and `libkeybinder-3.0-dev` packages
 
 ## Build and test
 
@@ -63,6 +63,6 @@ Configuration, backup and restore are covered in [server/README.md](server/READM
 
 ## CI
 
-The GitHub Actions pipeline ([.github/workflows/ci.yml](.github/workflows/ci.yml)) lints and tests the core, the server and the app, builds the Docker image and produces unsigned builds for Android, iOS, macOS and Windows, downloadable as run artifacts.
+The GitHub Actions pipeline ([.github/workflows/ci.yml](.github/workflows/ci.yml)) lints and tests the core, the server and the app, builds the Docker image and produces unsigned builds for Android, iOS, macOS, Windows and Linux, downloadable as run artifacts.
 
 The same jobs are also defined for Azure Pipelines in [azure-pipelines.yml](azure-pipelines.yml) (templates in `.azure/steps/`); there the pipeline runs only when started by hand.

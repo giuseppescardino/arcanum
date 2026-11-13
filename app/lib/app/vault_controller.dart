@@ -17,6 +17,7 @@ String defaultDeviceName() {
   final os = switch (defaultTargetPlatform) {
     TargetPlatform.windows => 'Windows',
     TargetPlatform.macOS => 'macOS',
+    TargetPlatform.linux => 'Linux',
     TargetPlatform.iOS => 'iOS',
     TargetPlatform.android => 'Android',
     _ => l10n.controllerDefaultDevice,

@@ -63,7 +63,9 @@ Future<VaultController> _openVault() async {
 /// Loopback server for the browser extension, desktop only. Never throws:
 /// the browser connection is a convenience, not a requirement.
 Future<BridgeServer?> _startBrowserBridge(VaultController controller) async {
-  if (!Platform.isMacOS && !Platform.isWindows) return null;
+  if (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) {
+    return null;
+  }
   final server = BridgeServer(
     handler: BridgeHandler(
       controller: controller,

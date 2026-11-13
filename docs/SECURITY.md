@@ -63,7 +63,7 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
 
 - 128 random bits generated at sign-up, shown as `PM1-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX` (base32).
 - When reading it back, parsing tolerates upper/lower case, dashes, spaces and the `0/O`, `1/I`, `8/B` mix-ups.
-- It is stored only on the devices (system keychain) and on the printed Emergency Kit. **It is never sent to the server.**
+- It is stored only on the devices (system keychain; on Linux the Secret Service, e.g. GNOME Keyring or KWallet, through libsecret) and on the printed Emergency Kit. **It is never sent to the server.**
 - A new device gets it via QR code from an already authorized device, or from the Emergency Kit.
 
 ## Login identifier
@@ -108,6 +108,7 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
   - **iOS/macOS:** a keychain item protected by the Secure Enclave and bound to the fingerprints or face enrolled at that moment (`biometryCurrentSet`). If a new fingerprint or face is enrolled, the secret becomes unusable.
   - **Android:** a Keystore key that requires strong (class 3) biometrics on every use.
   - **Windows:** the secret is encrypted with DPAPI (bound to the Windows user) and released after a Windows Hello check. This is a **consent confirmation**, not a hardware binding: malware running as the signed-in user could read it. The same malware, however, could also log keystrokes while you type the master password.
+  - **Linux:** not available. There is no common biometric API on Linux desktops, so the option is not offered and the vault is always unlocked with the master password.
 - **Master password still required:** it is asked for at least every 14 days anyway, and quick unlock is turned off automatically on every password change, whether local or synced from another device.
 - **Invalid secret:** if the stored secret no longer matches (for example after re-enabling), quick unlock is turned off and the app falls back to the password.
 
@@ -120,13 +121,13 @@ As a result, a ciphertext cannot be moved to another vault or item. Nor can it b
   - The app's own screens are never filled.
   - It is enabled from Android Settings → Passwords & autofill, or from the "Attiva compilazione automatica" (Enable autofill) entry in the app menu. In Chrome you also have to pick *Settings → Autofill services → Autofill using another service*.
   - Verified on the emulator (Android 16, Chrome) with a login page: unlock, choice of the suggested credential, filling of email and password.
-- **Windows** (there is no system autofill API): `Ctrl+Alt+P` brings the vault to the front with search active; Enter copies the password of the first result, which is cleared from the clipboard after 30 seconds, and minimizes the window.
+- **Windows and Linux** (there is no system autofill API): `Ctrl+Alt+P` brings the vault to the front with search active; Enter copies the password of the first result, which is cleared from the clipboard after 30 seconds, and minimizes the window. On Linux the global shortcut needs X11 (keybinder); under Wayland it is not registered and the app works without it.
 - **iOS/macOS:** the AutoFill Credential Provider extension is not implemented yet, because it needs a Mac with Xcode.
 - **Browsers (Chrome, Opera, Safari):** through the Arcanum extension and the desktop app, described in the next section.
 
 ## Browser extension
 
-The extension (`extension/`) fills saved logins, suggests generated passwords and offers to save new or changed ones. It holds **no vault data and no vault keys**: every credential comes from the running desktop app on macOS or Windows, and only while the vault is unlocked. Unlocking, sync and storage stay in the app and the Rust core.
+The extension (`extension/`) fills saved logins, suggests generated passwords and offers to save new or changed ones. It holds **no vault data and no vault keys**: every credential comes from the running desktop app on macOS, Windows or Linux, and only while the vault is unlocked. Unlocking, sync and storage stay in the app and the Rust core.
 
 - **Transport:** the app listens on `127.0.0.1` only (ports 47613–47615), never on other interfaces. Native messaging is not used: a sandboxed macOS app cannot install its manifests into browser profiles, and a native host would still have to authenticate whoever launches it.
 - **No TLS, end-to-end encryption instead:** a certificate for a loopback address would have to be self-signed and trusted system-wide. Every request and response after pairing is **AES-256-GCM** under a per-browser 256-bit key, with a random 96-bit nonce. The associated data binds the direction (`pm/bridge-req/v1` or `pm/bridge-res/v1`) and the browser's id, so a request cannot be replayed as a response or redirected to another browser. Reading loopback traffic (which already needs root/admin) shows only ciphertext.

@@ -1,5 +1,5 @@
 # CI for Arcanum: Rust core + sync server, Flutter app (Android APK, iOS,
-# macOS and Windows desktop), browser extension (Chromium zip, Safari app). Every build is unsigned or ad-hoc signed: no
+# macOS, Windows and Linux desktop), browser extension (Chromium zip, Safari app). Every build is unsigned or ad-hoc signed: no
 # secrets, keys or certificates are needed.
 
 name: CI
@@ -364,3 +364,41 @@ jobs:
         with:
           name: app-windows-x64
           path: app/build/windows/x64/runner/Release
+
+  linux:
+    name: Linux desktop
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # GTK for the runner, libsecret for flutter_secure_storage,
+      # keybinder for hotkey_manager.
+      - name: Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev libsecret-1-dev libkeybinder-3.0-dev
+
+      - name: flutter build linux
+        run: flutter build linux --release
+
+      # Extract and run ./install.sh (per user, no root) or ./arcanum.
+      - name: Stage Linux bundle
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/linux"
+          tar -czf "$RUNNER_TEMP/linux/Arcanum-linux-x64.tar.gz" \
+            -C build/linux/x64/release bundle --transform 's,^bundle,arcanum,'
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-linux-x64
+          path: ${{ runner.temp }}/linux

@@ -9,3 +9,4 @@ analyzer:
     - macos/**
     - rust_builder/**
     - lib/src/rust/**
+    - linux/**
