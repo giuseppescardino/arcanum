@@ -10,7 +10,6 @@ A zero-knowledge, cross-platform, self-hosted password manager. The vault is enc
 
 The threat model and cryptographic design are described in [docs/SECURITY.md](docs/SECURITY.md).
 
-> The app's user interface is currently in Italian.
 
 ## Layout
 
