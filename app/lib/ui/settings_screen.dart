@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/android_autofill.dart';
+import '../app/background_mode.dart';
 import '../app/breach_check.dart';
 import '../app/favicons.dart';
 import '../app/file_dialogs.dart';
@@ -36,6 +37,19 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _setLaunchAtLogin(
+    BuildContext context,
+    BackgroundMode background,
+    bool value,
+  ) async {
+    final ok = await background.setLaunchAtLogin(value);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.settingsLaunchAtLoginFailed)),
+      );
+    }
+  }
+
   void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
@@ -47,6 +61,7 @@ class SettingsScreen extends StatelessWidget {
     final breach = BreachScope.maybeOf(context);
     final bridge = BridgeScope.maybeOf(context);
     final siteIcons = FaviconScope.maybeOf(context);
+    final background = BackgroundScope.maybeOf(context);
     final danger = TextStyle(color: scheme.error);
 
     return Scaffold(
@@ -135,6 +150,33 @@ class SettingsScreen extends StatelessWidget {
                     value: siteIcons.enabled,
                     onChanged: siteIcons.setEnabled,
                   ),
+                if (background != null) ...[
+                  const Divider(),
+                  _SectionHeader(l10n.settingsDesktop),
+                  ListenableBuilder(
+                    listenable: background,
+                    builder: (context, _) => Column(
+                      children: [
+                        if (background.trayAvailable)
+                          SwitchListTile(
+                            secondary: const Icon(Icons.minimize),
+                            title: Text(l10n.settingsKeepRunning),
+                            subtitle: Text(l10n.settingsKeepRunningHint),
+                            value: background.keepRunning,
+                            onChanged: background.setKeepRunning,
+                          ),
+                        if (background.launchAtLoginSupported)
+                          SwitchListTile(
+                            secondary: const Icon(Icons.power_settings_new),
+                            title: Text(l10n.settingsLaunchAtLogin),
+                            value: background.launchAtLogin,
+                            onChanged: (value) =>
+                                _setLaunchAtLogin(context, background, value),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.info_outline),

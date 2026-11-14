@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:arcanum/app/background_mode.dart';
 import 'package:arcanum/app/favicons.dart';
 import 'package:arcanum/app/file_dialogs.dart';
 import 'package:arcanum/app/tools.dart';
@@ -29,6 +30,7 @@ void main() {
     WidgetTester tester, {
     bool quickUnlock = false,
     FaviconCache? favicons,
+    BackgroundMode? background,
   }) async {
     useNarrowWindow(tester);
     controller = VaultController(
@@ -42,7 +44,11 @@ void main() {
       controller.confirmEmergencyKit();
     });
     await tester.pumpWidget(
-      ArcanumApp(controller: controller, favicons: favicons),
+      ArcanumApp(
+        controller: controller,
+        favicons: favicons,
+        background: background,
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -170,6 +176,96 @@ void main() {
       ),
       findsNothing,
     );
+    await finish(tester);
+  });
+
+  Future<BackgroundMode> backgroundMode({
+    bool tray = true,
+    FakeLoginItem? login,
+  }) async {
+    final mode = BackgroundMode(
+      window: FakeAppWindow(),
+      tray: FakeSystemTray(supported: tray),
+      loginItem: login ?? FakeLoginItem(),
+      onLock: () {},
+      onQuit: () async {},
+    );
+    await mode.init(
+      labels: const TrayLabels(tooltip: 'A', open: 'O', lock: 'L', quit: 'Q'),
+      startHidden: false,
+    );
+    return mode;
+  }
+
+  testWidgets('desktop switches drive the background mode', (tester) async {
+    final login = FakeLoginItem();
+    late BackgroundMode mode;
+    await tester.runAsync(
+      () async => mode = await backgroundMode(login: login),
+    );
+    await pumpApp(tester, background: mode);
+    await openSettings(tester);
+
+    final keep = find.widgetWithText(
+      SwitchListTile,
+      "Resta attivo nell'area di notifica",
+    );
+    await tester.scrollUntilVisible(keep, 200);
+    expect(tester.widget<SwitchListTile>(keep).value, isTrue);
+    await tester.runAsync(() async {
+      await tester.tap(keep);
+      await tester.pump();
+    });
+    await tester.pumpAndSettle();
+    expect(mode.keepRunning, isFalse);
+
+    final start = find.widgetWithText(SwitchListTile, "Avvia all'accesso");
+    await tester.scrollUntilVisible(start, 200);
+    expect(tester.widget<SwitchListTile>(start).value, isFalse);
+    await tester.tap(start);
+    await tester.pumpAndSettle();
+    expect(login.enabled, isTrue);
+    expect(tester.widget<SwitchListTile>(start).value, isTrue);
+    await finish(tester);
+  });
+
+  testWidgets('a refused launch-at-login change says so', (tester) async {
+    late BackgroundMode mode;
+    await tester.runAsync(
+      () async =>
+          mode = await backgroundMode(login: FakeLoginItem(works: false)),
+    );
+    await pumpApp(tester, background: mode);
+    await openSettings(tester);
+
+    final start = find.widgetWithText(SwitchListTile, "Avvia all'accesso");
+    await tester.scrollUntilVisible(start, 200);
+    await tester.tap(start);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Il sistema non ha accettato la modifica.'),
+      findsOneWidget,
+    );
+    expect(tester.widget<SwitchListTile>(start).value, isFalse);
+    await finish(tester);
+  });
+
+  testWidgets('without a tray only launch at login is offered', (tester) async {
+    late BackgroundMode mode;
+    await tester.runAsync(() async => mode = await backgroundMode(tray: false));
+    await pumpApp(tester, background: mode);
+    await openSettings(tester);
+
+    await tester.scrollUntilVisible(find.text("Avvia all'accesso"), 200);
+    expect(find.text("Resta attivo nell'area di notifica"), findsNothing);
+    await finish(tester);
+  });
+
+  testWidgets('no desktop section without background mode', (tester) async {
+    await pumpApp(tester);
+    await openSettings(tester);
+    expect(find.text("Avvia all'accesso"), findsNothing);
+    expect(find.text('Desktop'), findsNothing);
     await finish(tester);
   });
 }

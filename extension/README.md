@@ -6,7 +6,7 @@ Extension for Chrome, Opera and Safari that, while you browse:
 - **suggests** a generated password in sign-up and change-password forms, filling both the password and its confirmation;
 - **saves** new logins, or updates a changed password, after you submit a form (banner "Salvare in Arcanum…?" / "Aggiornare…?").
 
-It holds no vault data and no keys: it asks the **Arcanum desktop app** (macOS, Windows or Linux), which must be running and unlocked. The design and threat model are in [docs/SECURITY.md](../docs/SECURITY.md#browser-extension) and [the design spec](../docs/superpowers/specs/2026-11-11-browser-extension-design.md).
+It holds no vault data and no keys: it asks the **Arcanum desktop app** (macOS, Windows or Linux), which must be running and unlocked. Closing the app's window leaves it running in the system tray, so the extension keeps working; choose **Quit** from the tray menu to stop it (see *Impostazioni* → **Desktop**, where you can also start Arcanum at login). The design and threat model are in [docs/SECURITY.md](../docs/SECURITY.md#browser-extension) and [the design spec](../docs/superpowers/specs/2026-11-11-browser-extension-design.md).
 
 Requirements: Chrome or Opera 133+ (X25519 in WebCrypto), Safari 17+.
 

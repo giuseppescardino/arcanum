@@ -1399,6 +1399,54 @@ abstract class AppLocalizations {
   /// **'Site icons'**
   String get settingsSiteIcons;
 
+  /// No description provided for @trayOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Arcanum'**
+  String get trayOpen;
+
+  /// No description provided for @trayLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock'**
+  String get trayLock;
+
+  /// No description provided for @trayQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Arcanum'**
+  String get trayQuit;
+
+  /// No description provided for @settingsDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get settingsDesktop;
+
+  /// No description provided for @settingsKeepRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep running in the tray'**
+  String get settingsKeepRunning;
+
+  /// No description provided for @settingsKeepRunningHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing the window keeps the browser extension working. The vault still locks after 5 minutes of inactivity.'**
+  String get settingsKeepRunningHint;
+
+  /// No description provided for @settingsLaunchAtLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Start at login'**
+  String get settingsLaunchAtLogin;
+
+  /// No description provided for @settingsLaunchAtLoginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The system did not accept the change.'**
+  String get settingsLaunchAtLoginFailed;
+
   /// No description provided for @vaultGroupPathHint.
   ///
   /// In en, this message translates to:
