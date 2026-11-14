@@ -20,7 +20,7 @@
   "reconnect": "Reconnect",
   "syncTitle": "Sync",
   "@syncTitle": {
-    "description": "Sync screen title and menu entry"
+    "description": "Sync screen title and settings entry"
   },
   "syncNow": "Sync now",
   "noGroup": "No group",
@@ -59,17 +59,9 @@
     "description": "Main screen title"
   },
   "vaultLock": "Lock",
-  "vaultEnableQuickUnlock": "Enable unlock with {method}",
-  "@vaultEnableQuickUnlock": {
-    "description": "method is e.g. Face ID, Touch ID, fingerprint",
-    "placeholders": {
-      "method": {
-        "type": "String"
-      }
-    }
-  },
-  "vaultDisableQuickUnlock": "Disable unlock with {method}",
-  "@vaultDisableQuickUnlock": {
+  "settingsQuickUnlock": "Unlock with {method}",
+  "@settingsQuickUnlock": {
+    "description": "Switch label in settings; method is e.g. Face ID, Touch ID, fingerprint",
     "placeholders": {
       "method": {
         "type": "String"
@@ -80,7 +72,7 @@
   "vaultChangeMasterPassword": "Change master password",
   "vaultAbout": "About",
   "@vaultAbout": {
-    "description": "Vault menu entry that opens the About dialog"
+    "description": "Settings entry that opens the About dialog"
   },
   "aboutVersion": "Version {version}",
   "@aboutVersion": {
@@ -98,7 +90,7 @@
   },
   "breachTitle": "Compromised passwords",
   "@breachTitle": {
-    "description": "Vault menu entry and title of the breached-password check"
+    "description": "Settings entry and title of the breached-password check"
   },
   "breachExplanation": "Arcanum compares your passwords with the Have I Been Pwned archive of passwords exposed in data breaches. Only the first 5 characters of each password's SHA-1 hash leave this device, over an encrypted connection: neither the password nor its full hash is ever sent. Results stay in memory and are forgotten when the vault locks.",
   "@breachExplanation": {
@@ -548,8 +540,12 @@
   },
   "vaultImport": "Import…",
   "vaultExport": "Export…",
-  "vaultShowSiteIcons": "Show site icons",
-  "vaultHideSiteIcons": "Hide site icons",
+  "settingsTitle": "Settings",
+  "settingsSecurity": "Security",
+  "settingsData": "Data",
+  "settingsAppearance": "Appearance",
+  "settingsDangerZone": "Danger zone",
+  "settingsSiteIcons": "Site icons",
   "vaultGroupPathHint": "Use / for subgroups, e.g. Work/Clients",
   "exportTitle": "Export items",
   "exportFormatBackup": "Encrypted backup",
@@ -737,5 +733,39 @@
   "browsersReject": "Reject",
   "browsersApprove": "Connect",
   "browsersPortsBusy": "The browser connection could not start: ports 47613–47615 are in use.",
-  "browsersWrongCode": "Wrong code"
+  "browsersWrongCode": "Wrong code",
+  "itemEdit": "Edit",
+  "itemUpdatedOn": "Edited {date}",
+  "@itemUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiresOn": "Expires {date}",
+  "@itemExpiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiredOn": "Expired {date}",
+  "@itemExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryExpiredTooltip": "Expired",
+  "expirySoonTooltip": "Expiring soon",
+  "editorExpiryLabel": "Expiry date",
+  "editorExpiryHelper": "Optional. The item is flagged as the date approaches.",
+  "editorExpiryClear": "Clear expiry date",
+  "vaultFavorites": "Favorites",
+  "vaultExpiring": "Expiring",
+  "vaultGroups": "Groups",
+  "vaultSelectItem": "Select an item to see its details."
 }

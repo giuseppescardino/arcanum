@@ -94,13 +94,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get vaultLock => 'Blocca';
 
   @override
-  String vaultEnableQuickUnlock(String method) {
-    return 'Attiva sblocco con $method';
-  }
-
-  @override
-  String vaultDisableQuickUnlock(String method) {
-    return 'Disattiva sblocco con $method';
+  String settingsQuickUnlock(String method) {
+    return 'Sblocco con $method';
   }
 
   @override
@@ -769,10 +764,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get vaultExport => 'Esporta…';
 
   @override
-  String get vaultShowSiteIcons => 'Mostra icone dei siti';
+  String get settingsTitle => 'Impostazioni';
 
   @override
-  String get vaultHideSiteIcons => 'Nascondi icone dei siti';
+  String get settingsSecurity => 'Sicurezza';
+
+  @override
+  String get settingsData => 'Dati';
+
+  @override
+  String get settingsAppearance => 'Aspetto';
+
+  @override
+  String get settingsDangerZone => 'Zona pericolosa';
+
+  @override
+  String get settingsSiteIcons => 'Icone dei siti';
 
   @override
   String get vaultGroupPathHint =>
@@ -1106,4 +1113,50 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get browsersWrongCode => 'Codice errato';
+
+  @override
+  String get itemEdit => 'Modifica';
+
+  @override
+  String itemUpdatedOn(String date) {
+    return 'Modificata il $date';
+  }
+
+  @override
+  String itemExpiresOn(String date) {
+    return 'Scade il $date';
+  }
+
+  @override
+  String itemExpiredOn(String date) {
+    return 'Scaduta il $date';
+  }
+
+  @override
+  String get expiryExpiredTooltip => 'Scaduta';
+
+  @override
+  String get expirySoonTooltip => 'In scadenza';
+
+  @override
+  String get editorExpiryLabel => 'Scadenza';
+
+  @override
+  String get editorExpiryHelper =>
+      'Facoltativa. La voce viene segnalata quando la data si avvicina.';
+
+  @override
+  String get editorExpiryClear => 'Rimuovi scadenza';
+
+  @override
+  String get vaultFavorites => 'Preferiti';
+
+  @override
+  String get vaultExpiring => 'Scadenze';
+
+  @override
+  String get vaultGroups => 'Gruppi';
+
+  @override
+  String get vaultSelectItem => 'Seleziona una voce per vederne i dettagli.';
 }

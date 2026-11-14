@@ -9,9 +9,11 @@ import 'package:arcanum/app/vault_controller.dart';
 import 'package:arcanum/src/rust/api/vault.dart';
 import 'package:arcanum/ui/app.dart';
 import 'package:arcanum/ui/breach_check_screen.dart';
+import 'package:arcanum/ui/settings_screen.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 /// Known counts; 'offline' fails like a network error.
 class FakeBreachApi implements BreachApi {
@@ -138,9 +140,7 @@ void main() {
       BreachChecker checker,
       List<(String, String)> items,
     ) async {
-      tester.view.physicalSize = const Size(1200, 1000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+      useNarrowWindow(tester, height: 1000);
       controller = VaultController(
         handle: FakeVaultHandle(),
         secretKeys: MemorySecretKeyStore(),
@@ -176,7 +176,7 @@ void main() {
       ]);
       expect(find.byType(MaterialBanner), findsNothing); // not opted in
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byTooltip('Impostazioni'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Password compromesse'));
       await tester.pumpAndSettle();
@@ -204,6 +204,8 @@ void main() {
       // Back in the list, compromised items carry a warning icon.
       Navigator.of(tester.element(find.byType(BreachCheckScreen))).pop();
       await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(SettingsScreen))).pop();
+      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.gpp_bad_outlined), findsNWidgets(2));
 
       // Locking forgets the results.
@@ -219,6 +221,8 @@ void main() {
       final checker = BreachChecker();
       await pumpApp(tester, checker, [('Banca', 'qwerty')]);
       await tester.tap(find.text('Banca'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
       await tester.pumpAndSettle();
       expect(api.asked, isEmpty); // nothing sent until asked
 
@@ -239,6 +243,8 @@ void main() {
 
       await tester.tap(find.text('Posta'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
       expect(api.asked, ['unique-and-long']);
       expect(find.text('Non trovata nelle violazioni note'), findsOneWidget);
       await unmount(tester);
@@ -251,6 +257,8 @@ void main() {
       await checker.setEnabled(true);
       await pumpApp(tester, checker, [('Rete', 'offline')]);
       await tester.tap(find.text('Rete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Modifica'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Impossibile controllare'), findsOneWidget);
       expect(find.text('Non trovata nelle violazioni note'), findsNothing);

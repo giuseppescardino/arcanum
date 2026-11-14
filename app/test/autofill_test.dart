@@ -9,6 +9,7 @@ import 'package:arcanum/src/rust/api/vault.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 class FakeBridge implements AutofillBridge {
   String? filledUser;
@@ -149,9 +150,7 @@ void main() {
     });
 
     Future<void> pump(WidgetTester tester, AutofillRequest request) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+      useNarrowWindow(tester, height: 1200);
       await tester.pumpWidget(
         AutofillApp(controller: controller, bridge: bridge, request: request),
       );

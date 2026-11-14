@@ -10,6 +10,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   late VaultController controller;
@@ -30,19 +31,12 @@ void main() {
 
   tearDown(() => controller.dispose());
 
-  Future<void> openMenu(WidgetTester tester, String entry) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  Future<void> openSettingsEntry(WidgetTester tester, String entry) async {
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller));
-    // Group headers have a menu of their own: take the app bar's.
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.more_vert),
-      ),
-    );
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text(entry), 200);
     await tester.tap(find.text(entry));
     await tester.pumpAndSettle();
   }
@@ -95,7 +89,7 @@ void main() {
   appTest('importing a CSV previews it and adds the new items', (tester) async {
     await controller.save(login('Jira', password: 'a'));
     dialogs.toPick = utf8.encode('Jira|a|\nSlack|b|Lavoro/Chat');
-    await openMenu(tester, 'Importa…');
+    await openSettingsEntry(tester, 'Importa…');
 
     expect(find.text('Formato riconosciuto: CSV'), findsOneWidget);
     expect(find.text('1 elemento da importare'), findsOneWidget);
@@ -110,14 +104,14 @@ void main() {
   });
 
   appTest('cancelling the file dialog imports nothing', (tester) async {
-    await openMenu(tester, 'Importa…');
+    await openSettingsEntry(tester, 'Importa…');
     expect(find.byType(AlertDialog), findsNothing);
     expect(controller.items, isEmpty);
   });
 
   appTest('an unknown file is refused', (tester) async {
     dialogs.toPick = utf8.encode('not a credential export');
-    await openMenu(tester, 'Importa…');
+    await openSettingsEntry(tester, 'Importa…');
     expect(
       find.text('Il file non è in un formato che Arcanum sa importare.'),
       findsOneWidget,
@@ -127,7 +121,7 @@ void main() {
 
   appTest('an encrypted backup asks for its password', (tester) async {
     dialogs.toPick = utf8.encode('BACKUP:backup-password\nSlack|b|');
-    await openMenu(tester, 'Importa…');
+    await openSettingsEntry(tester, 'Importa…');
 
     expect(find.text('Password del backup'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField), 'wrong');
@@ -147,7 +141,7 @@ void main() {
 
   appTest('export writes an encrypted backup by default', (tester) async {
     await controller.save(login('Jira', password: 'a', group: 'Lavoro'));
-    await openMenu(tester, 'Esporta…');
+    await openSettingsEntry(tester, 'Esporta…');
 
     // The backup password must be long enough and typed twice.
     await tester.tap(find.widgetWithText(FilledButton, 'Esporta'));
@@ -174,7 +168,7 @@ void main() {
 
   appTest('CSV export warns that the file is not encrypted', (tester) async {
     await controller.save(login('Jira', password: 'a'));
-    await openMenu(tester, 'Esporta…');
+    await openSettingsEntry(tester, 'Esporta…');
 
     await tester.tap(find.text('CSV in chiaro'));
     await tester.pumpAndSettle();

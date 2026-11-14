@@ -26,8 +26,7 @@
   "vaultRemove": "Rimuovi",
   "vaultTitle": "Vault",
   "vaultLock": "Blocca",
-  "vaultEnableQuickUnlock": "Attiva sblocco con {method}",
-  "vaultDisableQuickUnlock": "Disattiva sblocco con {method}",
+  "settingsQuickUnlock": "Sblocco con {method}",
   "vaultEnableAutofill": "Attiva compilazione automatica",
   "vaultChangeMasterPassword": "Cambia master password",
   "vaultAbout": "Informazioni",
@@ -211,8 +210,12 @@
   "clipboardCopied": "{label} copiato. Verrà cancellato tra {seconds, plural, other{{seconds} secondi}}.",
   "vaultImport": "Importa…",
   "vaultExport": "Esporta…",
-  "vaultShowSiteIcons": "Mostra icone dei siti",
-  "vaultHideSiteIcons": "Nascondi icone dei siti",
+  "settingsTitle": "Impostazioni",
+  "settingsSecurity": "Sicurezza",
+  "settingsData": "Dati",
+  "settingsAppearance": "Aspetto",
+  "settingsDangerZone": "Zona pericolosa",
+  "settingsSiteIcons": "Icone dei siti",
   "vaultGroupPathHint": "Usa / per i sottogruppi, es. Lavoro/Clienti",
   "exportTitle": "Esporta elementi",
   "exportFormatBackup": "Backup cifrato",
@@ -300,5 +303,39 @@
   "browsersReject": "Rifiuta",
   "browsersApprove": "Collega",
   "browsersPortsBusy": "Impossibile avviare il collegamento con i browser: le porte 47613–47615 sono occupate.",
-  "browsersWrongCode": "Codice errato"
+  "browsersWrongCode": "Codice errato",
+  "itemEdit": "Modifica",
+  "itemUpdatedOn": "Modificata il {date}",
+  "@itemUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiresOn": "Scade il {date}",
+  "@itemExpiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemExpiredOn": "Scaduta il {date}",
+  "@itemExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expiryExpiredTooltip": "Scaduta",
+  "expirySoonTooltip": "In scadenza",
+  "editorExpiryLabel": "Scadenza",
+  "editorExpiryHelper": "Facoltativa. La voce viene segnalata quando la data si avvicina.",
+  "editorExpiryClear": "Rimuovi scadenza",
+  "vaultFavorites": "Preferiti",
+  "vaultExpiring": "Scadenze",
+  "vaultGroups": "Gruppi",
+  "vaultSelectItem": "Seleziona una voce per vederne i dettagli."
 }

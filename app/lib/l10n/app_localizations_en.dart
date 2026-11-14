@@ -94,13 +94,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultLock => 'Lock';
 
   @override
-  String vaultEnableQuickUnlock(String method) {
-    return 'Enable unlock with $method';
-  }
-
-  @override
-  String vaultDisableQuickUnlock(String method) {
-    return 'Disable unlock with $method';
+  String settingsQuickUnlock(String method) {
+    return 'Unlock with $method';
   }
 
   @override
@@ -774,10 +769,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultExport => 'Export…';
 
   @override
-  String get vaultShowSiteIcons => 'Show site icons';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get vaultHideSiteIcons => 'Hide site icons';
+  String get settingsSecurity => 'Security';
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsDangerZone => 'Danger zone';
+
+  @override
+  String get settingsSiteIcons => 'Site icons';
 
   @override
   String get vaultGroupPathHint => 'Use / for subgroups, e.g. Work/Clients';
@@ -1110,4 +1117,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browsersWrongCode => 'Wrong code';
+
+  @override
+  String get itemEdit => 'Edit';
+
+  @override
+  String itemUpdatedOn(String date) {
+    return 'Edited $date';
+  }
+
+  @override
+  String itemExpiresOn(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String itemExpiredOn(String date) {
+    return 'Expired $date';
+  }
+
+  @override
+  String get expiryExpiredTooltip => 'Expired';
+
+  @override
+  String get expirySoonTooltip => 'Expiring soon';
+
+  @override
+  String get editorExpiryLabel => 'Expiry date';
+
+  @override
+  String get editorExpiryHelper =>
+      'Optional. The item is flagged as the date approaches.';
+
+  @override
+  String get editorExpiryClear => 'Clear expiry date';
+
+  @override
+  String get vaultFavorites => 'Favorites';
+
+  @override
+  String get vaultExpiring => 'Expiring';
+
+  @override
+  String get vaultGroups => 'Groups';
+
+  @override
+  String get vaultSelectItem => 'Select an item to see its details.';
 }

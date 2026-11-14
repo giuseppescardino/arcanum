@@ -57,7 +57,7 @@ The extension needs the Arcanum desktop app, which runs on macOS, Windows and Li
 
 ## Connect to the app
 
-1. In Arcanum (desktop), open the menu → **Browser collegati** → **Collega browser**. Pairing stays open for 2 minutes.
+1. In Arcanum (desktop), open *Impostazioni* → **Browser collegati** → **Collega browser**. Pairing stays open for 2 minutes.
 2. In the browser, click the Arcanum toolbar button → **Collega**. The popup shows a 6-digit code.
 3. Type that code in the app's dialog and press **Collega**. The app never shows the code itself; after three wrong codes the pairing is rejected.
 

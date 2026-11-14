@@ -9,6 +9,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   group('card numbers', () {
@@ -96,9 +97,7 @@ void main() {
     }
 
     void desktop(WidgetTester tester) {
-      tester.view.physicalSize = const Size(1200, 1400);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+      useNarrowWindow(tester, height: 1400);
     }
 
     testWidgets('a Wi-Fi item is saved and shows its QR code', (tester) async {

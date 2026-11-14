@@ -7,6 +7,12 @@ import '../l10n/l10n.dart';
 /// recognizable whatever the current UI language is.
 const _languageNames = {'en': 'English', 'it': 'Italiano'};
 
+/// Name of the language in use, or "System default" when none is picked.
+String currentLanguageLabel(BuildContext context) {
+  final code = LanguageScope.of(context).locale?.languageCode;
+  return _languageNames[code] ?? context.l10n.languageSystem;
+}
+
 Future<void> showLanguageDialog(BuildContext context) async {
   final settings = LanguageScope.of(context);
   final l10n = context.l10n;

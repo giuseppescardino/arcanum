@@ -152,7 +152,7 @@ abstract class AppLocalizations {
   /// **'Reconnect'**
   String get reconnect;
 
-  /// Sync screen title and menu entry
+  /// Sync screen title and settings entry
   ///
   /// In en, this message translates to:
   /// **'Sync'**
@@ -254,17 +254,11 @@ abstract class AppLocalizations {
   /// **'Lock'**
   String get vaultLock;
 
-  /// method is e.g. Face ID, Touch ID, fingerprint
+  /// Switch label in settings; method is e.g. Face ID, Touch ID, fingerprint
   ///
   /// In en, this message translates to:
-  /// **'Enable unlock with {method}'**
-  String vaultEnableQuickUnlock(String method);
-
-  /// No description provided for @vaultDisableQuickUnlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Disable unlock with {method}'**
-  String vaultDisableQuickUnlock(String method);
+  /// **'Unlock with {method}'**
+  String settingsQuickUnlock(String method);
 
   /// No description provided for @vaultEnableAutofill.
   ///
@@ -278,7 +272,7 @@ abstract class AppLocalizations {
   /// **'Change master password'**
   String get vaultChangeMasterPassword;
 
-  /// Vault menu entry that opens the About dialog
+  /// Settings entry that opens the About dialog
   ///
   /// In en, this message translates to:
   /// **'About'**
@@ -296,7 +290,7 @@ abstract class AppLocalizations {
   /// **'Zero-knowledge password manager: your data is encrypted on this device before it is synced.'**
   String get aboutDescription;
 
-  /// Vault menu entry and title of the breached-password check
+  /// Settings entry and title of the breached-password check
   ///
   /// In en, this message translates to:
   /// **'Compromised passwords'**
@@ -1369,17 +1363,41 @@ abstract class AppLocalizations {
   /// **'Export…'**
   String get vaultExport;
 
-  /// No description provided for @vaultShowSiteIcons.
+  /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Show site icons'**
-  String get vaultShowSiteIcons;
+  /// **'Settings'**
+  String get settingsTitle;
 
-  /// No description provided for @vaultHideSiteIcons.
+  /// No description provided for @settingsSecurity.
   ///
   /// In en, this message translates to:
-  /// **'Hide site icons'**
-  String get vaultHideSiteIcons;
+  /// **'Security'**
+  String get settingsSecurity;
+
+  /// No description provided for @settingsData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsData;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsDangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get settingsDangerZone;
+
+  /// No description provided for @settingsSiteIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Site icons'**
+  String get settingsSiteIcons;
 
   /// No description provided for @vaultGroupPathHint.
   ///
@@ -1908,6 +1926,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wrong code'**
   String get browsersWrongCode;
+
+  /// No description provided for @itemEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get itemEdit;
+
+  /// No description provided for @itemUpdatedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {date}'**
+  String itemUpdatedOn(String date);
+
+  /// No description provided for @itemExpiresOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String itemExpiresOn(String date);
+
+  /// No description provided for @itemExpiredOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired {date}'**
+  String itemExpiredOn(String date);
+
+  /// No description provided for @expiryExpiredTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expiryExpiredTooltip;
+
+  /// No description provided for @expirySoonTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiring soon'**
+  String get expirySoonTooltip;
+
+  /// No description provided for @editorExpiryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry date'**
+  String get editorExpiryLabel;
+
+  /// No description provided for @editorExpiryHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. The item is flagged as the date approaches.'**
+  String get editorExpiryHelper;
+
+  /// No description provided for @editorExpiryClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear expiry date'**
+  String get editorExpiryClear;
+
+  /// No description provided for @vaultFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get vaultFavorites;
+
+  /// No description provided for @vaultExpiring.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiring'**
+  String get vaultExpiring;
+
+  /// No description provided for @vaultGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get vaultGroups;
+
+  /// No description provided for @vaultSelectItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item to see its details.'**
+  String get vaultSelectItem;
 }
 
 class _AppLocalizationsDelegate

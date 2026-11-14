@@ -12,6 +12,7 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   late VaultController controller;
@@ -50,8 +51,9 @@ void main() {
       controller.confirmEmergencyKit();
       await server.start();
     });
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller, bridge: server));
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Browser collegati'));
     await tester.pumpAndSettle();
@@ -90,7 +92,7 @@ void main() {
     client.close();
   });
 
-  testWidgets('menu entry opens the browsers screen with the list', (
+  testWidgets('settings entry opens the browsers screen with the list', (
     tester,
   ) async {
     await setUpApp(tester);
@@ -158,7 +160,7 @@ void main() {
     await finish(tester);
   });
 
-  testWidgets('no menu entry without a bridge', (tester) async {
+  testWidgets('no settings entry without a bridge', (tester) async {
     controller = VaultController(
       handle: FakeVaultHandle(),
       secretKeys: MemorySecretKeyStore(),
@@ -168,8 +170,9 @@ void main() {
       await controller.create('master-password');
       controller.confirmEmergencyKit();
     });
+    useNarrowWindow(tester);
     await tester.pumpWidget(ArcanumApp(controller: controller));
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
     expect(find.text('Browser collegati'), findsNothing);
     controller.dispose();

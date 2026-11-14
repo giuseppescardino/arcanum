@@ -6,14 +6,13 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   setUp(() => tools = FakeTools());
 
   testWidgets('setup, emergency kit, add item, lock, unlock', (tester) async {
-    tester.view.physicalSize = const Size(1200, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester);
 
     final controller = VaultController(
       handle: FakeVaultHandle(),
@@ -81,7 +80,8 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('locking closes an open editor', (tester) async {
+  testWidgets('locking closes an open item view', (tester) async {
+    useNarrowWindow(tester);
     final controller = VaultController(
       handle: FakeVaultHandle(),
       secretKeys: MemorySecretKeyStore(),
@@ -98,6 +98,33 @@ void main() {
 
     controller.lock();
     await tester.pumpAndSettle();
+    expect(find.text('Modifica'), findsNothing);
+    expect(find.text('Sblocca il vault'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('locking closes the editor opened from the view', (tester) async {
+    useNarrowWindow(tester);
+    final controller = VaultController(
+      handle: FakeVaultHandle(),
+      secretKeys: MemorySecretKeyStore(),
+      quickUnlock: FakeQuickUnlockStore(available: false),
+    );
+    await controller.create('master-password');
+    controller.confirmEmergencyKit();
+    await controller.save(login('Bank', password: 'top-secret'));
+    await tester.pumpWidget(ArcanumApp(controller: controller));
+
+    await tester.tap(find.text('Bank'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Modifica'));
+    await tester.pumpAndSettle();
+    expect(find.text('Salva'), findsOneWidget);
+
+    controller.lock();
+    await tester.pumpAndSettle();
+    expect(find.text('Salva'), findsNothing);
     expect(find.text('Modifica'), findsNothing);
     expect(find.text('Sblocca il vault'), findsOneWidget);
 

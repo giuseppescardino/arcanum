@@ -102,6 +102,15 @@ fn backup_round_trips_and_needs_its_password() {
 }
 
 #[test]
+fn backup_keeps_expiry() {
+    let mut item = login("Bank");
+    item.expires_on = Some("2027-01-31".into());
+    let file = export_backup(&[item], b"pw").unwrap();
+    let back = import(&file, Some(b"pw")).unwrap();
+    assert_eq!(back.items[0].expires_on.as_deref(), Some("2027-01-31"));
+}
+
+#[test]
 fn backup_with_weak_kdf_is_refused() {
     let file = export_backup(&[login("X")], b"pw").unwrap();
     let mut json: serde_json::Value = serde_json::from_slice(&file).unwrap();

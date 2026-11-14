@@ -6,8 +6,8 @@ use std::sync::{Mutex, MutexGuard};
 
 use arcanum_sync::SyncError;
 use arcanum_vault::{
-    normalize_group, CardData, ItemData, ItemKind, KdfParams, SecretKey, SyncReport, Vault,
-    VaultError, WifiData, WifiSecurity,
+    normalize_expiry, normalize_group, CardData, ItemData, ItemKind, KdfParams, SecretKey,
+    SyncReport, Vault, VaultError, WifiData, WifiSecurity,
 };
 use data_encoding::BASE64;
 use flutter_rust_bridge::frb;
@@ -42,6 +42,8 @@ pub struct ItemFields {
     pub wifi: Option<WifiFields>,
     /// Details of a `Card` item.
     pub card: Option<CardFields>,
+    /// Expiry day as `YYYY-MM-DD`.
+    pub expires_on: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -472,6 +474,7 @@ impl From<ItemFields> for ItemData {
             cvv: c.cvv,
             pin: c.pin,
         });
+        d.expires_on = f.expires_on.as_deref().and_then(normalize_expiry);
         d
     }
 }
@@ -521,6 +524,7 @@ impl From<&ItemData> for ItemFields {
                 cvv: c.cvv.clone(),
                 pin: c.pin.clone(),
             }),
+            expires_on: d.expires_on.clone(),
         }
     }
 }

@@ -5,7 +5,7 @@
 A zero-knowledge, cross-platform, self-hosted password manager. The vault is encrypted on the device; the sync server stores only ciphertext and never sees the master password, the Secret Key or item contents.
 
 - **Cryptography:** Argon2id + HKDF-SHA256 + XChaCha20-Poly1305, Secret Key and Emergency Kit, OPAQUE login.
-- **App:** Flutter for Android, iOS, macOS, Windows and Linux, with password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock, autofill on Android and a browser extension for Chrome, Opera and Safari that works with the desktop app.
+- **App:** Flutter for Android, iOS, macOS, Windows and Linux, with a read-only item view (editing is explicit), a last-modified date and optional expiry dates on items, a three-column layout on wide windows, a settings screen, password generator, TOTP, nested groups, site icons, import/export (CSV, encrypted backup, Bitwarden, 1Password, KeePass), biometric unlock, autofill on Android and a browser extension for Chrome, Opera and Safari that works with the desktop app.
 - **Sync:** Rust + PostgreSQL server, deployed with Docker Compose and Caddy (automatic TLS), with daily age-encrypted backups.
 
 The threat model and cryptographic design are described in [docs/SECURITY.md](docs/SECURITY.md).

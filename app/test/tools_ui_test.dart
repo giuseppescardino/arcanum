@@ -7,14 +7,13 @@ import 'package:arcanum/ui/app.dart';
 
 import 'fake_tools.dart';
 import 'fakes.dart';
+import 'window.dart';
 
 void main() {
   setUp(() => tools = FakeTools());
 
   Future<VaultController> openVault(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1200, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    useNarrowWindow(tester, height: 1000);
     final controller = VaultController(
       handle: FakeVaultHandle(),
       secretKeys: MemorySecretKeyStore(),

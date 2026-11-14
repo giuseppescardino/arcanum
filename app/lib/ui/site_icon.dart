@@ -40,7 +40,7 @@ class _SiteIconState extends State<SiteIcon> {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = CircleAvatar(child: Icon(widget.fallback));
+    final fallback = ItemAvatar(child: Icon(widget.fallback));
     final icon = _icon;
     if (icon == null) return fallback;
     return FutureBuilder<Uint8List?>(
@@ -48,16 +48,13 @@ class _SiteIconState extends State<SiteIcon> {
       builder: (context, snapshot) {
         final bytes = snapshot.data;
         if (bytes == null) return fallback;
-        return CircleAvatar(
-          backgroundColor: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest,
+        return ItemAvatar(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.memory(
               bytes,
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               fit: BoxFit.contain,
               gaplessPlayback: true,
               // Undecodable icon: same look as a site without one.
@@ -66,6 +63,34 @@ class _SiteIconState extends State<SiteIcon> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Rounded-square avatar of a vault item: a light tile with a hairline
+/// border, so it stays visible on a highlighted row. [size] is the side.
+class ItemAvatar extends StatelessWidget {
+  const ItemAvatar({super.key, required this.child, this.size = 36});
+
+  final Widget child;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(size / 4.5),
+      ),
+      child: IconTheme.merge(
+        data: IconThemeData(color: scheme.onSurfaceVariant, size: size / 2),
+        child: child,
+      ),
     );
   }
 }

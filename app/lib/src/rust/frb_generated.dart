@@ -1854,8 +1854,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ItemFields dco_decode_item_fields(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 12)
-      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
+    if (arr.length != 13)
+      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
     return ItemFields(
       kind: dco_decode_vault_item_kind(arr[0]),
       title: dco_decode_String(arr[1]),
@@ -1869,6 +1869,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       color: dco_decode_opt_box_autoadd_u_32(arr[9]),
       wifi: dco_decode_opt_box_autoadd_wifi_fields(arr[10]),
       card: dco_decode_opt_box_autoadd_card_fields(arr[11]),
+      expiresOn: dco_decode_opt_String(arr[12]),
     );
   }
 
@@ -2279,6 +2280,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_color = sse_decode_opt_box_autoadd_u_32(deserializer);
     var var_wifi = sse_decode_opt_box_autoadd_wifi_fields(deserializer);
     var var_card = sse_decode_opt_box_autoadd_card_fields(deserializer);
+    var var_expiresOn = sse_decode_opt_String(deserializer);
     return ItemFields(
       kind: var_kind,
       title: var_title,
@@ -2292,6 +2294,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       color: var_color,
       wifi: var_wifi,
       card: var_card,
+      expiresOn: var_expiresOn,
     );
   }
 
@@ -2753,6 +2756,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_box_autoadd_u_32(self.color, serializer);
     sse_encode_opt_box_autoadd_wifi_fields(self.wifi, serializer);
     sse_encode_opt_box_autoadd_card_fields(self.card, serializer);
+    sse_encode_opt_String(self.expiresOn, serializer);
   }
 
   @protected

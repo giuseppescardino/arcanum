@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:arcanum/app/file_dialogs.dart';
 import 'package:arcanum/app/groups.dart';
+import 'package:arcanum/app/item_fields.dart';
 import 'package:arcanum/app/quick_unlock_store.dart';
 import 'package:arcanum/app/secret_key_store.dart';
 import 'package:arcanum/app/transfer.dart';
@@ -17,6 +18,13 @@ const fakeSecretKey = 'PM1-AAAAAA-AAAAA-AAAAA-AAAAA-AAAAA';
 /// In-memory stand-in for the Rust vault, so controller and widget tests
 /// run without the native library.
 class FakeVaultHandle implements VaultHandle {
+  /// [clock] stamps `updatedAt` on every write; defaults to a fixed instant.
+  FakeVaultHandle({DateTime Function()? clock})
+    : _clock = clock ?? (() => DateTime(2026, 11, 13, 9, 30));
+
+  final DateTime Function() _clock;
+  int get _now => _clock().millisecondsSinceEpoch;
+
   bool initialized = false;
   bool unlocked = false;
   String? _password;
@@ -221,7 +229,7 @@ class FakeVaultHandle implements VaultHandle {
   @override
   Future<VaultItem> addItem({required ItemFields fields}) async {
     _requireUnlocked();
-    final item = VaultItem(id: '${_nextId++}', updatedAt: 0, fields: fields);
+    final item = VaultItem(id: '${_nextId++}', updatedAt: _now, fields: fields);
     return _items[item.id] = item;
   }
 
@@ -234,7 +242,7 @@ class FakeVaultHandle implements VaultHandle {
     if (!_items.containsKey(id)) {
       throw const VaultFailure(code: VaultFailureCode.notFound, message: '');
     }
-    return _items[id] = VaultItem(id: id, updatedAt: 1, fields: fields);
+    return _items[id] = VaultItem(id: id, updatedAt: _now, fields: fields);
   }
 
   @override
@@ -265,7 +273,7 @@ class FakeVaultHandle implements VaultHandle {
       final rest = group.substring(from.length);
       _items[item.id] = VaultItem(
         id: item.id,
-        updatedAt: 1,
+        updatedAt: _now,
         fields: _withGroup(item.fields, to.isEmpty ? '' : '$to$rest'),
       );
       if (item.fields.kind == VaultItemKind.group) {
@@ -300,18 +308,8 @@ class FakeVaultHandle implements VaultHandle {
     );
   }
 
-  static ItemFields _withGroup(ItemFields f, String group) => ItemFields(
-    kind: f.kind,
-    title: f.title,
-    username: f.username,
-    password: f.password,
-    urls: f.urls,
-    notes: f.notes,
-    totp: f.totp,
-    favorite: f.favorite,
-    group: group,
-    color: f.color,
-  );
+  static ItemFields _withGroup(ItemFields f, String group) =>
+      f.copyWith(group: group);
 
   // RustOpaqueInterface members are irrelevant for the fake.
   @override
@@ -372,6 +370,7 @@ ItemFields login(
   bool favorite = false,
   String group = '',
   List<String> urls = const [],
+  String? expiresOn,
 }) => ItemFields(
   kind: VaultItemKind.login,
   title: title,
@@ -382,6 +381,7 @@ ItemFields login(
   favorite: favorite,
   group: group,
   color: null,
+  expiresOn: expiresOn,
 );
 
 /// Stand-in for the Rust formats: one `title|password|group` line per
