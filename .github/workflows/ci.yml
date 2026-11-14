@@ -214,6 +214,13 @@ jobs:
           channel: stable
           cache: true
 
+      # `flutter test` builds native assets for the host: the cnativeapi
+      # build hook (tray_manager / window_manager) needs GTK 3, X11 and Xi.
+      - name: Linux native-asset dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libx11-dev libxi-dev
+
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
