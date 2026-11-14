@@ -18,11 +18,13 @@ dependencies:
   hotkey_manager: ^0.2.3
   intl: any
   local_auth: ^3.0.2
+  nativeapi: 0.5.10
   package_info_plus: 10.2.2
   path_provider: ^2.1.6
   qr_flutter: ^4.1.0
   rust_lib_arcanum:
     path: rust_builder
+  tray_manager: ^0.8.3
   url_launcher: ^6.3.3
   window_manager: ^0.5.2
 
@@ -38,6 +40,8 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  assets:
+    - assets/tray/
 
 flutter_launcher_icons:
   image_path: "assets/branding/icon_ios_light_1024.png"

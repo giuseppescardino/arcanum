@@ -787,6 +787,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSiteIcons => 'Site icons';
 
   @override
+  String get trayOpen => 'Open Arcanum';
+
+  @override
+  String get trayLock => 'Lock';
+
+  @override
+  String get trayQuit => 'Quit Arcanum';
+
+  @override
+  String get settingsDesktop => 'Desktop';
+
+  @override
+  String get settingsKeepRunning => 'Keep running in the tray';
+
+  @override
+  String get settingsKeepRunningHint =>
+      'Closing the window keeps the browser extension working. The vault still locks after 5 minutes of inactivity.';
+
+  @override
+  String get settingsLaunchAtLogin => 'Start at login';
+
+  @override
+  String get settingsLaunchAtLoginFailed =>
+      'The system did not accept the change.';
+
+  @override
   String get vaultGroupPathHint => 'Use / for subgroups, e.g. Work/Clients';
 
   @override

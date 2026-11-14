@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import 'package:arcanum/app/background_mode.dart';
 import 'package:arcanum/app/file_dialogs.dart';
 import 'package:arcanum/app/groups.dart';
 import 'package:arcanum/app/item_fields.dart';
@@ -537,4 +538,91 @@ class MemoryBridgeClientStore implements BridgeClientStore {
   @override
   Future<void> save(List<PairedBrowser> browsers) async =>
       saved = List.of(browsers);
+}
+
+// ---- Background mode (tray, launch at login) ----
+
+class FakeAppWindow implements AppWindow {
+  final calls = <String>[];
+  bool visible = false;
+  bool preventClose = false;
+  void Function()? _onClose;
+
+  /// Simulates the user clicking the window's close button.
+  Future<void> userCloses() async {
+    if (preventClose) {
+      _onClose?.call();
+    } else {
+      calls.add('closed');
+      visible = false;
+    }
+  }
+
+  @override
+  Future<void> show() async {
+    calls.add('show');
+    visible = true;
+  }
+
+  @override
+  Future<void> hide() async {
+    calls.add('hide');
+    visible = false;
+  }
+
+  @override
+  Future<void> setPreventClose(bool value) async => preventClose = value;
+
+  @override
+  Future<void> destroy() async => calls.add('destroy');
+
+  @override
+  void onClose(void Function() callback) => _onClose = callback;
+}
+
+class FakeSystemTray implements SystemTray {
+  FakeSystemTray({this.supported = true, this.createWorks = true});
+
+  @override
+  final bool supported;
+  final bool createWorks;
+
+  TrayLabels? labels;
+  void Function(TrayAction)? onAction;
+  bool disposed = false;
+
+  @override
+  bool create({
+    required TrayLabels labels,
+    required void Function(TrayAction) onAction,
+  }) {
+    if (!createWorks) return false;
+    this.labels = labels;
+    this.onAction = onAction;
+    return true;
+  }
+
+  @override
+  void setLabels(TrayLabels labels) => this.labels = labels;
+
+  @override
+  void dispose() => disposed = true;
+}
+
+class FakeLoginItem implements LoginItem {
+  FakeLoginItem({this.supported = true, this.works = true});
+
+  @override
+  final bool supported;
+  final bool works;
+
+  @override
+  bool enabled = false;
+
+  @override
+  bool setEnabled(bool value) {
+    if (!works) return false;
+    enabled = value;
+    return true;
+  }
 }

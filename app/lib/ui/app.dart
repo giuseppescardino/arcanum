@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app/background_mode.dart';
 import '../app/breach_check.dart';
 import '../app/favicons.dart';
 import '../app/language_settings.dart';
@@ -23,6 +24,7 @@ class ArcanumApp extends StatefulWidget {
     BreachChecker? breach,
     FaviconCache? favicons,
     this.bridge,
+    this.background,
   }) : language = language ?? LanguageSettings(),
        breach = breach ?? BreachChecker(),
        favicons = favicons ?? FaviconCache.disabled();
@@ -34,6 +36,9 @@ class ArcanumApp extends StatefulWidget {
 
   /// Browser extension server; null where it does not run (mobile).
   final BridgeServer? bridge;
+
+  /// Tray and launch at login; null where they do not apply (mobile).
+  final BackgroundMode? background;
 
   @override
   State<ArcanumApp> createState() => _ArcanumAppState();
@@ -140,6 +145,10 @@ class _ArcanumAppState extends State<ArcanumApp> {
 
   Widget _withBridge(Widget child) {
     final bridge = widget.bridge;
+    final background = widget.background;
+    if (background != null) {
+      child = BackgroundScope(mode: background, child: child);
+    }
     return bridge == null ? child : BridgeScope(server: bridge, child: child);
   }
 }

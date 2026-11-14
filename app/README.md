@@ -67,13 +67,13 @@ flutter test integration_test -d <device-id>
 
 ## Linux
 
-Build dependencies (Debian/Ubuntu names): `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libkeybinder-3.0-dev`.
+Build dependencies (Debian/Ubuntu names): `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libkeybinder-3.0-dev libx11-dev libxi-dev`.
 
 ```bash
 flutter build linux --release      # bundle in build/linux/<arch>/release/bundle
 ```
 
-At runtime the app needs GTK 3, libsecret and keybinder, plus a running Secret Service (GNOME Keyring, KWallet, KeePassXC...), where it keeps the Secret Key. From the extracted bundle (the CI artifact `Arcanum-linux-x64.tar.gz`), `./install.sh` installs it for the current user in `~/.local` with a menu entry; `./install.sh --uninstall` removes it. Quick unlock is not available on Linux, and the `Ctrl+Alt+P` global shortcut works only under X11.
+At runtime the app needs GTK 3, libsecret and keybinder, plus a running Secret Service (GNOME Keyring, KWallet, KeePassXC...), where it keeps the Secret Key. From the extracted bundle (the CI artifact `Arcanum-linux-x64.tar.gz`), `./install.sh` installs it for the current user in `~/.local` with a menu entry; `./install.sh --uninstall` removes it. Quick unlock is not available on Linux, and the `Ctrl+Alt+P` global shortcut works only under X11. The tray icon is a StatusNotifierItem: KDE Plasma and most desktops show it, GNOME only with the AppIndicator extension (enabled on Ubuntu); without it, closing the window quits the app as before.
 
 ## Signing
 
