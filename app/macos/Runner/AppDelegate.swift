@@ -3,10 +3,13 @@ import FlutterMacOS
 
 @main
 class AppDelegate: FlutterAppDelegate {
-  // Closing the window quits only when it really closes: with "keep running
-  // in the tray" on, the Dart side intercepts the close and hides it instead.
+  // The Dart side decides what the close button does (BackgroundMode): it
+  // hides the window when "keep running" is on and quits the app otherwise.
+  // AppKit must not quit on its own: it also counts a hidden window as the
+  // last one closed, which ended the app, and the browser bridge with it,
+  // when the window was only hidden.
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    return true
+    return false
   }
 
   // A click on the Dock icon brings back the window hidden in the menu bar.

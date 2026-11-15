@@ -157,7 +157,7 @@ class SettingsScreen extends StatelessWidget {
                     listenable: background,
                     builder: (context, _) => Column(
                       children: [
-                        if (background.trayAvailable)
+                        if (background.canHide)
                           SwitchListTile(
                             secondary: const Icon(Icons.minimize),
                             title: Text(l10n.settingsKeepRunning),

@@ -129,6 +129,7 @@ Future<BackgroundMode?> _startBackgroundMode({
     store: FileBackgroundPrefsStore('${dir.path}/background.json'),
     onLock: controller.lock,
     onQuit: () async => bridge?.stop(),
+    dockRestoresWindow: Platform.isMacOS,
   );
   await mode.init(labels: _trayLabels(language), startHidden: startHidden);
   language.addListener(() => mode.setLabels(_trayLabels(language)));

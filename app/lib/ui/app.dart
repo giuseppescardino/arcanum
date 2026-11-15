@@ -49,6 +49,15 @@ class _ArcanumAppState extends State<ArcanumApp> {
   late final AppLifecycleListener _lifecycle;
   late VaultStage _lastStage;
 
+  /// Desktop: the biometric prompt opens on its own only on the unlock
+  /// screen shown at launch. Later the vault locks on its timer or by hand,
+  /// often while the window is minimized or in the tray, and a system
+  /// prompt (Windows Hello, Touch ID) popping up then is unexpected: the
+  /// user asks for it with the button when they come back. Not at all
+  /// after a hidden start (login item): nobody is looking at the window.
+  late bool _promptBiometrics =
+      _isMobile || !(widget.background?.startedHidden ?? false);
+
   VaultController get _controller => widget.controller;
 
   bool get _isMobile =>
@@ -87,6 +96,7 @@ class _ArcanumAppState extends State<ArcanumApp> {
   void _onStageChanged() {
     if (_controller.stage != _lastStage) {
       _lastStage = _controller.stage;
+      if (!_isMobile) _promptBiometrics = false;
       _navigatorKey.currentState?.popUntil((route) => route.isFirst);
       // Breach results name vault passwords: forget them when locked.
       if (_lastStage != VaultStage.unlocked) {
@@ -131,7 +141,10 @@ class _ArcanumAppState extends State<ArcanumApp> {
                     VaultStage.emergencyKit => EmergencyKitScreen(
                       controller: _controller,
                     ),
-                    VaultStage.locked => UnlockScreen(controller: _controller),
+                    VaultStage.locked => UnlockScreen(
+                      controller: _controller,
+                      promptBiometrics: _promptBiometrics,
+                    ),
                     VaultStage.unlocked => VaultScreen(controller: _controller),
                   },
                 ),
