@@ -20,13 +20,14 @@ void main() {
   late int locks;
   late int quits;
 
-  BackgroundMode make() => BackgroundMode(
+  BackgroundMode make({bool dock = false}) => BackgroundMode(
     window: window,
     tray: tray,
     loginItem: login,
     store: store,
     onLock: () => locks++,
     onQuit: () async => quits++,
+    dockRestoresWindow: dock,
   );
 
   setUp(() {
@@ -60,6 +61,55 @@ void main() {
 
     await window.userCloses();
     expect(window.calls, contains('closed'));
+  });
+
+  test('closing quits the whole app when there is no tray', () async {
+    tray = FakeSystemTray(supported: false);
+    await make().init(labels: _labels, startHidden: false);
+
+    await window.userCloses();
+    await pumpEventQueue();
+    expect(quits, 1, reason: 'the bridge stops');
+    expect(window.calls, contains('destroy'));
+  });
+
+  test('on macOS the Dock brings the window back, tray or not', () async {
+    tray = FakeSystemTray(supported: false);
+    final mode = make(dock: true);
+    await mode.init(labels: _labels, startHidden: false);
+    expect(mode.trayAvailable, isFalse);
+    expect(mode.canHide, isTrue);
+
+    await window.show();
+    await window.userCloses();
+    expect(window.calls.last, 'hide');
+    expect(quits, 0);
+
+    await mode.setKeepRunning(false);
+    await window.userCloses();
+    await pumpEventQueue();
+    expect(quits, 1);
+  });
+
+  test('the close button still quits when setup fails half way', () async {
+    final mode = BackgroundMode(
+      window: window,
+      tray: tray,
+      loginItem: login,
+      store: _BrokenPrefsStore(),
+      onLock: () => locks++,
+      onQuit: () async => quits++,
+      dockRestoresWindow: true,
+    );
+    await mode.init(labels: _labels, startHidden: false);
+    expect(window.preventClose, isFalse);
+
+    // The window really closes: hiding it instead would leave the app
+    // running with no window and no way back.
+    await window.userCloses();
+    await pumpEventQueue();
+    expect(window.calls, isNot(contains('hide')));
+    expect(quits, 1);
   });
 
   test('a tray that fails to appear counts as no tray', () async {
@@ -131,11 +181,14 @@ void main() {
       final mode = make();
       await mode.init(labels: _labels, startHidden: true);
       expect(window.calls, isNot(contains('show')));
+      expect(mode.startedHidden, isTrue);
 
       window = FakeAppWindow();
       tray = FakeSystemTray(supported: false);
-      await make().init(labels: _labels, startHidden: true);
+      final shown = make();
+      await shown.init(labels: _labels, startHidden: true);
       expect(window.calls, contains('show'));
+      expect(shown.startedHidden, isFalse);
 
       window = FakeAppWindow();
       tray = FakeSystemTray();
@@ -193,4 +246,13 @@ void main() {
     await File(file.path).writeAsString('not json');
     expect((await file.read()).keepRunning, isTrue);
   });
+}
+
+class _BrokenPrefsStore implements BackgroundPrefsStore {
+  @override
+  Future<BackgroundPrefs> read() async =>
+      throw const FileSystemException('unreadable');
+
+  @override
+  Future<void> write(BackgroundPrefs prefs) async {}
 }

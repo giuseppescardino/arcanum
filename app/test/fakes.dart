@@ -548,11 +548,11 @@ class FakeAppWindow implements AppWindow {
   bool preventClose = false;
   void Function()? _onClose;
 
-  /// Simulates the user clicking the window's close button.
+  /// Simulates the user clicking the window's close button. Like
+  /// window_manager, the close event fires whether or not it is prevented.
   Future<void> userCloses() async {
-    if (preventClose) {
-      _onClose?.call();
-    } else {
+    _onClose?.call();
+    if (!preventClose) {
       calls.add('closed');
       visible = false;
     }

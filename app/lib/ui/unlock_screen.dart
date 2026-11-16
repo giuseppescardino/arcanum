@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../app/messages.dart';
@@ -7,9 +8,17 @@ import '../src/rust/api/vault.dart';
 import 'widgets.dart';
 
 class UnlockScreen extends StatefulWidget {
-  const UnlockScreen({super.key, required this.controller});
+  const UnlockScreen({
+    super.key,
+    required this.controller,
+    this.promptBiometrics = true,
+  });
 
   final VaultController controller;
+
+  /// Whether the biometric prompt opens on its own when the screen shows.
+  /// When false it opens only from its button.
+  final bool promptBiometrics;
 
   @override
   State<UnlockScreen> createState() => _UnlockScreenState();
@@ -28,7 +37,13 @@ class _UnlockScreenState extends State<UnlockScreen> {
       widget.controller.quickUnlockAvailable &&
       !_askSecretKey;
 
-  late final AppLifecycleListener _lifecycle;
+  /// Phones and tablets, where leaving the app locks the vault and coming
+  /// back to it should ask for biometrics again.
+  bool get _isMobile =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  AppLifecycleListener? _lifecycle;
 
   /// Set while the app is in the background: the system refuses the
   /// biometric prompt there, so it is shown when the app comes back.
@@ -37,25 +52,30 @@ class _UnlockScreenState extends State<UnlockScreen> {
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(
-      // Only a real trip to the background (hidden), not the inactive
-      // state the Face ID sheet itself causes, or a cancel would loop.
-      onHide: () => _promptOnResume = true,
-      onResume: () {
-        if (!_promptOnResume) return;
-        _promptOnResume = false;
-        if (_canUseBiometrics) _biometrics();
-      },
-    );
+    // Desktop windows go hidden and come back all the time (minimized,
+    // closed to the tray, covered), and the vault stays unlocked meanwhile:
+    // a prompt there would pop up from a window the user just put away.
+    if (_isMobile) {
+      _lifecycle = AppLifecycleListener(
+        // Only a real trip to the background (hidden), not the inactive
+        // state the Face ID sheet itself causes, or a cancel would loop.
+        onHide: () => _promptOnResume = true,
+        onResume: () {
+          if (!_promptOnResume) return;
+          _promptOnResume = false;
+          if (_canUseBiometrics) _biometrics();
+        },
+      );
+    }
     // Offer biometrics right away, as users expect. On mobile this screen
     // is usually built while the app is still coming back (leaving the app
     // locks the vault): the prompt would fail, so wait until it is active.
-    if (_canUseBiometrics) {
+    if (widget.promptBiometrics && _canUseBiometrics) {
       switch (WidgetsBinding.instance.lifecycleState) {
         case null || AppLifecycleState.resumed:
           WidgetsBinding.instance.addPostFrameCallback((_) => _biometrics());
         case _:
-          _promptOnResume = true;
+          _promptOnResume = true; // only mobile listens for the resume
       }
     }
   }
@@ -77,7 +97,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
   @override
   void dispose() {
-    _lifecycle.dispose();
+    _lifecycle?.dispose();
     _password.dispose();
     _secretKey.dispose();
     super.dispose();

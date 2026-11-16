@@ -125,9 +125,9 @@ class MemoryBackgroundPrefsStore implements BackgroundPrefsStore {
 /// login. The vault still locks on its own timer whether or not the window
 /// is visible.
 ///
-/// The window is never hidden unless the tray icon is there to bring it
-/// back: without a tray (e.g. GNOME without AppIndicator), closing the
-/// window quits, as it always did.
+/// The window is never hidden unless something can bring it back: the tray
+/// icon, or on macOS the Dock icon. Without either (e.g. GNOME without
+/// AppIndicator), closing the window quits, as it always did.
 class BackgroundMode extends ChangeNotifier {
   BackgroundMode({
     required this.window,
@@ -135,6 +135,7 @@ class BackgroundMode extends ChangeNotifier {
     required this.loginItem,
     required this.onLock,
     required this.onQuit,
+    this.dockRestoresWindow = false,
     BackgroundPrefsStore? store,
   }) : store = store ?? MemoryBackgroundPrefsStore();
 
@@ -142,6 +143,10 @@ class BackgroundMode extends ChangeNotifier {
   final SystemTray tray;
   final LoginItem loginItem;
   final BackgroundPrefsStore store;
+
+  /// macOS: a click on the Dock icon brings a hidden window back, so the
+  /// window can hide even without a menu bar icon.
+  final bool dockRestoresWindow;
 
   /// Locks the vault (tray menu).
   final void Function() onLock;
@@ -151,13 +156,23 @@ class BackgroundMode extends ChangeNotifier {
 
   bool keepRunning = true;
   bool trayAvailable = false;
+
+  /// The app was started by the login item and its window left hidden.
+  bool startedHidden = false;
   bool _quitting = false;
+
+  /// Whether the window currently stops at the close button, waiting for
+  /// [_onCloseRequested] to hide it.
+  bool _closeIntercepted = false;
 
   bool get launchAtLoginSupported => loginItem.supported;
   bool get launchAtLogin => loginItem.supported && loginItem.enabled;
 
+  /// Whether a hidden window can be brought back by the user.
+  bool get canHide => trayAvailable || dockRestoresWindow;
+
   /// Whether closing the window hides it instead of quitting.
-  bool get hidesOnClose => trayAvailable && keepRunning;
+  bool get hidesOnClose => canHide && keepRunning;
 
   /// [startHidden] comes from the login item (`--hidden`); the native
   /// runner has then not shown the window. Never throws.
@@ -165,13 +180,17 @@ class BackgroundMode extends ChangeNotifier {
     required TrayLabels labels,
     required bool startHidden,
   }) async {
+    // First, so that whatever fails below the close button still ends in
+    // [quit] or a hide decided here, never in a window gone with the app
+    // left running (macOS no longer quits on its own when it closes).
+    window.onClose(_onCloseRequested);
     try {
       keepRunning = (await store.read()).keepRunning;
       trayAvailable =
           tray.supported && tray.create(labels: labels, onAction: _onAction);
-      window.onClose(_onCloseRequested);
-      await window.setPreventClose(hidesOnClose);
+      await _interceptClose();
       if (startHidden && !hidesOnClose) await window.show();
+      startedHidden = startHidden && hidesOnClose;
     } catch (e) {
       debugPrint('Background mode unavailable: $e');
       if (startHidden) await window.show();
@@ -185,7 +204,7 @@ class BackgroundMode extends ChangeNotifier {
 
   Future<void> setKeepRunning(bool value) async {
     keepRunning = value;
-    await window.setPreventClose(hidesOnClose);
+    await _interceptClose();
     notifyListeners();
     await store.write(BackgroundPrefs(keepRunning: value));
   }
@@ -210,8 +229,15 @@ class BackgroundMode extends ChangeNotifier {
     await window.destroy();
   }
 
+  Future<void> _interceptClose() async {
+    final value = hidesOnClose;
+    await window.setPreventClose(value);
+    _closeIntercepted = value;
+  }
+
   void _onCloseRequested() {
-    if (hidesOnClose) {
+    // Hide only a window the close button did not already close.
+    if (_closeIntercepted) {
       window.hide();
     } else {
       quit();
