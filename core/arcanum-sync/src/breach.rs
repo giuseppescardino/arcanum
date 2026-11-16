@@ -19,20 +19,20 @@ pub fn pwned_count(password: &str) -> Result<u64> {
 
 fn pwned_count_at(range_url: &str, password: &str) -> Result<u64> {
     let query = range_query(password);
-    let response = agent()
+    let mut response = agent()
         .get(&format!("{range_url}{}", query.prefix))
-        .set("Add-Padding", "true")
-        .call();
-    let body = match response {
-        Ok(resp) => resp
-            .into_string()
-            .map_err(|e| SyncError::Network(e.to_string()))?,
-        Err(ureq::Error::Status(429, _)) => return Err(SyncError::TooManyRequests),
-        Err(ureq::Error::Status(status, _)) => {
-            return Err(SyncError::Server(format!("HTTP {status}")))
-        }
-        Err(ureq::Error::Transport(t)) => return Err(SyncError::Network(t.to_string())),
-    };
+        .header("Add-Padding", "true")
+        .call()
+        .map_err(|e| SyncError::Network(e.to_string()))?;
+    match response.status().as_u16() {
+        200..=299 => {}
+        429 => return Err(SyncError::TooManyRequests),
+        status => return Err(SyncError::Server(format!("HTTP {status}"))),
+    }
+    let body = response
+        .body_mut()
+        .read_to_string()
+        .map_err(|e| SyncError::Network(e.to_string()))?;
     Ok(count_in_range(&body, &query.suffix))
 }
 
@@ -40,15 +40,18 @@ fn pwned_count_at(range_url: &str, password: &str) -> Result<u64> {
 fn agent() -> &'static ureq::Agent {
     static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
     AGENT.get_or_init(|| {
-        ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout(Duration::from_secs(30))
+        ureq::Agent::config_builder()
+            .timeout_connect(Some(Duration::from_secs(10)))
+            .timeout_global(Some(Duration::from_secs(30)))
+            // Statuses are mapped by the caller, not turned into errors.
+            .http_status_as_error(false)
             // HIBP requires a user agent that names the client.
             .user_agent(concat!(
                 "Arcanum-password-manager/",
                 env!("CARGO_PKG_VERSION")
             ))
             .build()
+            .into()
     })
 }
 

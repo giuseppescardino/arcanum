@@ -34,10 +34,10 @@ dependencies = [
  "argon2",
  "chacha20poly1305",
  "data-encoding",
- "hkdf 0.13.0",
+ "hkdf 0.12.4",
  "rand_core 0.6.4",
  "serde",
- "sha2 0.11.1",
+ "sha2 0.10.9",
  "thiserror",
  "zeroize",
 ]
@@ -50,7 +50,7 @@ dependencies = [
  "base64 0.23.1",
  "opaque-ke",
  "serde",
- "sha2 0.11.1",
+ "sha2 0.10.9",
 ]
 
 [[package]]
@@ -62,7 +62,7 @@ dependencies = [
  "axum",
  "base64 0.23.1",
  "data-encoding",
- "hmac 0.13.0",
+ "hmac 0.12.1",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -306,12 +306,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
-name = "const-oid"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be95d4a884358a21a199689323c29e9256b4a1b315e22f183d155422041d3a9a"
-
-[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -441,7 +435,7 @@ version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7c1832837b905bbfb5101e07cc24c8deddf52f93225eee6ead5f4d63d53ddcb"
 dependencies = [
- "const-oid 0.9.6",
+ "const-oid",
  "zeroize",
 ]
 
@@ -474,7 +468,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
 dependencies = [
  "block-buffer 0.12.1",
- "const-oid 0.10.3",
  "crypto-common 0.2.2",
  "ctutils",
 ]

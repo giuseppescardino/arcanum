@@ -15,8 +15,11 @@ use arcanum_vault::{AccountBundle, AuthKey, SyncTransport};
 use rand_core::OsRng;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use ureq::http::Response as HttpResponse;
 
 use crate::{Result, SyncError};
+
+type Response = HttpResponse<ureq::Body>;
 
 /// Plain HTTP is allowed only for local development servers.
 const LOCAL_HTTP_HOSTS: &[&str] = &["localhost", "127.0.0.1", "[::1]", "10.0.2.2"];
@@ -30,11 +33,14 @@ pub struct Client {
 impl Client {
     pub fn new(server_url: &str) -> Result<Self> {
         let base = normalize_url(server_url)?;
-        let agent = ureq::AgentBuilder::new()
-            .timeout_connect(Duration::from_secs(10))
-            .timeout(Duration::from_secs(60))
+        let agent = ureq::Agent::config_builder()
+            .timeout_connect(Some(Duration::from_secs(10)))
+            .timeout_global(Some(Duration::from_secs(60)))
+            // Error statuses carry a JSON body that `check` maps to SyncError.
+            .http_status_as_error(false)
             .user_agent(concat!("arcanum-sync/", env!("CARGO_PKG_VERSION")))
-            .build();
+            .build()
+            .into();
         Ok(Self {
             agent,
             base,
@@ -170,14 +176,18 @@ impl Client {
     /// Sets this session's name, already encrypted by the vault.
     pub fn set_device_name(&self, sealed_name: Vec<u8>) -> Result<()> {
         Self::check(
-            self.request("PUT", "/v1/devices/current")
+            self.auth(self.agent.put(&self.url("/v1/devices/current")))
                 .send_json(&DeviceNameRequest { name: sealed_name }),
         )
         .map(drop)
     }
 
     pub fn revoke_device(&self, id: &str) -> Result<()> {
-        Self::check(self.request("DELETE", &format!("/v1/devices/{id}")).call()).map(drop)
+        Self::check(
+            self.auth(self.agent.delete(&self.url(&format!("/v1/devices/{id}"))))
+                .call(),
+        )
+        .map(drop)
     }
 
     /// Both OPAQUE registration round trips; returns the upload message.
@@ -215,52 +225,63 @@ impl Client {
         Ok(finish.message.serialize().to_vec())
     }
 
-    fn request(&self, method: &str, path: &str) -> ureq::Request {
-        let req = self.agent.request(method, &format!("{}{path}", self.base));
+    fn url(&self, path: &str) -> String {
+        format!("{}{path}", self.base)
+    }
+
+    fn auth<B>(&self, req: ureq::RequestBuilder<B>) -> ureq::RequestBuilder<B> {
         match &self.token {
-            Some(t) => req.set("Authorization", &format!("Bearer {t}")),
+            Some(t) => req.header("Authorization", &format!("Bearer {t}")),
             None => req,
         }
     }
 
     fn get<R: DeserializeOwned>(&self, path: &str) -> Result<R> {
-        Self::json(Self::check(self.request("GET", path).call())?)
+        Self::json(Self::check(
+            self.auth(self.agent.get(&self.url(path))).call(),
+        )?)
     }
 
     fn post<B: Serialize, R: DeserializeOwned>(&self, path: &str, body: &B) -> Result<R> {
-        Self::json(Self::check(self.request("POST", path).send_json(body))?)
+        Self::json(Self::check(
+            self.auth(self.agent.post(&self.url(path))).send_json(body),
+        )?)
     }
 
     fn post_no_content<B: Serialize>(&self, path: &str, body: &B) -> Result<()> {
-        Self::check(self.request("POST", path).send_json(body)).map(drop)
+        Self::check(self.auth(self.agent.post(&self.url(path))).send_json(body)).map(drop)
     }
 
-    fn json<R: DeserializeOwned>(resp: ureq::Response) -> Result<R> {
-        resp.into_json()
+    fn json<R: DeserializeOwned>(mut resp: Response) -> Result<R> {
+        // ureq 2's into_json had no size cap; vault pulls can exceed ureq 3's
+        // 10 MB default.
+        resp.body_mut()
+            .with_config()
+            .limit(u64::MAX)
+            .read_json()
             .map_err(|_| SyncError::Protocol("invalid JSON"))
     }
 
-    fn check(result: std::result::Result<ureq::Response, ureq::Error>) -> Result<ureq::Response> {
-        match result {
-            Ok(resp) => Ok(resp),
-            Err(ureq::Error::Status(status, resp)) => {
-                let body: Option<ErrorResponse> = resp.into_json().ok();
-                Err(match body.map(|b| (b.error, b.message)) {
-                    Some((ErrorCode::Unauthorized, _)) => SyncError::Unauthorized,
-                    Some((ErrorCode::InvalidLogin, _)) => SyncError::InvalidLogin,
-                    Some((ErrorCode::AccountExists, _)) => SyncError::AccountExists,
-                    Some((ErrorCode::InviteRequired, _)) => SyncError::InviteRequired,
-                    Some((ErrorCode::InvalidInvite, _)) => SyncError::InvalidInvite,
-                    Some((ErrorCode::RegistrationClosed, _)) => SyncError::RegistrationClosed,
-                    Some((ErrorCode::QuotaExceeded, _)) => SyncError::QuotaExceeded,
-                    Some((ErrorCode::TooManyRequests, _)) => SyncError::TooManyRequests,
-                    Some((ErrorCode::CursorAhead, _)) => SyncError::ServerRestored,
-                    Some((_, message)) => SyncError::Server(message),
-                    None => SyncError::Server(format!("HTTP {status}")),
-                })
-            }
-            Err(ureq::Error::Transport(t)) => Err(SyncError::Network(t.to_string())),
+    fn check(result: std::result::Result<Response, ureq::Error>) -> Result<Response> {
+        let mut resp = result.map_err(|e| SyncError::Network(e.to_string()))?;
+        let status = resp.status();
+        if status.is_success() {
+            return Ok(resp);
         }
+        let body: Option<ErrorResponse> = resp.body_mut().read_json().ok();
+        Err(match body.map(|b| (b.error, b.message)) {
+            Some((ErrorCode::Unauthorized, _)) => SyncError::Unauthorized,
+            Some((ErrorCode::InvalidLogin, _)) => SyncError::InvalidLogin,
+            Some((ErrorCode::AccountExists, _)) => SyncError::AccountExists,
+            Some((ErrorCode::InviteRequired, _)) => SyncError::InviteRequired,
+            Some((ErrorCode::InvalidInvite, _)) => SyncError::InvalidInvite,
+            Some((ErrorCode::RegistrationClosed, _)) => SyncError::RegistrationClosed,
+            Some((ErrorCode::QuotaExceeded, _)) => SyncError::QuotaExceeded,
+            Some((ErrorCode::TooManyRequests, _)) => SyncError::TooManyRequests,
+            Some((ErrorCode::CursorAhead, _)) => SyncError::ServerRestored,
+            Some((_, message)) => SyncError::Server(message),
+            None => SyncError::Server(format!("HTTP {}", status.as_u16())),
+        })
     }
 }
 

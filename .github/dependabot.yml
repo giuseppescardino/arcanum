@@ -1,14 +1,42 @@
 # Weekly update PRs for dependencies and base images.
+#
+# RustCrypto crates share the `digest` trait version, so they must move
+# together: bumping them one PR at a time (sha2 0.11 next to hmac 0.12)
+# breaks the build. They are grouped into a single PR, and their breaking
+# releases (0.x minor) are ignored while opaque-ke 4 pins digest 0.10. When a
+# stable opaque-ke on digest 0.11 ships, drop the `ignore` blocks and bump the
+# whole family together with it, in core and server at once (the server
+# depends on core's arcanum-proto).
 version: 2
 updates:
   - package-ecosystem: cargo
     directory: /core
     schedule:
       interval: weekly
+    groups:
+      rustcrypto:
+        patterns: ["sha1", "sha2", "hmac", "hkdf", "digest", "opaque-ke"]
+    ignore:
+      - dependency-name: "sha1"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "sha2"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "hmac"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "hkdf"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
   - package-ecosystem: cargo
     directory: /server
     schedule:
       interval: weekly
+    groups:
+      rustcrypto:
+        patterns: ["sha1", "sha2", "hmac", "hkdf", "digest"]
+    ignore:
+      - dependency-name: "sha2"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "hmac"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
   - package-ecosystem: docker
     directories:
       - /deploy
